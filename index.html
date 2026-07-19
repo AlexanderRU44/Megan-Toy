@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎵 YouTube Радио с очередью</title>
+    <!-- Подключаем Firebase SDK (compat-версия) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- Plyr -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+        }
+        .player-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            margin-bottom: 20px;
+        }
+        h1 { color: #fff; font-size: 28px; text-align: center; margin-bottom: 6px; }
+        .subtitle { color: rgba(255,255,255,0.5); text-align: center; font-size: 14px; margin-bottom: 20px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .input-group input {
+            flex: 1;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.07);
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            min-width: 200px;
+        }
+        .input-group input::placeholder { color: rgba(255,255,255,0.35); }
+        .input-group input:focus { border-color: #ff6b6b; }
+        .input-group button {
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: none;
+            background: #ff6b6b;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            white-space: nowrap;
+        }
+        .input-group button:hover { background: #ee5a5a; transform: scale(1.02); }
+        .input-group button:active { transform: scale(0.98); }
+        .input-group .add-btn { background: #4ecdc4; }
+        .input-group .add-btn:hover { background: #3dbdb5; }
+
+        #player { border-radius: 12px; overflow: hidden; margin-top: 6px; }
+
+        .queue-section { margin-top: 16px; }
+        .queue-title {
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .queue-title span { background: rgba(255,255,255,0.1); padding: 2px 12px; border-radius: 20px; font-size: 12px; }
+        .queue-list {
+            list-style: none;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .queue-list::-webkit-scrollbar { width: 4px; }
+        .queue-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .queue-list::-webkit-scrollbar-thumb { background: #ff6b6b; border-radius: 10px; }
+
+        .queue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            color: rgba(255,255,255,0.85);
+            font-size: 14px;
+            transition: background 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .queue-item.current {
+            border-left-color: #ff6b6b;
+            background: rgba(255,107,107,0.12);
+        }
+        .queue-item .track-info {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 10px;
+        }
+        .queue-item .track-index {
+            color: rgba(255,255,255,0.3);
+            font-size: 12px;
+            margin-right: 12px;
+            min-width: 24px;
+        }
+        .queue-item .remove-btn {
+            background: rgba(255,255,255,0.08);
+            border: none;
+            color: rgba(255,255,255,0.4);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .queue-item .remove-btn:hover {
+            background: #ff6b6b;
+            color: #fff;
+        }
+
+        .info {
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            font-size: 12px;
+            margin-top: 12px;
+        }
+
+        .plyr { --plyr-color-main: #ff6b6b; --plyr-video-background: transparent; }
+        .plyr__controls { background: rgba(0,0,0,0.5) !important; border-radius: 12px !important; }
+        .plyr__control--overlaid { background: #ff6b6b !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="player-card">
+        <h1>🎵 Радио-очередь</h1>
+        <p class="subtitle">Вставляй ссылку — трек добавится в конец очереди</p>
+
+        <div class="input-group">
+            <input type="text" id="urlInput" placeholder="https://youtu.be/... или https://www.youtube.com/watch?v=..." />
+            <button class="add-btn" id="addBtn">➕ Добавить</button>
+        </div>
+
+        <div id="player"></div>
+
+        <div class="queue-section">
+            <div class="queue-title">
+                <span>📋 Очередь</span>
+                <span id="queueCount">0 треков</span>
+            </div>
+            <ul class="queue-list" id="queueList">
+                <li style="color:rgba(255,255,255,0.25); text-align:center; padding:20px; font-size:13px;">
+                    Пока пусто. Добавьте первый трек!
+                </li>
+            </ul>
+        </div>
+        <div class="info">
+            🔄 Очередь синхронизируется между всеми слушателями в реальном времени
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+    // ============================================================
+    // 1️⃣ ВАША КОНФИГУРАЦИЯ FIREBASE (уже вставлена)
+    // ============================================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyB8pw3vmKptGMvi_475jThROE_S7KLwBpk",
+        authDomain: "radio-7069e.firebaseapp.com",
+        databaseURL: "https://radio-7069e-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "radio-7069e",
+        storageBucket: "radio-7069e.firebasestorage.app",
+        messagingSenderId: "345419775118",
+        appId: "1:345419775118:web:bfcce3442f9c7b973e1ddf",
+        measurementId: "G-TJBWBVPM9B"
+    };
+
+    // ============================================================
+    // 2️⃣ ИНИЦИАЛИЗАЦИЯ FIREBASE
+    // ============================================================
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const queueRef = db.ref('queue');
+
+    // ============================================================
+    // 3️⃣ ПЕРЕМЕННЫЕ И СОСТОЯНИЕ
+    // ============================================================
+    let playlist = [];
+    let currentIndex = 0;
+    let isPlaying = false;
+    let plyrInstance = null;
+    let playerReady = false;
+
+    const queueListEl = document.getElementById('queueList');
+    const queueCountEl = document.getElementById('queueCount');
+
+    // ============================================================
+    // 4️⃣ ИНИЦИАЛИЗАЦИЯ PLYR
+    // ============================================================
+    function initPlyr() {
+        const container = document.getElementById('player');
+        container.innerHTML = '<div id="youtube-player"></div>';
+        if (plyrInstance) {
+            plyrInstance.destroy();
+        }
+        plyrInstance = new Plyr('#youtube-player', {
+            controls: ['play', 'progress', 'current-time', 'duration', 'volume', 'fullscreen'],
+            invertTime: false,
+            hideControls: false,
+        });
+        plyrInstance.on('ended', () => {
+            playNext();
+        });
+    }
+
+    // ============================================================
+    // 5️⃣ ЗАГРУЗКА ВИДЕО
+    // ============================================================
+    function loadVideo(videoId, autoplay = true) {
+        if (!playerReady) {
+            setTimeout(() => loadVideo(videoId, autoplay), 500);
+            return;
+        }
+        const container = document.getElementById('youtube-player');
+        container.innerHTML = '';
+        const iframe = document.createElement('iframe');
+        iframe.width = '100%';
+        iframe.height = '200';
+        const autoplayParam = autoplay ? '&autoplay=1' : '&autoplay=0';
+        iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1${autoplayParam}&controls=0&rel=0&showinfo=0&modestbranding=1`;
+        iframe.allow = 'autoplay; encrypted-media';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '12px';
+        container.appendChild(iframe);
+
+        if (plyrInstance) {
+            plyrInstance.destroy();
+        }
+        plyrInstance = new Plyr(iframe, {
+            controls: ['play', 'progress', 'current-time', 'duration', 'volume', 'fullscreen'],
+            invertTime: false,
+            hideControls: false,
+        });
+        if (autoplay) {
+            plyrInstance.on('canplay', () => {
+                plyrInstance.play();
+            });
+        }
+    }
+
+    function extractVideoId(url) {
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
+            /youtube\.com\/embed\/([^&\n?#]+)/,
+            /youtube\.com\/v\/([^&\n?#]+)/
+        ];
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match) return match[1];
+        }
+        return null;
+    }
+
+    // ============================================================
+    // 6️⃣ ЛОГИКА ОЧЕРЕДИ
+    // ============================================================
+    function playTrack(index) {
+        if (index >= playlist.length || index < 0) {
+            isPlaying = false;
+            currentIndex = 0;
+            renderQueue();
+            return;
+        }
+        currentIndex = index;
+        const track = playlist[index];
+        const videoId = extractVideoId(track.url);
+        if (!videoId) {
+            removeTrackByIndex(index);
+            playNext();
+            return;
+        }
+        isPlaying = true;
+        loadVideo(videoId, true);
+        renderQueue();
+    }
+
+    function playNext() {
+        if (playlist.length === 0) {
+            isPlaying = false;
+            renderQueue();
+            return;
+        }
+        let nextIndex = (currentIndex + 1) % playlist.length;
+        if (nextIndex >= playlist.length) {
+            nextIndex = 0;
+        }
+        playTrack(nextIndex);
+    }
+
+    function addTrackToQueue(url) {
+        const videoId = extractVideoId(url);
+        if (!videoId) {
+            alert('Не удалось распознать ссылку YouTube');
+            return false;
+        }
+        const newTrack = {
+            url: url,
+            added: firebase.database.ServerValue.TIMESTAMP,
+        };
+        const newRef = queueRef.push();
+        newRef.set(newTrack);
+        return true;
+    }
+
+    function removeTrackByIndex(index) {
+        const track = playlist[index];
+        if (track && track.id) {
+            queueRef.child(track.id).remove();
+        }
+    }
+
+    // ============================================================
+    // 7️⃣ ОТОБРАЖЕНИЕ ОЧЕРЕДИ
+    // ============================================================
+    function renderQueue() {
+        if (playlist.length === 0) {
+            queueListEl.innerHTML = `
+                <li style="color:rgba(255,255,255,0.25); text-align:center; padding:20px; font-size:13px;">
+                    🎧 Очередь пуста. Добавьте первый трек!
+                </li>
+            `;
+            queueCountEl.textContent = '0 треков';
+            return;
+        }
+
+        let html = '';
+        playlist.forEach((track, index) => {
+            const isCurrent = (index === currentIndex && isPlaying);
+            const displayUrl = track.url.length > 50 ? track.url.substring(0, 47) + '...' : track.url;
+            html += `
+                <li class="queue-item ${isCurrent ? 'current' : ''}">
+                    <span class="track-index">${index + 1}</span>
+                    <span class="track-info">${displayUrl}</span>
+                    <button class="remove-btn" data-index="${index}" title="Удалить">✕</button>
+                </li>
+            `;
+        });
+        queueListEl.innerHTML = html;
+        queueCountEl.textContent = `${playlist.length} треков`;
+
+        document.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                removeTrackByIndex(index);
+            });
+        });
+    }
+
+    // ============================================================
+    // 8️⃣ СЛУШАЕМ ИЗМЕНЕНИЯ В FIREBASE
+    // ============================================================
+    queueRef.on('child_added', (snapshot) => {
+        const data = snapshot.val();
+        const track = {
+            id: snapshot.key,
+            url: data.url,
+        };
+        playlist.push(track);
+        renderQueue();
+        if (!isPlaying && playlist.length === 1) {
+            playTrack(0);
+        }
+    });
+
+    queueRef.on('child_removed', (snapshot) => {
+        const removedId = snapshot.key;
+        const removedIndex = playlist.findIndex(t => t.id === removedId);
+        if (removedIndex === -1) return;
+
+        const wasPlaying = (removedIndex === currentIndex && isPlaying);
+        playlist.splice(removedIndex, 1);
+
+        if (removedIndex < currentIndex) {
+            currentIndex--;
+        } else if (removedIndex === currentIndex && wasPlaying) {
+            if (playlist.length > 0) {
+                const nextIdx = currentIndex % playlist.length;
+                playTrack(nextIdx);
+            } else {
+                isPlaying = false;
+                currentIndex = 0;
+                renderQueue();
+                if (plyrInstance) plyrInstance.stop();
+            }
+        } else {
+            renderQueue();
+        }
+    });
+
+    // ============================================================
+    // 9️⃣ ОБРАБОТЧИКИ UI
+    // ============================================================
+    document.getElementById('addBtn').addEventListener('click', () => {
+        const input = document.getElementById('urlInput');
+        const url = input.value.trim();
+        if (!url) {
+            alert('Вставьте ссылку на YouTube');
+            return;
+        }
+        addTrackToQueue(url);
+        input.value = '';
+        input.focus();
+    });
+
+    document.getElementById('urlInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('addBtn').click();
+        }
+    });
+
+    // ============================================================
+    // 🔟 ИНИЦИАЛИЗАЦИЯ
+    // ============================================================
+    window.onYouTubeIframeAPIReady = function() {
+        playerReady = true;
+        console.log('YouTube API готов');
+    };
+
+    initPlyr();
+
+    if (typeof YT !== 'undefined' && YT.loaded) {
+        playerReady = true;
+    }
+
+    queueRef.once('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            const tracks = Object.keys(data).map(key => ({
+                id: key,
+                url: data[key].url,
+            }));
+            playlist = tracks;
+            renderQueue();
+            if (playlist.length > 0) {
+                playTrack(0);
+            }
+        }
+    });
+
+    console.log('🎵 Радио запущено! Очередь синхронизируется через Firebase.');
+</script>
+</body>
+</html>
