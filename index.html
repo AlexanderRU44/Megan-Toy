@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🎵 YouTube Радио с очередью</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <title>🎵 Радио-очередь</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -58,57 +56,17 @@
         .input-group button:active { transform: scale(0.98); }
         .input-group .add-btn { background: #4ecdc4; }
         .input-group .add-btn:hover { background: #3dbdb5; }
-        .input-group .start-btn { background: #ffd93d; color: #1a1a2e; }
-        .input-group .start-btn:hover { background: #f7c948; }
 
-        /* Скрытый плеер YouTube */
-        #youtube-player-container {
-            position: relative;
-            width: 100%;
-            height: 0;
-            padding-bottom: 56.25%;
-            background: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            margin: 16px 0 10px;
-        }
-        #youtube-player-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        /* Скрываем видео, оставляем только звук */
-        #youtube-player-container {
-            max-height: 120px;
-            min-height: 80px;
-        }
-        #youtube-player-container iframe {
-            opacity: 0;
-            pointer-events: none;
-        }
-        /* Показываем плейлист вместо видео */
-        .audio-info {
-            position: relative;
-            z-index: 2;
-            margin-top: -80px;
-            padding: 16px 20px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.06);
-            color: #fff;
+        .status-bar {
+            color: rgba(255,255,255,0.5);
             text-align: center;
-            min-height: 60px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            font-size: 13px;
+            margin: 12px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
         }
-        .audio-info .track-name { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
-        .audio-info .track-status { font-size: 13px; color: rgba(255,255,255,0.5); }
-        .audio-info .track-status.playing { color: #ffd93d; }
+        .status-bar.playing { color: #ffd93d; }
 
         .queue-section { margin-top: 16px; }
         .queue-title {
@@ -180,6 +138,47 @@
             color: #fff;
         }
 
+        .admin-panel {
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 16px;
+        }
+        .admin-panel .admin-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .admin-panel input {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.07);
+            color: #fff;
+            font-size: 13px;
+            flex: 1;
+            min-width: 150px;
+        }
+        .admin-panel .admin-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: #ffd93d;
+            color: #1a1a2e;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: transform 0.2s;
+        }
+        .admin-panel .admin-btn:hover { transform: scale(1.02); }
+        .admin-panel .admin-btn.logout { background: #ff6b6b; color: #fff; }
+        .admin-status {
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+            margin-top: 6px;
+        }
+        .admin-status.active { color: #4ecdc4; }
+
         .info {
             color: rgba(255,255,255,0.4);
             text-align: center;
@@ -198,17 +197,9 @@
         <div class="input-group">
             <input type="text" id="urlInput" placeholder="https://youtu.be/... или https://www.youtube.com/watch?v=..." />
             <button class="add-btn" id="addBtn">➕ Добавить</button>
-            <button class="start-btn" id="startBtn">▶ Старт</button>
         </div>
 
-        <!-- Контейнер для скрытого YouTube плеера -->
-        <div id="youtube-player-container"></div>
-        
-        <!-- Информация о треке поверх плеера -->
-        <div class="audio-info">
-            <div class="track-name" id="trackName">🎵 Нет трека</div>
-            <div class="track-status" id="trackStatus">⏸ Ожидание</div>
-        </div>
+        <div class="status-bar" id="statusBar">⏳ Загрузка...</div>
 
         <div class="queue-section">
             <div class="queue-title">
@@ -217,314 +208,188 @@
             </div>
             <ul class="queue-list" id="queueList">
                 <li style="color:rgba(255,255,255,0.25); text-align:center; padding:20px; font-size:13px;">
-                    Пока пусто. Добавьте первый трек!
+                    🎧 Очередь пуста. Добавьте первый трек!
                 </li>
             </ul>
         </div>
+
+        <!-- Админ-панель -->
+        <div class="admin-panel">
+            <div class="admin-row">
+                <input type="password" id="adminPassword" placeholder="Пароль администратора" />
+                <button class="admin-btn" id="adminLoginBtn">🔐 Войти</button>
+                <button class="admin-btn logout" id="adminLogoutBtn" style="display: none;">🚪 Выйти</button>
+            </div>
+            <div class="admin-status" id="adminStatus">❌ Не авторизован</div>
+        </div>
+
         <div class="info">
-            🔄 Очередь синхронизируется между всеми слушателями в реальном времени
+            🔄 Очередь синхронизируется через ваш сервер
         </div>
     </div>
 </div>
 
-<script src="https://www.youtube.com/iframe_api"></script>
 <script>
     // ============================================================
-    // 1️⃣ КОНФИГУРАЦИЯ FIREBASE
+    // КОНФИГУРАЦИЯ — ЗАМЕНИТЕ НА СВОИ ДАННЫЕ!
     // ============================================================
-    const firebaseConfig = {
-        apiKey: "AIzaSyB8pw3vmKptGMvi_475jThROE_S7KLwBpk",
-        authDomain: "radio-7069e.firebaseapp.com",
-        databaseURL: "https://radio-7069e-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "radio-7069e",
-        storageBucket: "radio-7069e.firebasestorage.app",
-        messagingSenderId: "345419775118",
-        appId: "1:345419775118:web:bfcce3442f9c7b973e1ddf",
-        measurementId: "G-TJBWBVPM9B"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const queueRef = db.ref('queue');
+    const SERVER_URL = 'https://objects-julia-relevant-pay.trycloudflare.com';
+    const SECRET_KEY = 'мой_секретный_ключ_123';
 
     // ============================================================
-    // 2️⃣ ПЕРЕМЕННЫЕ
+    // СОСТОЯНИЕ
     // ============================================================
     let playlist = [];
     let currentIndex = 0;
     let isPlaying = false;
-    let player = null;
-    let playerReady = false;
-    let currentVideoId = null;
+    let isAdmin = false;
+    let updateInterval = null;
 
-    const trackNameEl = document.getElementById('trackName');
-    const trackStatusEl = document.getElementById('trackStatus');
-    const queueListEl = document.getElementById('queueList');
-    const queueCountEl = document.getElementById('queueCount');
+    const statusBar = document.getElementById('statusBar');
+    const queueList = document.getElementById('queueList');
+    const queueCount = document.getElementById('queueCount');
+    const adminStatus = document.getElementById('adminStatus');
 
     // ============================================================
-    // 3️⃣ YOUTUBE PLAYER API
+    // API ЗАПРОСЫ
     // ============================================================
-    function onYouTubeIframeAPIReady() {
-        playerReady = true;
-        console.log('YouTube API готов');
-        // Создаём плеер
-        createPlayer();
+    async function apiRequest(endpoint, options = {}) {
+        try {
+            const response = await fetch(`${SERVER_URL}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {})
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return await response.json();
+        } catch (e) {
+            console.error('API Error:', e);
+            return { success: false, error: e.message };
+        }
     }
 
-    function createPlayer() {
-        if (player) return;
-        const container = document.getElementById('youtube-player-container');
-        player = new YT.Player('youtube-player-container', {
-            height: '100%',
-            width: '100%',
-            videoId: '',
-            playerVars: {
-                'autoplay': 0,
-                'controls': 0,
-                'rel': 0,
-                'showinfo': 0,
-                'modestbranding': 1,
-                'playsinline': 1,
-                'iv_load_policy': 3,
-                'disablekb': 1,
-                'fs': 0,
-                'cc_load_policy': 0,
-                'hl': 'ru',
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange,
-                'onError': onPlayerError,
-            }
+    async function getQueue() {
+        const result = await apiRequest('/queue');
+        if (result.success === false) {
+            return null;
+        }
+        return result;
+    }
+
+    async function addTrack(url) {
+        return await apiRequest('/add', {
+            method: 'POST',
+            body: JSON.stringify({ url })
         });
     }
 
-    function onPlayerReady(event) {
-        console.log('Плеер готов');
-        // Если есть трек в очереди — запускаем
-        if (playlist.length > 0 && !isPlaying) {
-            playTrack(0);
+    async function removeTrack(index) {
+        if (!isAdmin) {
+            alert('Только администратор может удалять треки!');
+            return { success: false };
         }
-    }
-
-    function onPlayerStateChange(event) {
-        const state = event.data;
-        // YT.PlayerState: ENDED=0, PLAYING=1, PAUSED=2, BUFFERING=3, CUED=5
-        if (state === YT.PlayerState.ENDED) {
-            console.log('Трек закончился');
-            playNext();
-        } else if (state === YT.PlayerState.PLAYING) {
-            updateTrackStatus('▶ Воспроизводится', true);
-        } else if (state === YT.PlayerState.PAUSED) {
-            updateTrackStatus('⏸ Пауза', false);
-        } else if (state === YT.PlayerState.BUFFERING) {
-            updateTrackStatus('⏳ Буферизация...', false);
-        }
-    }
-
-    function onPlayerError(event) {
-        console.error('Ошибка плеера:', event.data);
-        updateTrackStatus('❌ Ошибка загрузки', false);
-        // Пробуем следующий трек через 3 секунды
-        setTimeout(() => {
-            playNext();
-        }, 3000);
+        return await apiRequest(`/remove?index=${index}&key=${SECRET_KEY}`, {
+            method: 'DELETE'
+        });
     }
 
     // ============================================================
-    // 4️⃣ ЛОГИКА ВОСПРОИЗВЕДЕНИЯ
+    // ОБНОВЛЕНИЕ ОЧЕРЕДИ
     // ============================================================
-    function extractVideoId(url) {
-        const patterns = [
-            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
-            /youtube\.com\/embed\/([^&\n?#]+)/,
-            /youtube\.com\/v\/([^&\n?#]+)/
-        ];
-        for (const pattern of patterns) {
-            const match = url.match(pattern);
-            if (match) return match[1];
-        }
-        return null;
-    }
-
-    function playTrack(index) {
-        if (!playerReady || !player) {
-            setTimeout(() => playTrack(index), 500);
+    async function updateQueue() {
+        const data = await getQueue();
+        if (!data) {
+            statusBar.textContent = '❌ Нет связи с сервером';
+            statusBar.className = 'status-bar';
             return;
         }
 
-        if (index >= playlist.length || index < 0) {
-            isPlaying = false;
-            currentIndex = 0;
-            renderQueue();
-            updateTrackStatus('⏸ Остановлено', false);
-            trackNameEl.textContent = '🎵 Нет трека';
-            return;
+        playlist = data.queue || [];
+        currentIndex = data.current || 0;
+        isPlaying = data.isPlaying || false;
+
+        // Статус
+        if (isPlaying && playlist.length > 0) {
+            statusBar.textContent = `▶ Играет #${currentIndex + 1} из ${playlist.length}`;
+            statusBar.className = 'status-bar playing';
+        } else if (playlist.length > 0) {
+            statusBar.textContent = `⏸ Остановлено (${playlist.length} треков)`;
+            statusBar.className = 'status-bar';
+        } else {
+            statusBar.textContent = '⏸ Остановлено';
+            statusBar.className = 'status-bar';
         }
 
-        currentIndex = index;
-        const track = playlist[index];
-        const videoId = extractVideoId(track.url);
-        if (!videoId) {
-            removeTrackByIndex(index);
-            playNext();
-            return;
-        }
-
-        currentVideoId = videoId;
-        isPlaying = true;
-        trackNameEl.textContent = `🎵 Трек #${index + 1}`;
-        updateTrackStatus('⏳ Загрузка...', false);
-
-        // Загружаем видео в плеер
-        player.loadVideoById(videoId);
-        player.playVideo();
         renderQueue();
     }
 
-    function playNext() {
-        if (playlist.length === 0) {
-            isPlaying = false;
-            renderQueue();
-            updateTrackStatus('⏸ Остановлено', false);
-            trackNameEl.textContent = '🎵 Нет трека';
-            return;
-        }
-        let nextIndex = (currentIndex + 1) % playlist.length;
-        playTrack(nextIndex);
-    }
-
-    function updateTrackStatus(text, isPlayingStatus) {
-        trackStatusEl.textContent = text;
-        if (isPlayingStatus) {
-            trackStatusEl.className = 'track-status playing';
-        } else {
-            trackStatusEl.className = 'track-status';
-        }
-    }
-
-    // ============================================================
-    // 5️⃣ ЛОГИКА ОЧЕРЕДИ
-    // ============================================================
-    function addTrackToQueue(url) {
-        const videoId = extractVideoId(url);
-        if (!videoId) {
-            alert('Не удалось распознать ссылку YouTube');
-            return false;
-        }
-        const newTrack = {
-            url: url,
-            added: firebase.database.ServerValue.TIMESTAMP,
-        };
-        const newRef = queueRef.push();
-        newRef.set(newTrack);
-        return true;
-    }
-
-    function removeTrackByIndex(index) {
-        const track = playlist[index];
-        if (track && track.id) {
-            queueRef.child(track.id).remove();
-        }
-    }
-
-    // ============================================================
-    // 6️⃣ ОТОБРАЖЕНИЕ ОЧЕРЕДИ
-    // ============================================================
     function renderQueue() {
         if (playlist.length === 0) {
-            queueListEl.innerHTML = `
+            queueList.innerHTML = `
                 <li style="color:rgba(255,255,255,0.25); text-align:center; padding:20px; font-size:13px;">
                     🎧 Очередь пуста. Добавьте первый трек!
                 </li>
             `;
-            queueCountEl.textContent = '0 треков';
+            queueCount.textContent = '0 треков';
             return;
         }
 
         let html = '';
         playlist.forEach((track, index) => {
             const isCurrent = (index === currentIndex && isPlaying);
-            const videoId = extractVideoId(track.url);
-            const displayName = videoId ? videoId.substring(0, 12) + '...' : track.url.substring(0, 30) + '...';
+            const displayUrl = track.url.length > 40 ? track.url.substring(0, 37) + '...' : track.url;
+            
+            let removeBtn = '';
+            if (isAdmin) {
+                removeBtn = `<button class="remove-btn" data-index="${index}" title="Удалить">✕</button>`;
+            }
+
             html += `
                 <li class="queue-item ${isCurrent ? 'current' : ''}">
                     <span class="track-index">${index + 1}</span>
-                    <span class="track-info">${displayName}</span>
-                    <button class="remove-btn" data-index="${index}" title="Удалить">✕</button>
+                    <span class="track-info">${displayUrl}</span>
+                    ${removeBtn}
                 </li>
             `;
         });
-        queueListEl.innerHTML = html;
-        queueCountEl.textContent = `${playlist.length} треков`;
 
-        document.querySelectorAll('.remove-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const index = parseInt(e.target.dataset.index);
-                removeTrackByIndex(index);
+        queueList.innerHTML = html;
+        queueCount.textContent = `${playlist.length} треков`;
+
+        if (isAdmin) {
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    await removeTrack(index);
+                    await updateQueue();
+                });
             });
-        });
+        }
     }
 
     // ============================================================
-    // 7️⃣ СЛУШАЕМ FIREBASE
+    // ОБРАБОТЧИКИ UI
     // ============================================================
-    queueRef.on('child_added', (snapshot) => {
-        const data = snapshot.val();
-        const track = {
-            id: snapshot.key,
-            url: data.url,
-        };
-        playlist.push(track);
-        renderQueue();
-        if (!isPlaying && playlist.length === 1) {
-            playTrack(0);
-        }
-    });
-
-    queueRef.on('child_removed', (snapshot) => {
-        const removedId = snapshot.key;
-        const removedIndex = playlist.findIndex(t => t.id === removedId);
-        if (removedIndex === -1) return;
-
-        const wasPlaying = (removedIndex === currentIndex && isPlaying);
-        playlist.splice(removedIndex, 1);
-
-        if (removedIndex < currentIndex) {
-            currentIndex--;
-        } else if (removedIndex === currentIndex && wasPlaying) {
-            if (playlist.length > 0) {
-                const nextIdx = currentIndex % playlist.length;
-                playTrack(nextIdx);
-            } else {
-                isPlaying = false;
-                currentIndex = 0;
-                renderQueue();
-                updateTrackStatus('⏸ Остановлено', false);
-                trackNameEl.textContent = '🎵 Нет трека';
-                if (player) {
-                    player.stopVideo();
-                }
-            }
-        } else {
-            renderQueue();
-        }
-    });
-
-    // ============================================================
-    // 8️⃣ ОБРАБОТЧИКИ UI
-    // ============================================================
-    document.getElementById('addBtn').addEventListener('click', () => {
+    document.getElementById('addBtn').addEventListener('click', async () => {
         const input = document.getElementById('urlInput');
         const url = input.value.trim();
         if (!url) {
             alert('Вставьте ссылку на YouTube');
             return;
         }
-        addTrackToQueue(url);
-        input.value = '';
-        input.focus();
+
+        const result = await addTrack(url);
+        if (result.success) {
+            input.value = '';
+            input.focus();
+            await updateQueue();
+        } else {
+            alert('Ошибка: ' + (result.error || 'Неизвестная ошибка'));
+        }
     });
 
     document.getElementById('urlInput').addEventListener('keydown', (e) => {
@@ -533,52 +398,40 @@
         }
     });
 
-    document.getElementById('startBtn').addEventListener('click', () => {
-        if (playlist.length === 0) {
-            alert('Очередь пуста. Добавьте трек!');
-            return;
-        }
-        if (!playerReady) {
-            alert('Плеер ещё не загрузился, подождите секунду');
-            return;
-        }
-        if (isPlaying) {
-            // Перезапускаем текущий трек
-            if (player && currentVideoId) {
-                player.seekTo(0);
-                player.playVideo();
-            }
+    // ============================================================
+    // АДМИН-ПАНЕЛЬ
+    // ============================================================
+    document.getElementById('adminLoginBtn').addEventListener('click', () => {
+        const password = document.getElementById('adminPassword').value;
+        if (password === SECRET_KEY) {
+            isAdmin = true;
+            document.getElementById('adminLoginBtn').style.display = 'none';
+            document.getElementById('adminLogoutBtn').style.display = 'inline-block';
+            adminStatus.textContent = '✅ Администратор';
+            adminStatus.className = 'admin-status active';
+            document.getElementById('adminPassword').value = '';
+            updateQueue();
         } else {
-            playTrack(currentIndex);
+            alert('Неверный пароль!');
         }
     });
 
-    // ============================================================
-    // 9️⃣ ИНИЦИАЛИЗАЦИЯ
-    // ============================================================
-    // Ждём загрузки API
-    if (typeof YT === 'undefined' || !YT.loaded) {
-        window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
-    } else {
-        onYouTubeIframeAPIReady();
-    }
-
-    queueRef.once('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            const tracks = Object.keys(data).map(key => ({
-                id: key,
-                url: data[key].url,
-            }));
-            playlist = tracks;
-            renderQueue();
-            if (playlist.length > 0 && playerReady) {
-                playTrack(0);
-            }
-        }
+    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+        isAdmin = false;
+        document.getElementById('adminLoginBtn').style.display = 'inline-block';
+        document.getElementById('adminLogoutBtn').style.display = 'none';
+        adminStatus.textContent = '❌ Не авторизован';
+        adminStatus.className = 'admin-status';
+        updateQueue();
     });
 
-    console.log('🎵 Радио запущено! Очередь синхронизируется через Firebase.');
+    // ============================================================
+    // ЗАПУСК
+    // ============================================================
+    updateQueue();
+    updateInterval = setInterval(updateQueue, 3000);
+
+    console.log('🎵 Радио-сайт подключён к серверу:', SERVER_URL);
 </script>
 </body>
 </html>
