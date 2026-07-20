@@ -67,6 +67,7 @@
             border-radius: 10px;
         }
         .status-bar.playing { color: #ffd93d; }
+        .status-bar.error { color: #ff6b6b; }
 
         .queue-section { margin-top: 16px; }
         .queue-title {
@@ -231,9 +232,9 @@
 
 <script>
     // ============================================================
-    // КОНФИГУРАЦИЯ — ЗАМЕНИТЕ НА СВОИ ДАННЫЕ!
+    // КОНФИГУРАЦИЯ — ЗАМЕНИТЕ НА СВОЙ АДРЕС!
     // ============================================================
-    const SERVER_URL = 'https://objects-julia-relevant-pay.trycloudflare.com';
+    const SERVER_URL = 'https://bore.pub:39173';
     const SECRET_KEY = 'мой_секретный_ключ_123';
 
     // ============================================================
@@ -301,30 +302,36 @@
     // ОБНОВЛЕНИЕ ОЧЕРЕДИ
     // ============================================================
     async function updateQueue() {
-        const data = await getQueue();
-        if (!data) {
-            statusBar.textContent = '❌ Нет связи с сервером';
-            statusBar.className = 'status-bar';
-            return;
+        try {
+            const data = await getQueue();
+            if (!data) {
+                statusBar.textContent = '❌ Нет связи с сервером';
+                statusBar.className = 'status-bar error';
+                return;
+            }
+
+            playlist = data.queue || [];
+            currentIndex = data.current || 0;
+            isPlaying = data.isPlaying || false;
+
+            // Статус
+            if (isPlaying && playlist.length > 0) {
+                statusBar.textContent = `▶ Играет #${currentIndex + 1} из ${playlist.length}`;
+                statusBar.className = 'status-bar playing';
+            } else if (playlist.length > 0) {
+                statusBar.textContent = `⏸ Остановлено (${playlist.length} треков)`;
+                statusBar.className = 'status-bar';
+            } else {
+                statusBar.textContent = '⏸ Остановлено';
+                statusBar.className = 'status-bar';
+            }
+
+            renderQueue();
+        } catch (e) {
+            console.error('Ошибка обновления:', e);
+            statusBar.textContent = '❌ Ошибка соединения';
+            statusBar.className = 'status-bar error';
         }
-
-        playlist = data.queue || [];
-        currentIndex = data.current || 0;
-        isPlaying = data.isPlaying || false;
-
-        // Статус
-        if (isPlaying && playlist.length > 0) {
-            statusBar.textContent = `▶ Играет #${currentIndex + 1} из ${playlist.length}`;
-            statusBar.className = 'status-bar playing';
-        } else if (playlist.length > 0) {
-            statusBar.textContent = `⏸ Остановлено (${playlist.length} треков)`;
-            statusBar.className = 'status-bar';
-        } else {
-            statusBar.textContent = '⏸ Остановлено';
-            statusBar.className = 'status-bar';
-        }
-
-        renderQueue();
     }
 
     function renderQueue() {
