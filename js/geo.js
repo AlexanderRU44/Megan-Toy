@@ -3,11 +3,40 @@
 // Функция для получения геоданных
 async function getGeoData() {
     try {
-        // Используем бесплатный API ip-api.com
+        // Используем HTTPS версию API
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        
+        if (data && !data.error) {
+            return {
+                country: data.country_name || 'Неизвестно',
+                city: data.city || 'Неизвестно',
+                region: data.region || 'Неизвестно',
+                isp: data.org || 'Неизвестно',
+                timezone: data.timezone || 'Неизвестно',
+                ip: data.ip || 'Неизвестно',
+                isHosting: false,
+                isProxy: false,
+                isMobile: false
+            };
+        } else {
+            // Пробуем запасной вариант
+            return await getGeoDataFallback();
+        }
+    } catch (error) {
+        console.error('Ошибка получения геоданных:', error);
+        return await getGeoDataFallback();
+    }
+}
+
+// Функция-запасной вариант (HTTPS)
+async function getGeoDataFallback() {
+    try {
+        // Используем ip-api.com с HTTPS
         const response = await fetch('https://ip-api.com/json/?fields=status,country,city,region,isp,timezone,hosting,proxy,mobile,query');
         const data = await response.json();
         
-        if (data.status === 'success') {
+        if (data && data.status === 'success') {
             return {
                 country: data.country || 'Неизвестно',
                 city: data.city || 'Неизвестно',
@@ -23,7 +52,7 @@ async function getGeoData() {
             return null;
         }
     } catch (error) {
-        console.error('Ошибка получения геоданных:', error);
+        console.error('Ошибка получения геоданных (fallback):', error);
         return null;
     }
 }
@@ -41,7 +70,6 @@ function getGeoInfoString() {
                 if (geo.timezone && geo.timezone !== 'Неизвестно') parts.push(`Часовой пояс: ${geo.timezone}`);
                 if (geo.ip && geo.ip !== 'Неизвестно') parts.push(`IP: ${geo.ip}`);
                 
-                // Определяем тип подключения
                 if (geo.isHosting) parts.push('⚠️ Обнаружен хостинг/сервер');
                 if (geo.isProxy) parts.push('⚠️ Обнаружен прокси/VPN');
                 if (geo.isMobile) parts.push('📱 Мобильное подключение');
@@ -58,7 +86,7 @@ function getGeoInfoString() {
 // Функция для отображения геоданных в уведомлении
 function showGeoInfo() {
     getGeoData().then(geo => {
-        if (geo) {
+        if (geo && geo.country !== 'Неизвестно') {
             let message = `📍 Твои геоданные:\n\n`;
             message += `🌍 Страна: ${geo.country}\n`;
             message += `🏙️ Город: ${geo.city}\n`;
@@ -82,9 +110,9 @@ function showGeoInfo() {
             );
         } else {
             showNotification(
-                '❌',
-                'Ошибка геолокации',
-                'Не удалось определить твоё местоположение. Возможно, ты слишком хорошо прячешься... 👻',
+                '🌐',
+                'Геолокация недоступна',
+                'Не удалось определить твоё местоположение.\n\nЭто может быть связано с:\n• Использованием VPN/прокси\n• Блокировкой запросов браузером\n• Ограничениями в твоей стране\n\n📌 Попробуй использовать другой браузер или отключить VPN.',
                 null,
                 '',
                 'Понятно',
