@@ -70,6 +70,53 @@ function openProfileModal() {
             </div>
 
             <div class="panel-box" style="grid-column: 1 / -1;">
+                <div class="panel-title">📍 ГЕО И GPS</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Страна</label>
+                        <input type="text" id="edCountry" value="" placeholder="Россия">
+                    </div>
+                    <div class="form-group">
+                        <label>Город</label>
+                        <input type="text" id="edCity" value="" placeholder="Москва">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Регион</label>
+                        <input type="text" id="edRegion" value="" placeholder="Московская область">
+                    </div>
+                    <div class="form-group">
+                        <label>Почтовый индекс</label>
+                        <input type="text" id="edPostal" value="" placeholder="101000">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Широта (GPS)</label>
+                        <input type="text" id="edLat" value="" placeholder="55.7558">
+                    </div>
+                    <div class="form-group">
+                        <label>Долгота (GPS)</label>
+                        <input type="text" id="edLon" value="" placeholder="37.6176">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Точность GPS (метры)</label>
+                    <input type="text" id="edAccuracy" value="" placeholder="65">
+                </div>
+                <div class="form-group">
+                    <label>Провайдер / ISP</label>
+                    <input type="text" id="edIsp" value="" placeholder="Ростелеком">
+                </div>
+                <div class="form-group">
+                    <label>IP-адрес</label>
+                    <input type="text" id="edIp" value="" placeholder="127.0.0.1">
+                </div>
+                <button class="action-btn geo-btn" style="padding:8px; font-size:0.7rem; margin-top:4px; min-height:36px;" onclick="loadCurrentLocation()">📍 Загрузить текущее местоположение</button>
+            </div>
+
+            <div class="panel-box" style="grid-column: 1 / -1;">
                 <div class="panel-title">📝 ЗАМЕТКИ МЭГАН</div>
                 <div class="form-group">
                     <label>Личные заметки</label>
@@ -134,8 +181,19 @@ function generateDossierText(forCopy = false) {
     const rating = document.getElementById('edRating') ? document.getElementById('edRating').value : '';
     const moodElement = document.getElementById('edMoodValue');
     const mood = moodElement ? moodElement.textContent : 'Спокойное (ледяное и вежливое)';
+    
+    // Гео данные
+    const country = document.getElementById('edCountry') ? document.getElementById('edCountry').value : '';
+    const city = document.getElementById('edCity') ? document.getElementById('edCity').value : '';
+    const region = document.getElementById('edRegion') ? document.getElementById('edRegion').value : '';
+    const postal = document.getElementById('edPostal') ? document.getElementById('edPostal').value : '';
+    const lat = document.getElementById('edLat') ? document.getElementById('edLat').value : '';
+    const lon = document.getElementById('edLon') ? document.getElementById('edLon').value : '';
+    const accuracy = document.getElementById('edAccuracy') ? document.getElementById('edAccuracy').value : '';
+    const isp = document.getElementById('edIsp') ? document.getElementById('edIsp').value : '';
+    const ip = document.getElementById('edIp') ? document.getElementById('edIp').value : '';
 
-    const hasData = num || name || aliases || age || status || threat || fears || behavior || history || phobias || triggers || notes || interest || rating;
+    const hasData = num || name || aliases || age || status || threat || fears || behavior || history || phobias || triggers || notes || interest || rating || country || city || lat || lon;
     
     if (!hasData) {
         return '📭 Досье пустое. Заполни данные выше!';
@@ -166,6 +224,19 @@ function generateDossierText(forCopy = false) {
     result += `\n🕒 ДАТА И ВРЕМЯ ПОСЛЕДНЕГО ОБЩЕНИЯ: ${dateString}`;
     if (status) result += `\n\n📊 СТАТУС: ${status}`;
     if (threat) result += `\n\n⚠️ СТЕПЕНЬ УГРОЗЫ: ${threat}`;
+    
+    // Гео данные
+    if (country || city || region || postal || lat || lon || accuracy || isp || ip) {
+        result += `\n\n📍 ГЕОЛОКАЦИЯ:`;
+        if (country) result += `\n· Страна: ${country}`;
+        if (city) result += `\n· Город: ${city}`;
+        if (region) result += `\n· Регион: ${region}`;
+        if (postal) result += `\n· Почтовый индекс: ${postal}`;
+        if (lat && lon) result += `\n· GPS: ${lat}, ${lon}`;
+        if (accuracy) result += `\n· Точность GPS: ${accuracy}м`;
+        if (isp) result += `\n· Провайдер: ${isp}`;
+        if (ip) result += `\n· IP: ${ip}`;
+    }
     
     result += `\n\n🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ:`;
     result += `\n${behaviorLines}`;
@@ -208,7 +279,6 @@ function copyEditedDossier() {
     const text = generateDossierText(true);
     const statusEl = document.getElementById('copyStatus');
     
-    // Показываем статус
     if (statusEl) {
         statusEl.style.display = 'block';
         statusEl.style.opacity = '1';
@@ -242,6 +312,139 @@ function copyEditedDossier() {
     });
 }
 
+// ====== ФУНКЦИЯ ЗАГРУЗКИ ТЕКУЩЕГО МЕСТОПОЛОЖЕНИЯ В РЕДАКТОР ======
+function loadCurrentLocation() {
+    const statusEl = document.getElementById('importStatus');
+    if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.opacity = '1';
+        statusEl.style.background = 'rgba(30, 150, 255, 0.12)';
+        statusEl.style.border = '1px solid #1e7cb8';
+        statusEl.style.color = '#8ad0d8';
+        statusEl.innerHTML = '⏳ Получение геоданных...';
+    }
+    
+    // Получаем IP данные
+    getGeoData().then(ipData => {
+        // Получаем GPS
+        getGPSLocation().then(gpsData => {
+            let loadedFields = 0;
+            let loadedFieldsList = [];
+            
+            // Заполняем IP данные
+            if (ipData) {
+                if (ipData.country && ipData.country !== 'Неизвестно') {
+                    document.getElementById('edCountry').value = ipData.country;
+                    loadedFields++;
+                    loadedFieldsList.push('Страна');
+                }
+                if (ipData.city && ipData.city !== 'Неизвестно') {
+                    document.getElementById('edCity').value = ipData.city;
+                    loadedFields++;
+                    loadedFieldsList.push('Город');
+                }
+                if (ipData.region && ipData.region !== 'Неизвестно') {
+                    document.getElementById('edRegion').value = ipData.region;
+                    loadedFields++;
+                    loadedFieldsList.push('Регион');
+                }
+                if (ipData.isp && ipData.isp !== 'Неизвестно') {
+                    document.getElementById('edIsp').value = ipData.isp;
+                    loadedFields++;
+                    loadedFieldsList.push('Провайдер');
+                }
+                if (ipData.ip && ipData.ip !== 'Неизвестно') {
+                    document.getElementById('edIp').value = ipData.ip;
+                    loadedFields++;
+                    loadedFieldsList.push('IP');
+                }
+                if (ipData.postal && ipData.postal !== 'Неизвестно') {
+                    document.getElementById('edPostal').value = ipData.postal;
+                    loadedFields++;
+                    loadedFieldsList.push('Почтовый индекс');
+                }
+            }
+            
+            // Заполняем GPS данные
+            if (gpsData && !gpsData.error) {
+                if (gpsData.lat) {
+                    document.getElementById('edLat').value = gpsData.lat;
+                    loadedFields++;
+                    loadedFieldsList.push('Широта');
+                }
+                if (gpsData.lon) {
+                    document.getElementById('edLon').value = gpsData.lon;
+                    loadedFields++;
+                    loadedFieldsList.push('Долгота');
+                }
+                if (gpsData.accuracy) {
+                    document.getElementById('edAccuracy').value = gpsData.accuracy;
+                    loadedFields++;
+                    loadedFieldsList.push('Точность GPS');
+                }
+                
+                // Пытаемся получить город по GPS
+                getCityFromCoords(gpsData.lat, gpsData.lon).then(cityData => {
+                    if (cityData && cityData.city !== 'Неизвестно') {
+                        document.getElementById('edCity').value = cityData.city;
+                        loadedFields++;
+                        loadedFieldsList.push('Город (GPS)');
+                    }
+                    if (cityData && cityData.region !== 'Неизвестно') {
+                        document.getElementById('edRegion').value = cityData.region;
+                        loadedFields++;
+                        loadedFieldsList.push('Регион (GPS)');
+                    }
+                    if (cityData && cityData.country !== 'Неизвестно') {
+                        document.getElementById('edCountry').value = cityData.country;
+                        loadedFields++;
+                        loadedFieldsList.push('Страна (GPS)');
+                    }
+                    
+                    // Обновляем статус
+                    if (statusEl) {
+                        statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
+                        statusEl.style.border = '1px solid #1eb81e';
+                        statusEl.style.color = '#8ad8a8';
+                        statusEl.innerHTML = `✅ Загружено ${loadedFields} полей: ${loadedFieldsList.join(', ')}. 🖤`;
+                        setTimeout(() => { 
+                            if (statusEl) {
+                                statusEl.style.opacity = '0';
+                                setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 500);
+                            }
+                        }, 4000);
+                    }
+                    
+                    liveUpdateDossier();
+                });
+            } else {
+                // Если GPS нет, просто обновляем с IP данными
+                if (statusEl) {
+                    statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
+                    statusEl.style.border = '1px solid #1eb81e';
+                    statusEl.style.color = '#8ad8a8';
+                    statusEl.innerHTML = `✅ Загружено ${loadedFields} полей (IP). GPS не доступен. 🖤`;
+                    setTimeout(() => { 
+                        if (statusEl) {
+                            statusEl.style.opacity = '0';
+                            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 4000);
+                        }
+                    }, 4000);
+                }
+                liveUpdateDossier();
+            }
+        });
+    }).catch(() => {
+        if (statusEl) {
+            statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
+            statusEl.style.border = '1px solid #c21515';
+            statusEl.style.color = '#eba4a4';
+            statusEl.innerHTML = '❌ Ошибка загрузки геоданных. Проверь интернет. 😈';
+            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 4000);
+        }
+    });
+}
+
 function parseImportedProfile() {
     const raw = document.getElementById('edImport').value;
     const statusEl = document.getElementById('importStatus');
@@ -265,7 +468,6 @@ function parseImportedProfile() {
         
         // --- ОДНОСТРОЧНЫЕ ПОЛЯ ---
         
-        // Номер досье
         const numMatch = text.match(/ДОСЬЕ ЖЕРТВЫ №\s*([0-9A-Za-z_-]+)/);
         if (numMatch && document.getElementById('edNum')) {
             document.getElementById('edNum').value = numMatch[1].trim();
@@ -273,7 +475,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Номер');
         }
 
-        // Имя
         const nameMatch = text.match(/ИМЯ:\s*(.*?)(?:\n|$)/i);
         if (nameMatch && document.getElementById('edName')) {
             document.getElementById('edName').value = nameMatch[1].trim();
@@ -281,7 +482,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Имя');
         }
 
-        // Псевдонимы
         const aliasesMatch = text.match(/ПСЕВДОНИМЫ:\s*(.*?)(?:\n|$)/i);
         if (aliasesMatch && document.getElementById('edAliases')) {
             document.getElementById('edAliases').value = aliasesMatch[1].trim();
@@ -289,7 +489,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Псевдонимы');
         }
 
-        // Возраст
         const ageMatch = text.match(/ВОЗРАСТ:\s*(.*?)(?:\n|$)/i);
         if (ageMatch && document.getElementById('edAge')) {
             const ageVal = ageMatch[1].trim();
@@ -298,7 +497,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Возраст');
         }
 
-        // Статус
         const statusMatch = text.match(/СТАТУС:\s*(.*?)(?:\n|$)/i);
         if (statusMatch && document.getElementById('edStatus')) {
             document.getElementById('edStatus').value = statusMatch[1].trim();
@@ -306,7 +504,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Статус');
         }
 
-        // Настроение Мэган
         const moodMatch = text.match(/НАСТРОЕНИЕ МЭГАН:\s*(.*?)(?:\n|$)/i);
         if (moodMatch && document.getElementById('edMoodValue')) {
             const moodVal = moodMatch[1].trim();
@@ -325,7 +522,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Настроение');
         }
 
-        // Степень угрозы
         const threatMatch = text.match(/СТЕПЕНЬ УГРОЗЫ:\s*(.*?)(?:\n|$)/i);
         if (threatMatch && document.getElementById('edThreat')) {
             document.getElementById('edThreat').value = threatMatch[1].trim();
@@ -333,7 +529,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Угроза');
         }
 
-        // Счётчик страхов
         const fearsMatch = text.match(/Счётчик страхов:\s*(.*?)(?:\n|$)/);
         if (fearsMatch && document.getElementById('edFears')) {
             document.getElementById('edFears').value = fearsMatch[1].trim();
@@ -341,7 +536,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Счётчик страхов');
         }
 
-        // Интерес
         const interestMatch = text.match(/Интерес:\s*(.*?)(?:\n|$)/);
         if (interestMatch && document.getElementById('edInterest')) {
             document.getElementById('edInterest').value = interestMatch[1].trim();
@@ -349,7 +543,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Интерес');
         }
 
-        // Оценка
         const ratingMatch = text.match(/Оценка:\s*(.*?)(?:\n|$)/);
         if (ratingMatch && document.getElementById('edRating')) {
             document.getElementById('edRating').value = ratingMatch[1].trim();
@@ -357,10 +550,67 @@ function parseImportedProfile() {
             loadedFieldsList.push('Оценка');
         }
 
-        // --- МНОГОСТРОЧНЫЕ ПОЛЯ (УНИВЕРСАЛЬНЫЙ ПАРСЕР) ---
+        // --- ГЕО ДАННЫЕ ---
+        const countryMatch = text.match(/Страна:\s*(.*?)(?:\n|$)/i);
+        if (countryMatch && document.getElementById('edCountry')) {
+            document.getElementById('edCountry').value = countryMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Страна');
+        }
+
+        const cityMatch = text.match(/Город:\s*(.*?)(?:\n|$)/i);
+        if (cityMatch && document.getElementById('edCity')) {
+            document.getElementById('edCity').value = cityMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Город');
+        }
+
+        const regionMatch = text.match(/Регион:\s*(.*?)(?:\n|$)/i);
+        if (regionMatch && document.getElementById('edRegion')) {
+            document.getElementById('edRegion').value = regionMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Регион');
+        }
+
+        const postalMatch = text.match(/Почтовый индекс:\s*(.*?)(?:\n|$)/i);
+        if (postalMatch && document.getElementById('edPostal')) {
+            document.getElementById('edPostal').value = postalMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Почтовый индекс');
+        }
+
+        const latMatch = text.match(/GPS:\s*([0-9.-]+),\s*([0-9.-]+)/);
+        if (latMatch && document.getElementById('edLat') && document.getElementById('edLon')) {
+            document.getElementById('edLat').value = latMatch[1].trim();
+            document.getElementById('edLon').value = latMatch[2].trim();
+            loadedFields++;
+            loadedFieldsList.push('GPS');
+        }
+
+        const accuracyMatch = text.match(/Точность GPS:\s*(.*?)м/i);
+        if (accuracyMatch && document.getElementById('edAccuracy')) {
+            document.getElementById('edAccuracy').value = accuracyMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Точность GPS');
+        }
+
+        const ispMatch = text.match(/Провайдер:\s*(.*?)(?:\n|$)/i);
+        if (ispMatch && document.getElementById('edIsp')) {
+            document.getElementById('edIsp').value = ispMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Провайдер');
+        }
+
+        const ipMatch = text.match(/IP:\s*(.*?)(?:\n|$)/i);
+        if (ipMatch && document.getElementById('edIp')) {
+            document.getElementById('edIp').value = ipMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('IP');
+        }
+
+        // --- МНОГОСТРОЧНЫЕ ПОЛЯ ---
         
         function extractTextBetween(text, startKeyword, endKeywords) {
-            // Ищем позицию начала
             let startPos = -1;
             let startPatterns = [
                 new RegExp(`🧠\\s*${startKeyword}`, 'i'),
@@ -383,7 +633,6 @@ function parseImportedProfile() {
             
             if (startPos === -1) return null;
             
-            // Ищем конец
             let endPos = text.length;
             for (const keyword of endKeywords) {
                 const patterns = [
@@ -408,8 +657,6 @@ function parseImportedProfile() {
             }
             
             let section = text.substring(startPos, endPos).trim();
-            
-            // Убираем маркеры списка
             const lines = section.split('\n')
                 .filter(line => line.trim())
                 .map(line => line.replace(/^[·\-*]\s*/, '').trim())
@@ -418,7 +665,6 @@ function parseImportedProfile() {
             return lines.length > 0 ? lines.join('\n') : null;
         }
 
-        // Психологический портрет
         const behaviorText = extractTextBetween(text, 'ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ', 
             ['ИСТОРИЯ ПОВЕДЕНИЯ', 'ФОБИИ', 'ТРИГГЕРЫ', 'НАСТРОЕНИЕ МЭГАН', 'ЗАМЕТКИ МЭГАН', 'СТЕПЕНЬ УГРОЗЫ', '⚠️', '📜', '😨', '⚡', '🌡️', '📝']);
         if (behaviorText && document.getElementById('edBehavior')) {
@@ -427,7 +673,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Психологический портрет');
         }
 
-        // История поведения
         const historyText = extractTextBetween(text, 'ИСТОРИЯ ПОВЕДЕНИЯ',
             ['ФОБИИ', 'ТРИГГЕРЫ', 'НАСТРОЕНИЕ МЭГАН', 'ЗАМЕТКИ МЭГАН', 'СТЕПЕНЬ УГРОЗЫ', '😨', '⚡', '🌡️', '📝', '🌚']);
         if (historyText && document.getElementById('edHistory')) {
@@ -436,7 +681,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('История поведения');
         }
 
-        // Фобии
         const phobiasText = extractTextBetween(text, 'ФОБИИ',
             ['ТРИГГЕРЫ', 'НАСТРОЕНИЕ МЭГАН', 'ЗАМЕТКИ МЭГАН', 'СТЕПЕНЬ УГРОЗЫ', '⚡', '🌡️', '📝', '🌚']);
         if (phobiasText && document.getElementById('edPhobias')) {
@@ -445,7 +689,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Фобии');
         }
 
-        // Триггеры
         const triggersText = extractTextBetween(text, 'ТРИГГЕРЫ',
             ['НАСТРОЕНИЕ МЭГАН', 'ЗАМЕТКИ МЭГАН', 'СТЕПЕНЬ УГРОЗЫ', '🌡️', '📝']);
         if (triggersText && document.getElementById('edTriggers')) {
@@ -454,7 +697,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Триггеры');
         }
 
-        // Заметки Мэган
         const notesText = extractTextBetween(text, 'ЗАМЕТКИ МЭГАН',
             ['════', '$']);
         if (notesText && document.getElementById('edNotes')) {
@@ -463,7 +705,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Заметки Мэган');
         }
 
-        // Обновляем превью
         liveUpdateDossier();
         
         if (statusEl) {
