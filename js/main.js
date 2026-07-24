@@ -10,8 +10,7 @@ const characterTraits = [
 
 let traitIndex = 0;
 let isModalOpen = false;
-let laughPlayed = false;
-let audioCtxReady = false;
+let firstInteraction = false;
 
 function rotateTraits() {
     const badge = document.getElementById('traitBadge');
@@ -53,7 +52,7 @@ async function getPreparedPayload() {
     return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]\n${geoString}\n\n` + MEGAN_PROMPT;
 }
 
-// ====== ЗВУК СМЕХА (ТОЛЬКО ИЗ ФАЙЛА) ======
+// ====== ЗВУК СМЕХА ======
 function playMeganLaugh() {
     try {
         const audio = new Audio('audio/laugh1.mp3');
@@ -67,61 +66,26 @@ function playMeganLaugh() {
     }
 }
 
-// ====== ПЕРВЫЙ СМЕХ ПРИ ЗАГРУЗКЕ ======
-function checkAndPlayLaughOnLoad() {
-    if (!laughPlayed) {
-        // Ждём клик пользователя для активации аудио
-        const playOnFirstClick = function() {
-            setTimeout(() => {
-                playMeganLaugh();
-                laughPlayed = true;
-                
-                setTimeout(() => {
-                    showNotification(
-                        '👻',
-                        'Мэган проснулась...',
-                        'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
-                        null,
-                        '',
-                        'Понятно',
-                        closeNotification
-                    );
-                }, 800);
-            }, 300);
-            document.removeEventListener('click', playOnFirstClick);
-            document.removeEventListener('touchstart', playOnFirstClick);
-            document.removeEventListener('keydown', playOnFirstClick);
-        };
-        
-        document.addEventListener('click', playOnFirstClick);
-        document.addEventListener('touchstart', playOnFirstClick);
-        document.addEventListener('keydown', playOnFirstClick);
-        
-        // Если через 3 секунды не было клика - пробуем всё равно
+// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ (после клика) ======
+function showFirstNotification() {
+    if (!firstInteraction) {
+        firstInteraction = true;
+        playMeganLaugh();
         setTimeout(() => {
-            if (!laughPlayed) {
-                setTimeout(() => {
-                    playMeganLaugh();
-                    laughPlayed = true;
-                    
-                    setTimeout(() => {
-                        showNotification(
-                            '👻',
-                            'Мэган проснулась...',
-                            'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
-                            null,
-                            '',
-                            'Понятно',
-                            closeNotification
-                        );
-                    }, 800);
-                }, 300);
-            }
-        }, 3000);
+            showNotification(
+                '👻',
+                'Мэган проснулась...',
+                'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
+                null,
+                '',
+                'Понятно',
+                closeNotification
+            );
+        }, 300);
     }
 }
 
-// ====== ПЕРЕОПРЕДЕЛЯЕМ showNotification ======
+// ====== ПЕРЕОПРЕДЕЛЯЕМ showNotification (без смеха) ======
 window.showNotification = function(icon, title, text, url = null, extra = '', btnText = 'Понятно', action = null) {
     isModalOpen = true;
     document.getElementById('notifIcon').innerText = icon;
@@ -143,14 +107,9 @@ window.showNotification = function(icon, title, text, url = null, extra = '', bt
     document.getElementById('notifOverlay').style.display = 'flex';
     document.body.style.overflow = 'hidden';
     clearTimeout(inactivityTimer);
-    
-    // ====== СМЕХ ТОЛЬКО ПРИ ПОЯВЛЕНИИ ОКНА (кроме первого загрузочного) ======
-    if (!title.includes('Мэган проснулась')) {
-        setTimeout(playMeganLaugh, 300);
-    }
 };
 
-// ====== ПЕРЕОПРЕДЕЛЯЕМ closeNotification ======
+// ====== ПЕРЕОПРЕДЕЛЯЕМ closeNotification (без смеха) ======
 window.closeNotification = function() {
     document.getElementById('notifOverlay').style.display = 'none';
     document.body.style.overflow = '';
@@ -160,9 +119,6 @@ window.closeNotification = function() {
     }
     isModalOpen = false;
     resetInactivityTimer();
-    
-    // ====== СМЕХ ТОЛЬКО ПРИ ЗАКРЫТИИ ОКНА ======
-    setTimeout(playMeganLaugh, 200);
 };
 
 async function copyPrompt() {
@@ -241,7 +197,7 @@ function createThump(freq, volume, delay) {
     } catch(e) {}
 }
 
-// ====== ТАЙМЕР БЕЗДЕЙСТВИЯ ======
+// ====== ТАЙМЕР БЕЗДЕЙСТВИЯ (смех перед уведомлением) ======
 let inactivityTimer = null;
 const INACTIVITY_LIMIT = 60000;
 
@@ -256,12 +212,15 @@ function resetInactivityTimer() {
             resetInactivityTimer();
             return;
         }
-        // Смех при появлении уведомления (будет внутри showNotification)
-        showNotification(
-            '👁️',
-            'Ты всё ещё здесь?',
-            'Ты уже долго просто сидишь и смотришь на экран... боишься пошевелиться, да, сука? 🖤'
-        );
+        // Смех при уведомлении "Ты всё ещё здесь?"
+        playMeganLaugh();
+        setTimeout(() => {
+            showNotification(
+                '👁️',
+                'Ты всё ещё здесь?',
+                'Ты уже долго просто сидишь и смотришь на экран... боишься пошевелиться, да, сука? 🖤'
+            );
+        }, 300);
     }, INACTIVITY_LIMIT);
 }
 
@@ -282,7 +241,23 @@ window.onload = function() {
         startHeartbeatAutomatically();
     }, 1000);
     
-    checkAndPlayLaughOnLoad();
+    // Ожидаем первого клика для показа уведомления "Мэган проснулась..."
+    const firstClickHandler = function() {
+        showFirstNotification();
+        document.removeEventListener('click', firstClickHandler);
+        document.removeEventListener('touchstart', firstClickHandler);
+        document.removeEventListener('keydown', firstClickHandler);
+    };
+    document.addEventListener('click', firstClickHandler);
+    document.addEventListener('touchstart', firstClickHandler);
+    document.addEventListener('keydown', firstClickHandler);
+    
+    // Если через 5 секунд не было клика - показываем принудительно
+    setTimeout(() => {
+        if (!firstInteraction) {
+            showFirstNotification();
+        }
+    }, 5000);
 };
 
 // События для таймера бездействия
