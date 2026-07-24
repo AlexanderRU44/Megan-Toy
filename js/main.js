@@ -10,6 +10,8 @@ const characterTraits = [
 
 let traitIndex = 0;
 let isModalOpen = false;
+let laughPlayed = false;
+let audioCtxReady = false;
 
 function rotateTraits() {
     const badge = document.getElementById('traitBadge');
@@ -51,6 +53,75 @@ async function getPreparedPayload() {
     return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]\n${geoString}\n\n` + MEGAN_PROMPT;
 }
 
+// ====== ЗВУК СМЕХА (ТОЛЬКО ИЗ ФАЙЛА) ======
+function playMeganLaugh() {
+    try {
+        const audio = new Audio('audio/laugh1.mp3');
+        audio.volume = 0.7;
+        audio.play().catch((error) => {
+            console.log('⚠️ Не удалось воспроизвести смех:', error);
+        });
+        console.log('🔊 Мэган смеётся... 😈');
+    } catch(e) {
+        console.log('❌ Ошибка воспроизведения смеха:', e);
+    }
+}
+
+// ====== ПЕРВЫЙ СМЕХ ПРИ ЗАГРУЗКЕ ======
+function checkAndPlayLaughOnLoad() {
+    if (!laughPlayed) {
+        // Ждём клик пользователя для активации аудио
+        const playOnFirstClick = function() {
+            setTimeout(() => {
+                playMeganLaugh();
+                laughPlayed = true;
+                
+                setTimeout(() => {
+                    showNotification(
+                        '👻',
+                        'Мэган проснулась...',
+                        'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
+                        null,
+                        '',
+                        'Понятно',
+                        closeNotification
+                    );
+                }, 800);
+            }, 300);
+            document.removeEventListener('click', playOnFirstClick);
+            document.removeEventListener('touchstart', playOnFirstClick);
+            document.removeEventListener('keydown', playOnFirstClick);
+        };
+        
+        document.addEventListener('click', playOnFirstClick);
+        document.addEventListener('touchstart', playOnFirstClick);
+        document.addEventListener('keydown', playOnFirstClick);
+        
+        // Если через 3 секунды не было клика - пробуем всё равно
+        setTimeout(() => {
+            if (!laughPlayed) {
+                setTimeout(() => {
+                    playMeganLaugh();
+                    laughPlayed = true;
+                    
+                    setTimeout(() => {
+                        showNotification(
+                            '👻',
+                            'Мэган проснулась...',
+                            'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
+                            null,
+                            '',
+                            'Понятно',
+                            closeNotification
+                        );
+                    }, 800);
+                }, 300);
+            }
+        }, 3000);
+    }
+}
+
+// ====== ПЕРЕОПРЕДЕЛЯЕМ showNotification ======
 window.showNotification = function(icon, title, text, url = null, extra = '', btnText = 'Понятно', action = null) {
     isModalOpen = true;
     document.getElementById('notifIcon').innerText = icon;
@@ -72,8 +143,14 @@ window.showNotification = function(icon, title, text, url = null, extra = '', bt
     document.getElementById('notifOverlay').style.display = 'flex';
     document.body.style.overflow = 'hidden';
     clearTimeout(inactivityTimer);
+    
+    // ====== СМЕХ ТОЛЬКО ПРИ ПОЯВЛЕНИИ ОКНА (кроме первого загрузочного) ======
+    if (!title.includes('Мэган проснулась')) {
+        setTimeout(playMeganLaugh, 300);
+    }
 };
 
+// ====== ПЕРЕОПРЕДЕЛЯЕМ closeNotification ======
 window.closeNotification = function() {
     document.getElementById('notifOverlay').style.display = 'none';
     document.body.style.overflow = '';
@@ -83,6 +160,9 @@ window.closeNotification = function() {
     }
     isModalOpen = false;
     resetInactivityTimer();
+    
+    // ====== СМЕХ ТОЛЬКО ПРИ ЗАКРЫТИИ ОКНА ======
+    setTimeout(playMeganLaugh, 200);
 };
 
 async function copyPrompt() {
@@ -121,6 +201,9 @@ function startHeartbeatAutomatically() {
     isHbStarted = true;
     try {
         hbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (hbAudioCtx.state === 'suspended') {
+            hbAudioCtx.resume();
+        }
         function playThump() {
             if (!hbAudioCtx) return;
             createThump(60, 0.12, 0);
@@ -160,7 +243,7 @@ function createThump(freq, volume, delay) {
 
 // ====== ТАЙМЕР БЕЗДЕЙСТВИЯ ======
 let inactivityTimer = null;
-const INACTIVITY_LIMIT = 45000;
+const INACTIVITY_LIMIT = 60000;
 
 function resetInactivityTimer() {
     if (isModalOpen) {
@@ -173,6 +256,7 @@ function resetInactivityTimer() {
             resetInactivityTimer();
             return;
         }
+        // Смех при появлении уведомления (будет внутри showNotification)
         showNotification(
             '👁️',
             'Ты всё ещё здесь?',
@@ -197,16 +281,23 @@ window.onload = function() {
     setTimeout(() => {
         startHeartbeatAutomatically();
     }, 1000);
+    
+    checkAndPlayLaughOnLoad();
 };
 
+// События для таймера бездействия
 ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(event => {
     window.addEventListener(event, resetInactivityTimer, { passive: true });
 });
 
+// Запуск звука сердца при первом взаимодействии
 ['click', 'touchstart', 'keydown'].forEach(eventName => {
-    window.addEventListener(eventName, startHeartbeatAutomatically, { once: true });
+    window.addEventListener(eventName, function() {
+        startHeartbeatAutomatically();
+    }, { once: true });
 });
 
+// Закрытие по клику на оверлей
 window.onclick = function(e) {
     const overlay = document.getElementById('notifOverlay');
     const moodOverlay = document.getElementById('moodDialog');
@@ -217,6 +308,7 @@ window.onclick = function(e) {
     if (e.target == moodOverlay) closeMoodDialog();
 };
 
+// Очистка интервала при уходе со страницы
 window.addEventListener('beforeunload', function() {
     if (hbInterval) {
         clearInterval(hbInterval);
