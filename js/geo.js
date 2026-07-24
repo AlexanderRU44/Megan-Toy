@@ -1,127 +1,29 @@
-// ====== ГЕОЛОКАЦИЯ (с обходом CORS) ======
+// ====== ГЕОЛОКАЦИЯ (только JSONP - гарантированно работает) ======
 
-// Функция для получения геоданных
-async function getGeoData() {
-    try {
-        // Пробуем несколько API для надёжности
-        const apis = [
-            'https://ipinfo.io/json',
-            'https://ip-api.com/json/?fields=status,country,city,region,isp,timezone,hosting,proxy,mobile,query',
-            'https://api.ipify.org?format=json' // только для IP
-        ];
-        
-        let lastError = null;
-        
-        for (const api of apis) {
-            try {
-                const response = await fetch(api, {
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) continue;
-                
-                const data = await response.json();
-                
-                // Проверяем ipinfo.io
-                if (data.ip && data.country) {
-                    return {
-                        country: data.country || 'Неизвестно',
-                        city: data.city || 'Неизвестно',
-                        region: data.region || 'Неизвестно',
-                        isp: data.org || 'Неизвестно',
-                        timezone: data.timezone || 'Неизвестно',
-                        ip: data.ip || 'Неизвестно',
-                        location: data.loc || 'Неизвестно',
-                        isHosting: false,
-                        isProxy: false,
-                        isMobile: false
-                    };
-                }
-                
-                // Проверяем ip-api.com
-                if (data.status === 'success' && data.country) {
-                    return {
-                        country: data.country || 'Неизвестно',
-                        city: data.city || 'Неизвестно',
-                        region: data.region || 'Неизвестно',
-                        isp: data.isp || 'Неизвестно',
-                        timezone: data.timezone || 'Неизвестно',
-                        ip: data.query || 'Неизвестно',
-                        location: `${data.lat || '0'}, ${data.lon || '0'}`,
-                        isHosting: data.hosting || false,
-                        isProxy: data.proxy || false,
-                        isMobile: data.mobile || false
-                    };
-                }
-                
-                // Проверяем api.ipify.org (только IP)
-                if (data.ip) {
-                    // Если есть только IP, пытаемся получить остальное через другой запрос
-                    return await getGeoDataFromIP(data.ip);
-                }
-                
-            } catch (e) {
-                lastError = e;
-                console.log(`API ${api} не работает:`, e.message);
-            }
-        }
-        
-        // Если ничего не сработало, пробуем через JSONP (обход CORS)
-        return await getGeoDataJSONP();
-        
-    } catch (error) {
-        console.error('Ошибка получения геоданных:', error);
-        return await getGeoDataJSONP();
-    }
-}
-
-// Функция для получения геоданных по IP (если есть только IP)
-async function getGeoDataFromIP(ip) {
-    try {
-        const response = await fetch(`https://ip-api.com/json/${ip}?fields=status,country,city,region,isp,timezone`);
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            return {
-                country: data.country || 'Неизвестно',
-                city: data.city || 'Неизвестно',
-                region: data.region || 'Неизвестно',
-                isp: data.isp || 'Неизвестно',
-                timezone: data.timezone || 'Неизвестно',
-                ip: ip || 'Неизвестно',
-                location: `${data.lat || '0'}, ${data.lon || '0'}`,
-                isHosting: false,
-                isProxy: false,
-                isMobile: false
-            };
-        }
-        return null;
-    } catch {
-        return null;
-    }
-}
-
-// Функция через JSONP (обход CORS)
-function getGeoDataJSONP() {
+// Функция для получения геоданных через JSONP
+function getGeoData() {
     return new Promise((resolve) => {
         try {
+            // Создаём уникальное имя callback
+            const callbackName = 'geoCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            
+            // Создаём скрипт
             const script = document.createElement('script');
-            const callbackName = 'geoCallback_' + Date.now();
             
             // Добавляем callback в глобальный объект
             window[callbackName] = function(data) {
+                // Очищаем после получения данных
                 delete window[callbackName];
-                document.body.removeChild(script);
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
                 
-                if (data && data.country) {
+                if (data && data.ip) {
                     resolve({
                         country: data.country || 'Неизвестно',
                         city: data.city || 'Неизвестно',
                         region: data.region || 'Неизвестно',
-                        isp: data.isp || 'Неизвестно',
+                        isp: data.org || 'Неизвестно',
                         timezone: data.timezone || 'Неизвестно',
                         ip: data.ip || 'Неизвестно',
                         location: data.loc || 'Неизвестно',
@@ -134,22 +36,28 @@ function getGeoDataJSONP() {
                 }
             };
             
-            // Используем ipinfo.io с JSONP
-            script.src = `https://ipinfo.io/json?callback=${callbackName}`;
+            // Обработка ошибки загрузки скрипта
             script.onerror = function() {
                 delete window[callbackName];
-                document.body.removeChild(script);
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
                 resolve(null);
             };
             
-            document.body.appendChild(script);
+            // Используем ipinfo.io с JSONP
+            script.src = `https://ipinfo.io/json?callback=${callbackName}`;
+            script.async = true;
             
-            // Таймаут на случай долгого ответа
+            // Добавляем скрипт в DOM
+            document.head.appendChild(script);
+            
+            // Таймаут на случай долгого ответа (5 секунд)
             setTimeout(() => {
                 if (window[callbackName]) {
                     delete window[callbackName];
-                    if (document.body.contains(script)) {
-                        document.body.removeChild(script);
+                    if (script.parentNode) {
+                        script.parentNode.removeChild(script);
                     }
                     resolve(null);
                 }
@@ -213,7 +121,7 @@ function showGeoInfo() {
             showNotification(
                 '🌐',
                 'Геолокация недоступна',
-                'Не удалось определить твоё местоположение.\n\nЭто может быть связано с:\n• Использованием VPN/прокси\n• Блокировкой запросов браузером\n• Ограничениями в твоей стране\n\n📌 Попробуй использовать другой браузер или отключить VPN.\n\n🔧 Техническая информация:\nВсе API сервисы временно недоступны.',
+                'Не удалось определить твоё местоположение.\n\nПроверь:\n• Интернет-соединение\n• Отключи VPN/прокси\n• Обнови страницу (Ctrl+F5)',
                 null,
                 '',
                 'Понятно',
@@ -223,19 +131,19 @@ function showGeoInfo() {
     });
 }
 
-// Функция для проверки работоспособности (для отладки)
-function testGeoAPI() {
-    console.log('🧪 Тестируем геолокацию...');
+// Тестовая функция
+function testGeo() {
+    console.log('🧪 Проверка геолокации...');
     getGeoData().then(geo => {
         if (geo) {
-            console.log('✅ Геолокация работает:', geo);
+            console.log('✅ Успешно! Твои данные:', geo);
         } else {
-            console.log('❌ Геолокация не работает');
+            console.log('❌ Не удалось получить данные');
         }
     });
 }
 
 // Запускаем тест при загрузке
 if (typeof window !== 'undefined') {
-    setTimeout(testGeoAPI, 1000);
+    setTimeout(testGeo, 2000);
 }
