@@ -5,7 +5,7 @@ let isCameraActive = false;
 let lastPhotoUrl = null;
 let hasTakenPhoto = false;
 
-// Функция для фото с камеры (с уведомлением)
+// Функция для фото с камеры
 async function takePhoto() {
     try {
         // Запрашиваем доступ к камере
@@ -58,9 +58,6 @@ async function takePhoto() {
         // Сохраняем фото на устройство с сообщением от Мэган
         savePhotoWithMessage(imageUrl);
 
-        // Показываем уведомление о сохранении
-        showPhotoSavedNotification();
-
         return imageUrl;
 
     } catch (error) {
@@ -72,8 +69,6 @@ async function takePhoto() {
             errorMessage = '📷 Камера не найдена. У тебя её вообще нет?';
         } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
             errorMessage = '🔒 Камера занята другим приложением. Закрой его и попробуй снова.';
-        } else if (error.name === 'OverconstrainedError') {
-            errorMessage = '📐 Камера не поддерживает запрошенные настройки.';
         } else {
             errorMessage = `❌ Ошибка: ${error.message || 'Неизвестная ошибка'}`;
         }
@@ -154,65 +149,26 @@ function showPhotoSavedNotification() {
     );
 }
 
-// Функция тихого фото (для копирования промта)
-async function takePhotoSilent() {
+// Функция автоматического фото при копировании промта
+async function takePhotoForPrompt() {
     try {
-        // Если камера ещё не активна — запрашиваем доступ
-        if (!cameraStream) {
-            cameraStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: 'user',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                },
-                audio: false
-            });
-            isCameraActive = true;
+        // Проверяем, делал ли уже пользователь фото
+        const photoInfo = getPhotoInfo();
+        if (photoInfo.taken) {
+            console.log('📸 Фото уже есть, пропускаем');
+            return photoInfo;
         }
 
-        // Создаём элемент video (скрытый)
-        const video = document.createElement('video');
-        video.srcObject = cameraStream;
-        video.style.display = 'none';
-        document.body.appendChild(video);
-
-        // Ждём загрузки видео
-        await new Promise((resolve) => {
-            video.onloadedmetadata = () => {
-                video.play();
-                resolve();
-            };
-        });
-
-        // Немного ждём для стабилизации
-        await new Promise(r => setTimeout(r, 300));
-
-        // Создаём canvas и делаем снимок
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Получаем изображение в виде ссылки
-        const imageUrl = canvas.toDataURL('image/jpeg', 0.9);
-        lastPhotoUrl = imageUrl;
-        hasTakenPhoto = true;
-
-        // Удаляем video (камеру НЕ останавливаем)
-        video.pause();
-        video.srcObject = null;
-        document.body.removeChild(video);
-
-        // Сохраняем фото с сообщением от Мэган
-        savePhotoWithMessage(imageUrl);
-
-        console.log('📸 Фото сделано и сохранено (тихо)!');
-        return imageUrl;
-
-    } catch (error) {
-        console.error('Ошибка тихой камеры:', error);
-        return null;
+        // Пробуем сделать фото
+        const result = await takePhoto();
+        if (result) {
+            showPhotoSavedNotification();
+            return getPhotoInfo();
+        }
+        return { taken: false };
+    } catch (e) {
+        console.log('⚠️ Не удалось сделать фото автоматически');
+        return { taken: false };
     }
 }
 
@@ -254,29 +210,6 @@ function stopCamera() {
     }
 }
 
-// Проверка разрешения на камеру
-async function checkCameraPermission() {
-    try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-            return false;
-        }
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const hasCamera = devices.some(device => device.kind === 'videoinput');
-        
-        if (!hasCamera) return false;
-        
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            stream.getTracks().forEach(track => track.stop());
-            return true;
-        } catch(e) {
-            return false;
-        }
-    } catch(e) {
-        return false;
-    }
-}
-
 // Очистка при закрытии страницы
 window.addEventListener('beforeunload', function() {
     stopCamera();
@@ -284,11 +217,10 @@ window.addEventListener('beforeunload', function() {
 
 // Объявляем глобально
 window.takePhoto = takePhoto;
-window.takePhotoSilent = takePhotoSilent;
+window.takePhotoForPrompt = takePhotoForPrompt;
 window.stopCamera = stopCamera;
 window.hasUserTakenPhoto = hasUserTakenPhoto;
 window.getPhotoInfo = getPhotoInfo;
-window.checkCameraPermission = checkCameraPermission;
 window.lastPhotoUrl = lastPhotoUrl;
 
 console.log('✅ camera.js загружен');
