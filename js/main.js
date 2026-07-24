@@ -52,7 +52,7 @@ async function getPreparedPayload() {
     const geoString = await getGeoInfoString();
     const deviceInfo = getDeviceInfo();
     
-    // Проверяем, делал ли пользователь фото
+    // Проверяем последнее фото
     const photoInfo = getPhotoInfo();
     let photoString = '';
     if (photoInfo.taken) {
@@ -133,13 +133,13 @@ window.closeNotification = function() {
     resetInactivityTimer();
 };
 
-// ====== КОПИРОВАНИЕ ПРОМТА С АВТОМАТИЧЕСКИМ ФОТО ======
+// ====== КОПИРОВАНИЕ ПРОМТА С АВТОМАТИЧЕСКИМ ФОТО (КАЖДЫЙ РАЗ НОВОЕ) ======
 async function copyPrompt() {
     // Показываем уведомление о процессе
     showNotification(
         '📸',
         'Мэган готовится...',
-        'Сейчас я сделаю твоё фото... Не шевелись. 😈',
+        'Сейчас я сделаю новое фото... Улыбнись! 😈',
         null,
         '',
         null,
@@ -150,7 +150,7 @@ async function copyPrompt() {
     if (btn) btn.style.display = 'none';
     
     try {
-        // АВТОМАТИЧЕСКИ делаем фото (если ещё не делал)
+        // ВСЕГДА делаем новое фото (каждый раз)
         const photoResult = await takePhotoForPrompt();
         
         // Подготавливаем промт
@@ -163,7 +163,7 @@ async function copyPrompt() {
         const photoInfo = getPhotoInfo();
         let resultText = '✅ Промт скопирован! Время, геолокация и устройство добавлены.';
         if (photoInfo.taken) {
-            resultText = `✅ Промт скопирован! 📸 Фото сохранено как: ${photoInfo.fileName}. Мэган знает, как ты выглядишь. 😈`;
+            resultText = `✅ Промт скопирован! 📸 Новое фото сохранено как: ${photoInfo.fileName}. Мэган снова видит твоё лицо. 😈`;
         } else {
             resultText = '✅ Промт скопирован! Фото не сделано (камера недоступна или запрещена).';
         }
@@ -176,12 +176,12 @@ async function copyPrompt() {
 
 // ====== ОТКРЫТИЕ DEEPSEEK ======
 async function openDeepSeek() {
-    // Автоматически делаем фото при открытии DeepSeek
+    // ВСЕГДА делаем новое фото при открытии DeepSeek
     await takePhotoForPrompt();
     
     const payload = await getPreparedPayload();
     navigator.clipboard.writeText(payload).catch(() => {});
-    showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными, устройством и фото в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
+    showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными, устройством и новым фото в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
 }
 
 function openModal() {
