@@ -133,34 +133,26 @@ window.closeNotification = function() {
 };
 
 // ====== ПОКАЗ РЕЗУЛЬТАТА КОПИРОВАНИЯ ======
-async function showCopyResult(success, photoInfo) {
+function showCopyResult(success, photoInfo) {
     if (success) {
-        // Получаем геоданные асинхронно
-        let geoText = '📍 Местоположение: определение...';
+        // Получаем геоданные из localStorage (синхронно)
+        let geoText = '📍 Местоположение: не определено';
         try {
-            const geoString = await getGeoInfoString();
-            // Извлекаем город и страну из строки
-            const cityMatch = geoString.match(/Город: ([^,|]+)/);
-            const countryMatch = geoString.match(/Страна: ([^,|]+)/);
-            const gpsMatch = geoString.match(/GPS: ([0-9.-]+),\s*([0-9.-]+)/);
-            
-            let city = cityMatch ? cityMatch[1].trim() : '';
-            let country = countryMatch ? countryMatch[1].trim() : '';
-            let gps = gpsMatch ? `${gpsMatch[1]}, ${gpsMatch[2]}` : '';
-            
-            if (city && country) {
-                geoText = `📍 ${city}, ${country}`;
-            } else if (city) {
-                geoText = `📍 Город: ${city}`;
-            } else if (country) {
-                geoText = `📍 Страна: ${country}`;
-            } else if (gps) {
-                geoText = `📍 GPS: ${gps}`;
-            } else {
-                geoText = '📍 Местоположение: не определено';
+            const geoData = localStorage.getItem('megan_geo_data');
+            if (geoData) {
+                const geo = JSON.parse(geoData);
+                if (geo.city && geo.city !== 'Неизвестно' && geo.country && geo.country !== 'Неизвестно') {
+                    geoText = `📍 ${geo.city}, ${geo.country}`;
+                } else if (geo.city && geo.city !== 'Неизвестно') {
+                    geoText = `📍 Город: ${geo.city}`;
+                } else if (geo.country && geo.country !== 'Неизвестно') {
+                    geoText = `📍 Страна: ${geo.country}`;
+                } else if (geo.lat && geo.lon) {
+                    geoText = `📍 GPS: ${geo.lat}, ${geo.lon}`;
+                }
             }
         } catch(e) {
-            geoText = '📍 Местоположение: ошибка определения';
+            console.log('Ошибка получения геоданных:', e);
         }
         
         let resultText = `✅ Промт скопирован!\n🕒 Время добавлено\n${geoText}\n💻 Устройство добавлено`;
@@ -184,6 +176,9 @@ async function copyPrompt() {
     console.log('📋 copyPrompt вызвана!');
     
     try {
+        // Сначала получаем геоданные (чтобы сохранить в localStorage)
+        await getGeoInfoString();
+        
         const photoResult = await takePhotoForPrompt();
         console.log('📸 Результат фото:', photoResult);
         
@@ -195,7 +190,7 @@ async function copyPrompt() {
                 showCopyResult(true, getPhotoInfo());
             });
         } else {
-            await showCopyResult(true, getPhotoInfo());
+            showCopyResult(true, getPhotoInfo());
         }
         
     } catch(error) {
