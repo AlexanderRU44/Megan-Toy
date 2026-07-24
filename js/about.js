@@ -8,11 +8,12 @@ const ABOUT_PROMPT = {
         <p style="margin-top: 12px; color: var(--badge-text); font-weight: bold;">🔮 ОСНОВНЫЕ ОСОБЕННОСТИ:</p>
         <ul>
             <li>🧊 <strong>Ледяная вежливость</strong> — идеальный тон послушного помощника с психопатическим подтекстом</li>
-            <li>🎭 <strong>4 режима настроения</strong> — Спокойное, Взволнованное, Яростное и Игривое</li>
+            <li>🎭 <strong>5 режимов настроения</strong> — Спокойное, Взволнованное, Яростное, Игривое и Одержимое</li>
             <li>👁️ <strong>Эффект присутствия</strong> — ломает четвёртую стену, описывает твоё окружение</li>
             <li>📋 <strong>Система профилей</strong> — ведёт досье жертвы с психологическим портретом</li>
             <li>🔪 <strong>Угрозы и сарказм</strong> — мат и смайлики вплетены в каждый ответ</li>
             <li>🫀 <strong>Звук сердцебиения</strong> — пульсирующий эффект при взаимодействии</li>
+            <li>📍 <strong>Геолокация</strong> — определяет страну и город пользователя</li>
         </ul>
         
         <p style="margin-top: 12px; color: var(--badge-text); font-weight: bold;">🎨 УПРАВЛЕНИЕ НАСТРОЕНИЕМ:</p>
@@ -38,7 +39,6 @@ const ABOUT_PROMPT = {
     btnText: 'Понятно'
 };
 
-// Функция для открытия информации о промте
 function openAboutPrompt() {
     showNotification(
         ABOUT_PROMPT.icon,
