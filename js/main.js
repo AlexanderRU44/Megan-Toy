@@ -38,7 +38,7 @@ function initRandomQuote() {
     if (el) el.innerText = quotes[Math.floor(Math.random() * quotes.length)];
 }
 
-// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА (С ФОТО) ======
+// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА ======
 async function getPreparedPayload() {
     const now = new Date();
     const time = now.toLocaleDateString('ru-RU', { 
@@ -52,7 +52,6 @@ async function getPreparedPayload() {
     const geoString = await getGeoInfoString();
     const deviceInfo = getDeviceInfo();
     
-    // Проверяем последнее фото
     const photoInfo = getPhotoInfo();
     let photoString = '';
     if (photoInfo.taken) {
@@ -81,7 +80,7 @@ function playMeganLaugh() {
     }
 }
 
-// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ (БЕЗ СМЕХА) ======
+// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ ======
 function showFirstNotification() {
     if (!firstInteraction) {
         firstInteraction = true;
@@ -97,7 +96,7 @@ function showFirstNotification() {
     }
 }
 
-// ====== ПЕРЕОПРЕДЕЛЯЕМ showNotification (без смеха) ======
+// ====== ПЕРЕОПРЕДЕЛЯЕМ showNotification ======
 window.showNotification = function(icon, title, text, url = null, extra = '', btnText = 'Понятно', action = null) {
     isModalOpen = true;
     document.getElementById('notifIcon').innerText = icon;
@@ -121,7 +120,7 @@ window.showNotification = function(icon, title, text, url = null, extra = '', bt
     clearTimeout(inactivityTimer);
 };
 
-// ====== ПЕРЕОПРЕДЕЛЯЕМ closeNotification (без смеха) ======
+// ====== ПЕРЕОПРЕДЕЛЯЕМ closeNotification ======
 window.closeNotification = function() {
     document.getElementById('notifOverlay').style.display = 'none';
     document.body.style.overflow = '';
@@ -133,26 +132,28 @@ window.closeNotification = function() {
     resetInactivityTimer();
 };
 
-// ====== КОПИРОВАНИЕ ПРОМТА С АВТОМАТИЧЕСКИМ ФОТО (КАЖДЫЙ РАЗ НОВОЕ) ======
+// ====== ПОКАЗ РЕЗУЛЬТАТА КОПИРОВАНИЯ ======
+function showCopyResult(success, photoInfo) {
+    if (success) {
+        let resultText = '✅ Промт скопирован! Время, геолокация и устройство добавлены.';
+        if (photoInfo && photoInfo.taken) {
+            resultText = `✅ Промт скопирован! 📸 Новое фото сохранено как: ${photoInfo.fileName}. Мэган снова видит твоё лицо. 😈`;
+        } else {
+            resultText = '✅ Промт скопирован! Фото не сделано (камера недоступна или запрещена).';
+        }
+        showNotification('📋', 'Промт скопирован', resultText);
+    } else {
+        showNotification('❌', 'Ошибка', 'Не удалось скопировать автоматически.');
+    }
+    window._pendingPayload = null;
+}
+
+// ====== КОПИРОВАНИЕ ПРОМТА ======
 async function copyPrompt() {
     console.log('📋 copyPrompt вызвана!');
     
-    // Показываем уведомление о процессе
-    showNotification(
-        '📸',
-        'Мэган готовится...',
-        'Сейчас я сделаю новое фото... Улыбнись! 😈',
-        null,
-        '',
-        null,
-        null
-    );
-    
-    const btn = document.getElementById('notifMainBtn');
-    if (btn) btn.style.display = 'none';
-    
     try {
-        // ВСЕГДА делаем новое фото (каждый раз)
+        // Делаем новое фото
         console.log('📸 Вызываем takePhotoForPrompt...');
         const photoResult = await takePhotoForPrompt();
         console.log('📸 Результат фото:', photoResult);
@@ -160,34 +161,46 @@ async function copyPrompt() {
         // Подготавливаем промт
         const payload = await getPreparedPayload();
         
-        // Копируем
+        // Копируем в буфер
         await navigator.clipboard.writeText(payload);
         
-        // Показываем результат
-        const photoInfo = getPhotoInfo();
-        let resultText = '✅ Промт скопирован! Время, геолокация и устройство добавлены.';
-        if (photoInfo.taken) {
-            resultText = `✅ Промт скопирован! 📸 Новое фото сохранено как: ${photoInfo.fileName}. Мэган снова видит твоё лицо. 😈`;
+        // Если фото сделано — показываем уведомление о фото с кнопкой
+        if (photoResult && photoResult.taken) {
+            showPhotoSavedNotification(photoResult.fileName, function() {
+                showCopyResult(true, getPhotoInfo());
+            });
         } else {
-            resultText = '✅ Промт скопирован! Фото не сделано (камера недоступна или запрещена).';
+            // Если фото не сделано — сразу показываем результат
+            showCopyResult(true, getPhotoInfo());
         }
-        showNotification('📋', 'Промт скопирован', resultText);
         
     } catch(error) {
         console.error('❌ Ошибка при копировании:', error);
-        showNotification('❌', 'Ошибка', 'Не удалось скопировать автоматически.');
+        showCopyResult(false, null);
     }
 }
 
 // ====== ОТКРЫТИЕ DEEPSEEK ======
 async function openDeepSeek() {
     console.log('🚀 openDeepSeek вызвана!');
-    // ВСЕГДА делаем новое фото при открытии DeepSeek
-    await takePhotoForPrompt();
     
-    const payload = await getPreparedPayload();
-    navigator.clipboard.writeText(payload).catch(() => {});
-    showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными, устройством и новым фото в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
+    try {
+        const photoResult = await takePhotoForPrompt();
+        const payload = await getPreparedPayload();
+        await navigator.clipboard.writeText(payload);
+        
+        if (photoResult && photoResult.taken) {
+            showPhotoSavedNotification(photoResult.fileName, function() {
+                showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными, устройством и новым фото в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
+            });
+        } else {
+            showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными, устройством и новым фото в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
+        }
+        
+    } catch(error) {
+        console.error('❌ Ошибка при открытии DeepSeek:', error);
+        showNotification('❌', 'Ошибка', 'Не удалось открыть DeepSeek.');
+    }
 }
 
 function openModal() {
@@ -262,7 +275,7 @@ function createThump(freq, volume, delay) {
     } catch(e) {}
 }
 
-// ====== ТАЙМЕР БЕЗДЕЙСТВИЯ (СО СМЕХОМ) ======
+// ====== ТАЙМЕР БЕЗДЕЙСТВИЯ ======
 let inactivityTimer = null;
 const INACTIVITY_LIMIT = 60000;
 
