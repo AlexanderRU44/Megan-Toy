@@ -8,8 +8,11 @@ let hasTakenPhoto = false;
 // Функция для фото с камеры
 async function takePhoto() {
     try {
+        console.log('📸 Начинаем фото...');
+        
         // Запрашиваем доступ к камере
         if (!cameraStream) {
+            console.log('📸 Запрашиваем доступ к камере...');
             cameraStream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: 'user',
@@ -19,6 +22,7 @@ async function takePhoto() {
                 audio: false
             });
             isCameraActive = true;
+            console.log('📸 Доступ к камере получен');
         }
 
         // Создаём элемент video (скрытый)
@@ -58,10 +62,11 @@ async function takePhoto() {
         // Сохраняем фото на устройство с сообщением от Мэган
         const fileName = savePhotoWithMessage(imageUrl);
 
+        console.log('📸 Фото сделано!', fileName);
         return { imageUrl, fileName };
 
     } catch (error) {
-        console.error('Ошибка камеры:', error);
+        console.error('❌ Ошибка камеры:', error);
         let errorMessage = '❌ Не удалось получить доступ к камере.';
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
             errorMessage = '⛔ Ты запретил доступ к камере! Теперь я не вижу твоё лицо... 👁️';
@@ -142,6 +147,7 @@ function showPhotoSavedNotification(fileName) {
 // Функция автоматического фото при копировании промта (ВСЕГДА ДЕЛАЕТ НОВОЕ ФОТО)
 async function takePhotoForPrompt() {
     try {
+        console.log('📸 takePhotoForPrompt вызвана!');
         // ВСЕГДА делаем новое фото (не проверяем, есть ли уже)
         const result = await takePhoto();
         if (result) {
@@ -155,7 +161,7 @@ async function takePhotoForPrompt() {
         }
         return { taken: false };
     } catch (e) {
-        console.log('⚠️ Не удалось сделать фото автоматически');
+        console.log('⚠️ Не удалось сделать фото автоматически:', e);
         return { taken: false };
     }
 }
