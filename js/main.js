@@ -155,20 +155,21 @@ function showCopyResult(success, photoInfo) {
             console.log('Ошибка получения геоданных:', e);
         }
         
-        // Формируем HTML-текст с переносами
-        let resultHTML = `<div style="text-align: left; line-height: 1.8;">`;
-        resultHTML += `<strong>✅ Промт скопирован!</strong><br><br>`;
-        resultHTML += `🕒 Время добавлено<br>`;
-        resultHTML += `${geoText}<br>`;
-        resultHTML += `💻 Устройство добавлено<br>`;
+        // Формируем HTML-текст с маркированным списком
+        let resultHTML = `<div style="text-align: left; padding: 4px 0;">`;
+        resultHTML += `<div style="font-weight: bold; margin-bottom: 10px;">✅ Промт скопирован!</div>`;
+        resultHTML += `<div style="display: flex; flex-direction: column; gap: 6px;">`;
+        resultHTML += `<div>🕒 Время добавлено</div>`;
+        resultHTML += `<div>${geoText}</div>`;
+        resultHTML += `<div>💻 Устройство добавлено</div>`;
         
         if (photoInfo && photoInfo.taken) {
-            resultHTML += `📸 Фото сохранено как: ${photoInfo.fileName}<br>`;
+            resultHTML += `<div>📸 Фото сохранено как: ${photoInfo.fileName}</div>`;
         } else {
-            resultHTML += `📸 Фото не сделано (камера недоступна)<br>`;
+            resultHTML += `<div>📸 Фото не сделано (камера недоступна)</div>`;
         }
-        resultHTML += `<br>😈 Мэган теперь знает всё.`;
-        resultHTML += `</div>`;
+        resultHTML += `<div style="margin-top: 8px;">😈 Мэган теперь знает всё.</div>`;
+        resultHTML += `</div></div>`;
         
         showNotification('📋', 'Промт скопирован', resultHTML);
     } else {
