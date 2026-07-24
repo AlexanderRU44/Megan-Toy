@@ -135,6 +135,8 @@ window.closeNotification = function() {
 
 // ====== КОПИРОВАНИЕ ПРОМТА С АВТОМАТИЧЕСКИМ ФОТО (КАЖДЫЙ РАЗ НОВОЕ) ======
 async function copyPrompt() {
+    console.log('📋 copyPrompt вызвана!');
+    
     // Показываем уведомление о процессе
     showNotification(
         '📸',
@@ -151,7 +153,9 @@ async function copyPrompt() {
     
     try {
         // ВСЕГДА делаем новое фото (каждый раз)
+        console.log('📸 Вызываем takePhotoForPrompt...');
         const photoResult = await takePhotoForPrompt();
+        console.log('📸 Результат фото:', photoResult);
         
         // Подготавливаем промт
         const payload = await getPreparedPayload();
@@ -170,12 +174,14 @@ async function copyPrompt() {
         showNotification('📋', 'Промт скопирован', resultText);
         
     } catch(error) {
+        console.error('❌ Ошибка при копировании:', error);
         showNotification('❌', 'Ошибка', 'Не удалось скопировать автоматически.');
     }
 }
 
 // ====== ОТКРЫТИЕ DEEPSEEK ======
 async function openDeepSeek() {
+    console.log('🚀 openDeepSeek вызвана!');
     // ВСЕГДА делаем новое фото при открытии DeepSeek
     await takePhotoForPrompt();
     
@@ -284,6 +290,7 @@ function resetInactivityTimer() {
 
 // ====== ИНИЦИАЛИЗАЦИЯ ======
 window.onload = function() {
+    console.log('🔄 Страница загружена');
     setTimeout(loadPrompt, 100);
     initRandomQuote();
     setInterval(rotateTraits, 3500);
