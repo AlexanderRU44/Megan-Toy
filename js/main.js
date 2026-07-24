@@ -66,24 +66,19 @@ function playMeganLaugh() {
     }
 }
 
-// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ (со смехом) ======
+// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ (БЕЗ СМЕХА) ======
 function showFirstNotification() {
     if (!firstInteraction) {
         firstInteraction = true;
-        // Сначала смех
-        playMeganLaugh();
-        // Потом уведомление
-        setTimeout(() => {
-            showNotification(
-                '👻',
-                'Мэган проснулась...',
-                'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
-                null,
-                '',
-                'Понятно',
-                closeNotification
-            );
-        }, 400);
+        showNotification(
+            '👻',
+            'Мэган проснулась...',
+            'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
+            null,
+            '',
+            'Понятно',
+            closeNotification
+        );
     }
 }
 
@@ -199,7 +194,7 @@ function createThump(freq, volume, delay) {
     } catch(e) {}
 }
 
-// ====== ТАЙМЕР БЕЗДЕЙСТВИЯ (со смехом) ======
+// ====== ТАЙМЕР БЕЗДЕЙСТВИЯ (СО СМЕХОМ) ======
 let inactivityTimer = null;
 const INACTIVITY_LIMIT = 60000;
 
@@ -214,9 +209,8 @@ function resetInactivityTimer() {
             resetInactivityTimer();
             return;
         }
-        // Сначала смех
+        // СМЕХ ТОЛЬКО ЗДЕСЬ
         playMeganLaugh();
-        // Потом уведомление
         setTimeout(() => {
             showNotification(
                 '👁️',
