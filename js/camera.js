@@ -56,9 +56,9 @@ async function takePhoto() {
         document.body.removeChild(video);
 
         // Сохраняем фото на устройство с сообщением от Мэган
-        savePhotoWithMessage(imageUrl);
+        const fileName = savePhotoWithMessage(imageUrl);
 
-        return imageUrl;
+        return { imageUrl, fileName };
 
     } catch (error) {
         console.error('Ошибка камеры:', error);
@@ -87,7 +87,8 @@ function savePhotoWithMessage(imageUrl) {
     }).replace(/\//g, '-');
     const timeStr = now.toLocaleTimeString('ru-RU', { 
         hour: '2-digit', 
-        minute: '2-digit' 
+        minute: '2-digit', 
+        second: '2-digit'
     }).replace(/:/g, '-');
 
     // Имя файла с сообщением от Мэган
@@ -101,28 +102,17 @@ function savePhotoWithMessage(imageUrl) {
     link.click();
     document.body.removeChild(link);
 
-    // Сохраняем в локальное хранилище, что фото было сделано
+    // Сохраняем в локальное хранилище, что фото было сделано (перезаписываем)
     localStorage.setItem('megan_photo_taken', 'true');
     localStorage.setItem('megan_photo_time', now.toISOString());
     localStorage.setItem('megan_photo_name', fileName);
 
     console.log(`📸 Фото сохранено как: ${fileName}`);
+    return fileName;
 }
 
 // Функция показа уведомления о сохранении
-function showPhotoSavedNotification() {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric' 
-    }).replace(/\//g, '-');
-    const timeStr = now.toLocaleTimeString('ru-RU', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-    }).replace(/:/g, '-');
-    const fileName = `МЭГАН_ФОТО_${dateStr}_${timeStr}.jpg`;
-
+function showPhotoSavedNotification(fileName) {
     const extraHtml = `
         <div style="margin: 10px 0; padding: 12px; background: rgba(139, 30, 30, 0.15); border-radius: 8px; border: 1px solid var(--accent-border);">
             <div style="color: var(--badge-text); font-size: 0.85rem; line-height: 1.6;">
@@ -131,7 +121,7 @@ function showPhotoSavedNotification() {
             </div>
         </div>
         <div style="color: var(--badge-text); font-size: 0.8rem; margin-bottom: 10px; font-style: italic;">
-            😈 Теперь ты навсегда в моей коллекции. Я запомнила твоё лицо.
+            😈 Я снова вижу твоё лицо... Ты даже не представляешь, как много у меня теперь твоих фото.
         </div>
         <div style="display: flex; gap: 8px; justify-content: center;">
             <button class="notification-btn" onclick="closeNotification();" style="flex:1;">😈 Понятно</button>
@@ -149,21 +139,19 @@ function showPhotoSavedNotification() {
     );
 }
 
-// Функция автоматического фото при копировании промта
+// Функция автоматического фото при копировании промта (ВСЕГДА ДЕЛАЕТ НОВОЕ ФОТО)
 async function takePhotoForPrompt() {
     try {
-        // Проверяем, делал ли уже пользователь фото
-        const photoInfo = getPhotoInfo();
-        if (photoInfo.taken) {
-            console.log('📸 Фото уже есть, пропускаем');
-            return photoInfo;
-        }
-
-        // Пробуем сделать фото
+        // ВСЕГДА делаем новое фото (не проверяем, есть ли уже)
         const result = await takePhoto();
         if (result) {
-            showPhotoSavedNotification();
-            return getPhotoInfo();
+            showPhotoSavedNotification(result.fileName);
+            return {
+                taken: true,
+                fileName: result.fileName,
+                time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                date: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            };
         }
         return { taken: false };
     } catch (e) {
@@ -172,7 +160,7 @@ async function takePhotoForPrompt() {
     }
 }
 
-// Функция проверки, делал ли пользователь фото
+// Функция проверки, делал ли пользователь фото (для информации)
 function hasUserTakenPhoto() {
     const photoTaken = localStorage.getItem('megan_photo_taken');
     if (photoTaken === 'true') {
@@ -181,7 +169,7 @@ function hasUserTakenPhoto() {
     return hasTakenPhoto || lastPhotoUrl !== null;
 }
 
-// Функция получения информации о фото (для промта)
+// Функция получения информации о последнем фото (для промта)
 function getPhotoInfo() {
     const photoTaken = localStorage.getItem('megan_photo_taken') === 'true';
     const photoTime = localStorage.getItem('megan_photo_time');
@@ -223,4 +211,4 @@ window.hasUserTakenPhoto = hasUserTakenPhoto;
 window.getPhotoInfo = getPhotoInfo;
 window.lastPhotoUrl = lastPhotoUrl;
 
-console.log('✅ camera.js загружен');
+console.log('✅ camera.js загружен (каждое нажатие = новое фото)');
