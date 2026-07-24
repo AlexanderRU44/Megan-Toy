@@ -135,7 +135,7 @@ window.closeNotification = function() {
 // ====== ПОКАЗ РЕЗУЛЬТАТА КОПИРОВАНИЯ ======
 function showCopyResult(success, photoInfo) {
     if (success) {
-        // Получаем геоданные из localStorage (синхронно)
+        // Получаем геоданные из localStorage
         let geoText = '📍 Местоположение: не определено';
         try {
             const geoData = localStorage.getItem('megan_geo_data');
@@ -155,14 +155,18 @@ function showCopyResult(success, photoInfo) {
             console.log('Ошибка получения геоданных:', e);
         }
         
-        let resultText = `✅ Промт скопирован!\n🕒 Время добавлено\n${geoText}\n💻 Устройство добавлено`;
+        // Формируем текст по порядку (каждый пункт с новой строки)
+        let resultText = `✅ Промт скопирован!\n\n`;
+        resultText += `🕒 Время добавлено\n`;
+        resultText += `${geoText}\n`;
+        resultText += `💻 Устройство добавлено\n`;
         
         if (photoInfo && photoInfo.taken) {
-            resultText += `\n📸 Фото сохранено как: ${photoInfo.fileName}`;
+            resultText += `📸 Фото сохранено как: ${photoInfo.fileName}\n`;
         } else {
-            resultText += '\n📸 Фото не сделано (камера недоступна)';
+            resultText += `📸 Фото не сделано (камера недоступна)\n`;
         }
-        resultText += '\n\n😈 Мэган теперь знает всё.';
+        resultText += `\n😈 Мэган теперь знает всё.`;
         
         showNotification('📋', 'Промт скопирован', resultText);
     } else {
