@@ -1,22 +1,15 @@
-// ====== ГЕОЛОКАЦИЯ (только JSONP - гарантированно работает) ======
+// ====== ГЕОЛОКАЦИЯ (с приоритетом GPS для отображения) ======
 
-// Функция для получения геоданных через JSONP
+// Функция для получения геоданных через IP
 function getGeoData() {
     return new Promise((resolve) => {
         try {
-            // Создаём уникальное имя callback
             const callbackName = 'geoCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-            
-            // Создаём скрипт
             const script = document.createElement('script');
             
-            // Добавляем callback в глобальный объект
             window[callbackName] = function(data) {
-                // Очищаем после получения данных
                 delete window[callbackName];
-                if (script.parentNode) {
-                    script.parentNode.removeChild(script);
-                }
+                if (script.parentNode) script.parentNode.removeChild(script);
                 
                 if (data && data.ip) {
                     resolve({
@@ -27,38 +20,27 @@ function getGeoData() {
                         timezone: data.timezone || 'Неизвестно',
                         ip: data.ip || 'Неизвестно',
                         location: data.loc || 'Неизвестно',
-                        isHosting: false,
-                        isProxy: false,
-                        isMobile: false
+                        postal: data.postal || 'Неизвестно'
                     });
                 } else {
                     resolve(null);
                 }
             };
             
-            // Обработка ошибки загрузки скрипта
             script.onerror = function() {
                 delete window[callbackName];
-                if (script.parentNode) {
-                    script.parentNode.removeChild(script);
-                }
+                if (script.parentNode) script.parentNode.removeChild(script);
                 resolve(null);
             };
             
-            // Используем ipinfo.io с JSONP
             script.src = `https://ipinfo.io/json?callback=${callbackName}`;
             script.async = true;
-            
-            // Добавляем скрипт в DOM
             document.head.appendChild(script);
             
-            // Таймаут на случай долгого ответа (5 секунд)
             setTimeout(() => {
                 if (window[callbackName]) {
                     delete window[callbackName];
-                    if (script.parentNode) {
-                        script.parentNode.removeChild(script);
-                    }
+                    if (script.parentNode) script.parentNode.removeChild(script);
                     resolve(null);
                 }
             }, 5000);
@@ -70,80 +52,233 @@ function getGeoData() {
     });
 }
 
-// Функция для добавления геоданных в промт
+// Функция для получения GPS
+function getGPSLocation() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            resolve({ error: true, message: 'GPS не поддерживается' });
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                resolve({
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    error: false
+                });
+            },
+            (error) => {
+                let message = '';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        message = '⛔ Доступ к GPS запрещён';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message = '📡 GPS сигнал недоступен';
+                        break;
+                    case error.TIMEOUT:
+                        message = '⏳ Превышено время ожидания GPS';
+                        break;
+                    default:
+                        message = '❌ Ошибка GPS';
+                }
+                resolve({ error: true, message: message });
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 60000
+            }
+        );
+    });
+}
+
+// Обратный геокодинг - получение города по координатам
+async function getCityFromCoords(lat, lon) {
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ru`);
+        const data = await response.json();
+        if (data && data.address) {
+            const address = data.address;
+            return {
+                city: address.city || address.town || address.village || address.hamlet || 'Неизвестно',
+                region: address.state || address.region || 'Неизвестно',
+                country: address.country || 'Неизвестно',
+                full: data.display_name || 'Неизвестно'
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error('Ошибка обратного геокодинга:', error);
+        return null;
+    }
+}
+
+// ====== ГЛАВНАЯ ФУНКЦИЯ ======
+function showFullLocation() {
+    console.log('📍 Нажата кнопка местоположения');
+    
+    showNotification(
+        '📍',
+        'Определение местоположения...',
+        '<div style="text-align: center;">⏳ Подожди, я смотрю где ты...</div>',
+        null,
+        '',
+        null,
+        null
+    );
+    
+    const btn = document.getElementById('notifMainBtn');
+    if (btn) btn.style.display = 'none';
+    
+    let ipData = null;
+    let gpsData = null;
+    let cityData = null;
+    let done = 0;
+    const total = 3;
+    
+    function finish() {
+        done++;
+        if (done === total) {
+            showResult();
+        }
+    }
+    
+    function showResult() {
+        let message = '';
+        let hasData = false;
+        let gpsAvailable = false;
+        
+        if (gpsData && !gpsData.error) {
+            gpsAvailable = true;
+            hasData = true;
+            message += `✅ ТВОЁ РЕАЛЬНОЕ МЕСТОПОЛОЖЕНИЕ (GPS):\n\n`;
+            message += `📍 Координаты: ${gpsData.lat}, ${gpsData.lon}\n`;
+            message += `🎯 Точность: ${gpsData.accuracy} метров\n`;
+            
+            if (cityData) {
+                message += `\n🏙️ Город: ${cityData.city}\n`;
+                message += `🗺️ Регион: ${cityData.region}\n`;
+                message += `🌍 Страна: ${cityData.country}\n`;
+            }
+            
+            message += `\n🗺️ Карта: https://www.google.com/maps?q=${gpsData.lat},${gpsData.lon}\n\n`;
+            message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        } else if (gpsData && gpsData.error) {
+            message += `📡 GPS: ${gpsData.message}\n\n`;
+        }
+        
+        if (ipData && ipData.country !== 'Неизвестно') {
+            message += `⚠️ IP-геолокация (приблизительно, может отличаться):\n`;
+            message += `🌍 Страна: ${ipData.country}\n`;
+            message += `🏙️ Город по IP: ${ipData.city}\n`;
+            if (ipData.region && ipData.region !== 'Неизвестно') {
+                message += `🗺️ Регион по IP: ${ipData.region}\n`;
+            }
+            if (ipData.isp && ipData.isp !== 'Неизвестно') {
+                message += `📡 Провайдер: ${ipData.isp}\n`;
+            }
+            message += `🔢 IP: ${ipData.ip}\n`;
+            hasData = true;
+        }
+        
+        if (!hasData) {
+            message = `❌ Не удалось определить местоположение.\n\nПроверь интернет и попробуй ещё раз.`;
+        }
+        
+        if (gpsAvailable) {
+            message += `\n\n✅ Определено по GPS (ТОЧНО)`;
+        } else if (ipData && ipData.country !== 'Неизвестно') {
+            message += `\n\nℹ️ Определено по IP-адресу (ПРИБЛИЗИТЕЛЬНО)`;
+        }
+        
+        const resultBtn = document.getElementById('notifMainBtn');
+        if (resultBtn) {
+            resultBtn.style.display = 'block';
+            resultBtn.innerText = 'Понятно';
+            resultBtn.onclick = closeNotification;
+        }
+        
+        document.getElementById('notifIcon').innerText = '📍';
+        document.getElementById('notifTitle').innerText = 'Твоё местоположение';
+        document.getElementById('notifText').innerHTML = message.replace(/\n/g, '<br>');
+    }
+    
+    getGeoData().then(data => {
+        ipData = data;
+        finish();
+    });
+    
+    getGPSLocation().then(data => {
+        gpsData = data;
+        if (gpsData && !gpsData.error) {
+            getCityFromCoords(gpsData.lat, gpsData.lon).then(city => {
+                cityData = city;
+                finish();
+            });
+        } else {
+            finish();
+        }
+    });
+    
+    setTimeout(() => {
+        if (done < total) {
+            if (!gpsData) {
+                gpsData = { error: true, message: '⏳ Время ожидания истекло' };
+            }
+            if (!ipData) {
+                ipData = null;
+            }
+            done = total;
+            showResult();
+        }
+    }, 10000);
+}
+
+// ====== ФУНКЦИЯ ДЛЯ ПРОМТА (с реальным городом из GPS) ======
 function getGeoInfoString() {
     return new Promise((resolve) => {
-        getGeoData().then(geo => {
-            if (geo) {
-                const parts = [];
-                if (geo.country && geo.country !== 'Неизвестно') parts.push(`Страна: ${geo.country}`);
-                if (geo.city && geo.city !== 'Неизвестно') parts.push(`Город: ${geo.city}`);
-                if (geo.region && geo.region !== 'Неизвестно') parts.push(`Регион: ${geo.region}`);
-                if (geo.isp && geo.isp !== 'Неизвестно') parts.push(`Провайдер: ${geo.isp}`);
-                if (geo.timezone && geo.timezone !== 'Неизвестно') parts.push(`Часовой пояс: ${geo.timezone}`);
-                if (geo.ip && geo.ip !== 'Неизвестно') parts.push(`IP: ${geo.ip}`);
-                
-                const result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`;
-                resolve(result);
-            } else {
-                resolve('[ГЕОЛОКАЦИЯ: Не удалось определить]');
+        getGPSLocation().then(gps => {
+            if (gps && !gps.error) {
+                getCityFromCoords(gps.lat, gps.lon).then(cityData => {
+                    let result = '';
+                    if (cityData && cityData.city !== 'Неизвестно') {
+                        result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: Город: ${cityData.city}, Регион: ${cityData.region}, Страна: ${cityData.country} | GPS: ${gps.lat}, ${gps.lon} | Точность: ${gps.accuracy}м]`;
+                        console.log('✅ Для промта используется GPS с городом:', cityData.city);
+                    } else {
+                        result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: GPS: ${gps.lat}, ${gps.lon} | Точность: ${gps.accuracy}м]`;
+                        console.log('✅ Для промта используется GPS (без города)');
+                    }
+                    resolve(result);
+                });
+                return;
             }
+            
+            console.log('ℹ️ GPS не доступен, используем IP для промта');
+            getGeoData().then(geo => {
+                if (geo) {
+                    const parts = [];
+                    if (geo.country && geo.country !== 'Неизвестно') parts.push(`Страна: ${geo.country}`);
+                    if (geo.city && geo.city !== 'Неизвестно') parts.push(`Город: ${geo.city}`);
+                    if (geo.region && geo.region !== 'Неизвестно') parts.push(`Регион: ${geo.region}`);
+                    if (geo.ip && geo.ip !== 'Неизвестно') parts.push(`IP: ${geo.ip}`);
+                    resolve(`[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`);
+                } else {
+                    resolve('[ГЕОЛОКАЦИЯ: Не удалось определить]');
+                }
+            });
         });
     });
 }
 
-// Функция для отображения геоданных в уведомлении
-function showGeoInfo() {
-    getGeoData().then(geo => {
-        if (geo && geo.country !== 'Неизвестно') {
-            let message = `📍 Твои геоданные:\n\n`;
-            message += `🌍 Страна: ${geo.country}\n`;
-            message += `🏙️ Город: ${geo.city}\n`;
-            message += `🗺️ Регион: ${geo.region}\n`;
-            message += `📡 Провайдер: ${geo.isp}\n`;
-            message += `🕐 Часовой пояс: ${geo.timezone}\n`;
-            message += `🔢 IP: ${geo.ip}\n`;
-            
-            if (geo.location && geo.location !== 'Неизвестно') {
-                message += `📍 Координаты: ${geo.location}\n`;
-            }
-            
-            showNotification(
-                '📍',
-                'Твоё местоположение',
-                message,
-                null,
-                '',
-                'Понятно',
-                closeNotification
-            );
-        } else {
-            showNotification(
-                '🌐',
-                'Геолокация недоступна',
-                'Не удалось определить твоё местоположение.\n\nПроверь:\n• Интернет-соединение\n• Отключи VPN/прокси\n• Обнови страницу (Ctrl+F5)',
-                null,
-                '',
-                'Понятно',
-                closeNotification
-            );
-        }
-    });
-}
+// Объявляем глобально
+window.showFullLocation = showFullLocation;
+window.getGeoInfoString = getGeoInfoString;
+window.getGeoData = getGeoData;
+window.getGPSLocation = getGPSLocation;
+window.getCityFromCoords = getCityFromCoords;
 
-// Тестовая функция
-function testGeo() {
-    console.log('🧪 Проверка геолокации...');
-    getGeoData().then(geo => {
-        if (geo) {
-            console.log('✅ Успешно! Твои данные:', geo);
-        } else {
-            console.log('❌ Не удалось получить данные');
-        }
-    });
-}
-
-// Запускаем тест при загрузке
-if (typeof window !== 'undefined') {
-    setTimeout(testGeo, 2000);
-}
+console.log('✅ geo.js загружен');
+console.log('✅ showFullLocation доступна:', typeof showFullLocation === 'function');
