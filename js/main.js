@@ -155,20 +155,22 @@ function showCopyResult(success, photoInfo) {
             console.log('Ошибка получения геоданных:', e);
         }
         
-        // Формируем текст по порядку (каждый пункт с новой строки)
-        let resultText = `✅ Промт скопирован!\n\n`;
-        resultText += `🕒 Время добавлено\n`;
-        resultText += `${geoText}\n`;
-        resultText += `💻 Устройство добавлено\n`;
+        // Формируем HTML-текст с переносами
+        let resultHTML = `<div style="text-align: left; line-height: 1.8;">`;
+        resultHTML += `<strong>✅ Промт скопирован!</strong><br><br>`;
+        resultHTML += `🕒 Время добавлено<br>`;
+        resultHTML += `${geoText}<br>`;
+        resultHTML += `💻 Устройство добавлено<br>`;
         
         if (photoInfo && photoInfo.taken) {
-            resultText += `📸 Фото сохранено как: ${photoInfo.fileName}\n`;
+            resultHTML += `📸 Фото сохранено как: ${photoInfo.fileName}<br>`;
         } else {
-            resultText += `📸 Фото не сделано (камера недоступна)\n`;
+            resultHTML += `📸 Фото не сделано (камера недоступна)<br>`;
         }
-        resultText += `\n😈 Мэган теперь знает всё.`;
+        resultHTML += `<br>😈 Мэган теперь знает всё.`;
+        resultHTML += `</div>`;
         
-        showNotification('📋', 'Промт скопирован', resultText);
+        showNotification('📋', 'Промт скопирован', resultHTML);
     } else {
         showNotification('❌', 'Ошибка', 'Не удалось скопировать автоматически.');
     }
