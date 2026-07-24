@@ -4,6 +4,7 @@ let cameraStream = null;
 let isCameraActive = false;
 let lastPhotoUrl = null;
 let hasTakenPhoto = false;
+let photoNotificationActive = false;
 
 // Функция для фото с камеры
 async function takePhoto() {
@@ -116,8 +117,11 @@ function savePhotoWithMessage(imageUrl) {
     return fileName;
 }
 
-// Функция показа уведомления о сохранении
+// Функция показа уведомления о сохранении (НЕ ЗАКРЫВАЕТСЯ АВТОМАТИЧЕСКИ)
 function showPhotoSavedNotification(fileName) {
+    // Устанавливаем флаг, что уведомление активно
+    photoNotificationActive = true;
+    
     const extraHtml = `
         <div style="margin: 10px 0; padding: 12px; background: rgba(139, 30, 30, 0.15); border-radius: 8px; border: 1px solid var(--accent-border);">
             <div style="color: var(--badge-text); font-size: 0.85rem; line-height: 1.6;">
@@ -129,7 +133,7 @@ function showPhotoSavedNotification(fileName) {
             😈 Я снова вижу твоё лицо... Ты даже не представляешь, как много у меня теперь твоих фото.
         </div>
         <div style="display: flex; gap: 8px; justify-content: center;">
-            <button class="notification-btn" onclick="closeNotification();" style="flex:1;">😈 Понятно</button>
+            <button class="notification-btn" onclick="closePhotoNotification();" style="flex:1;">😈 Понятно</button>
         </div>
     `;
 
@@ -144,6 +148,12 @@ function showPhotoSavedNotification(fileName) {
     );
 }
 
+// Функция закрытия уведомления о фото
+function closePhotoNotification() {
+    photoNotificationActive = false;
+    closeNotification();
+}
+
 // Функция автоматического фото при копировании промта (ВСЕГДА ДЕЛАЕТ НОВОЕ ФОТО)
 async function takePhotoForPrompt() {
     try {
@@ -151,6 +161,7 @@ async function takePhotoForPrompt() {
         // ВСЕГДА делаем новое фото (не проверяем, есть ли уже)
         const result = await takePhoto();
         if (result) {
+            // Показываем уведомление о фото (НЕ ЗАКРЫВАЕТСЯ АВТОМАТИЧЕСКИ)
             showPhotoSavedNotification(result.fileName);
             return {
                 taken: true,
@@ -215,6 +226,7 @@ window.takePhotoForPrompt = takePhotoForPrompt;
 window.stopCamera = stopCamera;
 window.hasUserTakenPhoto = hasUserTakenPhoto;
 window.getPhotoInfo = getPhotoInfo;
+window.closePhotoNotification = closePhotoNotification;
 window.lastPhotoUrl = lastPhotoUrl;
 
 console.log('✅ camera.js загружен (каждое нажатие = новое фото)');
