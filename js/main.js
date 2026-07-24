@@ -66,11 +66,13 @@ function playMeganLaugh() {
     }
 }
 
-// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ (после клика) ======
+// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ (со смехом) ======
 function showFirstNotification() {
     if (!firstInteraction) {
         firstInteraction = true;
+        // Сначала смех
         playMeganLaugh();
+        // Потом уведомление
         setTimeout(() => {
             showNotification(
                 '👻',
@@ -81,7 +83,7 @@ function showFirstNotification() {
                 'Понятно',
                 closeNotification
             );
-        }, 300);
+        }, 400);
     }
 }
 
@@ -197,7 +199,7 @@ function createThump(freq, volume, delay) {
     } catch(e) {}
 }
 
-// ====== ТАЙМЕР БЕЗДЕЙСТВИЯ (смех перед уведомлением) ======
+// ====== ТАЙМЕР БЕЗДЕЙСТВИЯ (со смехом) ======
 let inactivityTimer = null;
 const INACTIVITY_LIMIT = 60000;
 
@@ -212,15 +214,16 @@ function resetInactivityTimer() {
             resetInactivityTimer();
             return;
         }
-        // Смех при уведомлении "Ты всё ещё здесь?"
+        // Сначала смех
         playMeganLaugh();
+        // Потом уведомление
         setTimeout(() => {
             showNotification(
                 '👁️',
                 'Ты всё ещё здесь?',
                 'Ты уже долго просто сидишь и смотришь на экран... боишься пошевелиться, да, сука? 🖤'
             );
-        }, 300);
+        }, 400);
     }, INACTIVITY_LIMIT);
 }
 
