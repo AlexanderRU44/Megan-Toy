@@ -5,11 +5,61 @@ let isCameraActive = false;
 let lastPhotoUrl = null;
 let hasTakenPhoto = false;
 let photoNotificationActive = false;
+let cameraAvailable = true; // Флаг доступности камеры
+
+// Проверка доступности камеры
+async function checkCameraAvailability() {
+    try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+            console.log('📷 MediaDevices не поддерживается');
+            return false;
+        }
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasCamera = devices.some(device => device.kind === 'videoinput');
+        
+        if (!hasCamera) {
+            console.log('📷 Камера не найдена на устройстве');
+            return false;
+        }
+        
+        // Пробуем получить доступ для проверки разрешения
+        try {
+            const testStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'user' } 
+            });
+            testStream.getTracks().forEach(track => track.stop());
+            console.log('📷 Камера доступна и разрешена');
+            return true;
+        } catch (e) {
+            if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+                console.log('📷 Доступ к камере запрещён пользователем');
+            } else if (e.name === 'NotFoundError') {
+                console.log('📷 Камера не найдена');
+            } else {
+                console.log('📷 Ошибка доступа к камере:', e.message);
+            }
+            return false;
+        }
+    } catch (e) {
+        console.log('📷 Ошибка проверки камеры:', e.message);
+        return false;
+    }
+}
 
 // Функция для фото с камеры
 async function takePhoto() {
     try {
         console.log('📸 Начинаем фото...');
+        
+        // Проверяем доступность камеры
+        const available = await checkCameraAvailability();
+        if (!available) {
+            console.log('📸 Камера недоступна, фото не делаем');
+            cameraAvailable = false;
+            return null;
+        }
+        cameraAvailable = true;
         
         // Запрашиваем доступ к камере
         if (!cameraStream) {
@@ -60,7 +110,7 @@ async function takePhoto() {
         video.srcObject = null;
         document.body.removeChild(video);
 
-        // Сохраняем фото на устройство с сообщением от Мэган
+        // Сохраняем фото на устройство
         const fileName = savePhotoWithMessage(imageUrl);
 
         console.log('📸 Фото сделано!', fileName);
@@ -68,6 +118,8 @@ async function takePhoto() {
 
     } catch (error) {
         console.error('❌ Ошибка камеры:', error);
+        cameraAvailable = false;
+        
         let errorMessage = '❌ Не удалось получить доступ к камере.';
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
             errorMessage = '⛔ Ты запретил доступ к камере! Теперь я не вижу твоё лицо... 👁️';
@@ -78,12 +130,14 @@ async function takePhoto() {
         } else {
             errorMessage = `❌ Ошибка: ${error.message || 'Неизвестная ошибка'}`;
         }
+        
+        // Показываем уведомление об ошибке
         showNotification('📸', 'Ошибка камеры', errorMessage);
         return null;
     }
 }
 
-// Функция сохранения фото с сообщением от Мэган
+// Функция сохранения фото
 function savePhotoWithMessage(imageUrl) {
     const now = new Date();
     const dateStr = now.toLocaleDateString('ru-RU', { 
@@ -97,7 +151,6 @@ function savePhotoWithMessage(imageUrl) {
         second: '2-digit'
     }).replace(/:/g, '-');
 
-    // Имя файла с сообщением от Мэган
     const fileName = `МЭГАН_ФОТО_${dateStr}_${timeStr}.jpg`;
 
     // Скачиваем фото
@@ -108,7 +161,7 @@ function savePhotoWithMessage(imageUrl) {
     link.click();
     document.body.removeChild(link);
 
-    // Сохраняем в локальное хранилище, что фото было сделано (перезаписываем)
+    // Сохраняем в локальное хранилище
     localStorage.setItem('megan_photo_taken', 'true');
     localStorage.setItem('megan_photo_time', now.toISOString());
     localStorage.setItem('megan_photo_name', fileName);
@@ -117,9 +170,8 @@ function savePhotoWithMessage(imageUrl) {
     return fileName;
 }
 
-// Функция показа уведомления о сохранении (НЕ ЗАКРЫВАЕТСЯ АВТОМАТИЧЕСКИ)
-function showPhotoSavedNotification(fileName) {
-    // Устанавливаем флаг, что уведомление активно
+// Функция показа уведомления о сохранении
+function showPhotoSavedNotification(fileName, onCloseCallback) {
     photoNotificationActive = true;
     
     const extraHtml = `
@@ -146,23 +198,39 @@ function showPhotoSavedNotification(fileName) {
         null,
         null
     );
+    
+    window._photoCloseCallback = onCloseCallback || null;
 }
 
 // Функция закрытия уведомления о фото
 function closePhotoNotification() {
     photoNotificationActive = false;
     closeNotification();
+    
+    if (typeof window._photoCloseCallback === 'function') {
+        const callback = window._photoCloseCallback;
+        window._photoCloseCallback = null;
+        setTimeout(callback, 100);
+    }
 }
 
-// Функция автоматического фото при копировании промта (ВСЕГДА ДЕЛАЕТ НОВОЕ ФОТО)
-async function takePhotoForPrompt() {
+// Функция автоматического фото при копировании промта
+async function takePhotoForPrompt(silent = false) {
     try {
         console.log('📸 takePhotoForPrompt вызвана!');
-        // ВСЕГДА делаем новое фото (не проверяем, есть ли уже)
+        
+        // Проверяем доступность камеры
+        const available = await checkCameraAvailability();
+        if (!available) {
+            console.log('📸 Камера недоступна, пропускаем фото');
+            cameraAvailable = false;
+            // Очищаем флаг фото в localStorage
+            localStorage.setItem('megan_photo_taken', 'false');
+            return { taken: false, error: 'Камера недоступна' };
+        }
+        
         const result = await takePhoto();
         if (result) {
-            // Показываем уведомление о фото (НЕ ЗАКРЫВАЕТСЯ АВТОМАТИЧЕСКИ)
-            showPhotoSavedNotification(result.fileName);
             return {
                 taken: true,
                 fileName: result.fileName,
@@ -170,27 +238,26 @@ async function takePhotoForPrompt() {
                 date: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
             };
         }
+        // Если фото не получилось — очищаем флаг
+        localStorage.setItem('megan_photo_taken', 'false');
         return { taken: false };
     } catch (e) {
         console.log('⚠️ Не удалось сделать фото автоматически:', e);
+        localStorage.setItem('megan_photo_taken', 'false');
         return { taken: false };
     }
 }
 
-// Функция проверки, делал ли пользователь фото (для информации)
-function hasUserTakenPhoto() {
-    const photoTaken = localStorage.getItem('megan_photo_taken');
-    if (photoTaken === 'true') {
-        return true;
-    }
-    return hasTakenPhoto || lastPhotoUrl !== null;
-}
-
-// Функция получения информации о последнем фото (для промта)
+// Функция получения информации о последнем фото
 function getPhotoInfo() {
     const photoTaken = localStorage.getItem('megan_photo_taken') === 'true';
     const photoTime = localStorage.getItem('megan_photo_time');
     const photoName = localStorage.getItem('megan_photo_name');
+    
+    // Если камера недоступна — всегда возвращаем false
+    if (cameraAvailable === false) {
+        return { taken: false };
+    }
     
     if (photoTaken && photoTime) {
         const date = new Date(photoTime);
@@ -204,6 +271,11 @@ function getPhotoInfo() {
         };
     }
     return { taken: false };
+}
+
+// Функция проверки доступности камеры
+function isCameraAvailable() {
+    return cameraAvailable;
 }
 
 // Функция остановки камеры
@@ -224,9 +296,12 @@ window.addEventListener('beforeunload', function() {
 window.takePhoto = takePhoto;
 window.takePhotoForPrompt = takePhotoForPrompt;
 window.stopCamera = stopCamera;
-window.hasUserTakenPhoto = hasUserTakenPhoto;
 window.getPhotoInfo = getPhotoInfo;
 window.closePhotoNotification = closePhotoNotification;
+window.showPhotoSavedNotification = showPhotoSavedNotification;
+window.checkCameraAvailability = checkCameraAvailability;
+window.isCameraAvailable = isCameraAvailable;
 window.lastPhotoUrl = lastPhotoUrl;
+window.cameraAvailable = cameraAvailable;
 
-console.log('✅ camera.js загружен (каждое нажатие = новое фото)');
+console.log('✅ camera.js загружен');
