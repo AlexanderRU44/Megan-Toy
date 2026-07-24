@@ -19,8 +19,7 @@ function getGeoData() {
                         isp: data.org || 'Неизвестно',
                         timezone: data.timezone || 'Неизвестно',
                         ip: data.ip || 'Неизвестно',
-                        location: data.loc || 'Неизвестно',
-                        postal: data.postal || 'Неизвестно'
+                        location: data.loc || 'Неизвестно'
                     });
                 } else {
                     resolve(null);
@@ -240,14 +239,18 @@ function showFullLocation() {
 // ====== ФУНКЦИЯ ДЛЯ ПРОМТА (с реальным городом из GPS) ======
 function getGeoInfoString() {
     return new Promise((resolve) => {
+        // Сначала пытаемся получить GPS
         getGPSLocation().then(gps => {
             if (gps && !gps.error) {
+                // Если GPS есть — получаем город по координатам
                 getCityFromCoords(gps.lat, gps.lon).then(cityData => {
                     let result = '';
                     if (cityData && cityData.city !== 'Неизвестно') {
+                        // Используем реальный город из GPS
                         result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: Город: ${cityData.city}, Регион: ${cityData.region}, Страна: ${cityData.country} | GPS: ${gps.lat}, ${gps.lon} | Точность: ${gps.accuracy}м]`;
                         console.log('✅ Для промта используется GPS с городом:', cityData.city);
                     } else {
+                        // Если город не определился — только координаты
                         result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: GPS: ${gps.lat}, ${gps.lon} | Точность: ${gps.accuracy}м]`;
                         console.log('✅ Для промта используется GPS (без города)');
                     }
@@ -256,6 +259,7 @@ function getGeoInfoString() {
                 return;
             }
             
+            // Если GPS нет — используем IP
             console.log('ℹ️ GPS не доступен, используем IP для промта');
             getGeoData().then(geo => {
                 if (geo) {
@@ -278,7 +282,6 @@ window.showFullLocation = showFullLocation;
 window.getGeoInfoString = getGeoInfoString;
 window.getGeoData = getGeoData;
 window.getGPSLocation = getGPSLocation;
-window.getCityFromCoords = getCityFromCoords;
 
 console.log('✅ geo.js загружен');
 console.log('✅ showFullLocation доступна:', typeof showFullLocation === 'function');
