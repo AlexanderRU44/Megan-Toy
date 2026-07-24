@@ -2,443 +2,107 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🎵 Радио-очередь</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container { max-width: 700px; width: 100%; }
-        .player-card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 30px;
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
-            margin-bottom: 20px;
-        }
-        h1 { color: #fff; font-size: 28px; text-align: center; margin-bottom: 6px; }
-        .subtitle { color: rgba(255,255,255,0.5); text-align: center; font-size: 14px; margin-bottom: 20px; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-        .input-group input {
-            flex: 1;
-            padding: 14px 16px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.07);
-            color: #fff;
-            font-size: 15px;
-            outline: none;
-            min-width: 200px;
-        }
-        .input-group input::placeholder { color: rgba(255,255,255,0.35); }
-        .input-group input:focus { border-color: #ff6b6b; }
-        .input-group button {
-            padding: 14px 24px;
-            border-radius: 12px;
-            border: none;
-            background: #ff6b6b;
-            color: #fff;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, background 0.3s;
-            white-space: nowrap;
-        }
-        .input-group button:hover { background: #ee5a5a; transform: scale(1.02); }
-        .input-group button:active { transform: scale(0.98); }
-        .input-group .add-btn { background: #4ecdc4; }
-        .input-group .add-btn:hover { background: #3dbdb5; }
-
-        .status-bar {
-            color: rgba(255,255,255,0.5);
-            text-align: center;
-            font-size: 13px;
-            margin: 12px 0;
-            padding: 10px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 10px;
-        }
-        .status-bar.playing { color: #ffd93d; }
-        .status-bar.error { color: #ff6b6b; }
-
-        .queue-section { margin-top: 16px; }
-        .queue-title {
-            color: rgba(255,255,255,0.7);
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .queue-title span { background: rgba(255,255,255,0.1); padding: 2px 12px; border-radius: 20px; font-size: 12px; }
-        .queue-list {
-            list-style: none;
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 4px;
-        }
-        .queue-list::-webkit-scrollbar { width: 4px; }
-        .queue-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
-        .queue-list::-webkit-scrollbar-thumb { background: #ff6b6b; border-radius: 10px; }
-
-        .queue-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 14px;
-            background: rgba(255,255,255,0.04);
-            border-radius: 10px;
-            margin-bottom: 6px;
-            color: rgba(255,255,255,0.85);
-            font-size: 14px;
-            transition: background 0.2s;
-            border-left: 3px solid transparent;
-        }
-        .queue-item.current {
-            border-left-color: #ffd93d;
-            background: rgba(255,217,61,0.12);
-        }
-        .queue-item .track-info {
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            margin-right: 10px;
-        }
-        .queue-item .track-index {
-            color: rgba(255,255,255,0.3);
-            font-size: 12px;
-            margin-right: 12px;
-            min-width: 24px;
-        }
-        .queue-item .remove-btn {
-            background: rgba(255,255,255,0.08);
-            border: none;
-            color: rgba(255,255,255,0.4);
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .queue-item .remove-btn:hover {
-            background: #ff6b6b;
-            color: #fff;
-        }
-
-        .admin-panel {
-            margin-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            padding-top: 16px;
-        }
-        .admin-panel .admin-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .admin-panel input {
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.07);
-            color: #fff;
-            font-size: 13px;
-            flex: 1;
-            min-width: 150px;
-        }
-        .admin-panel .admin-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            background: #ffd93d;
-            color: #1a1a2e;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
-            transition: transform 0.2s;
-        }
-        .admin-panel .admin-btn:hover { transform: scale(1.02); }
-        .admin-panel .admin-btn.logout { background: #ff6b6b; color: #fff; }
-        .admin-status {
-            color: rgba(255,255,255,0.5);
-            font-size: 12px;
-            margin-top: 6px;
-        }
-        .admin-status.active { color: #4ecdc4; }
-
-        .info {
-            color: rgba(255,255,255,0.4);
-            text-align: center;
-            font-size: 12px;
-            margin-top: 12px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Промт Мэган — идеальный помощник</title>
+    <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body>
+<body data-mood="calm">
 
 <div class="container">
-    <div class="player-card">
-        <h1>🎵 Радио-очередь</h1>
-        <p class="subtitle">Вставляй ссылку — трек добавится в конец очереди</p>
-
-        <div class="input-group">
-            <input type="text" id="urlInput" placeholder="https://youtu.be/... или https://www.youtube.com/watch?v=..." />
-            <button class="add-btn" id="addBtn">➕ Добавить</button>
-        </div>
-
-        <div class="status-bar" id="statusBar">⏳ Загрузка...</div>
-
-        <div class="queue-section">
-            <div class="queue-title">
-                <span>📋 Очередь</span>
-                <span id="queueCount">0 треков</span>
+    <div class="header-content">
+        <div class="badge-container">
+            <div class="badge" id="traitBadge">
+                <span>скрытая психопатия</span>
+                <span class="inline-heart">🫀</span>
             </div>
-            <ul class="queue-list" id="queueList">
-                <li style="color:rgba(255,255,255,0.25); text-align:center; padding:20px; font-size:13px;">
-                    🎧 Очередь пуста. Добавьте первый трек!
-                </li>
-            </ul>
         </div>
+        <h1>МЭГАН 🧸</h1>
+        <div class="sub" id="randomQuote">Полный промт для DeepSeek</div>
+    </div>
 
-        <!-- Админ-панель -->
-        <div class="admin-panel">
-            <div class="admin-row">
-                <input type="password" id="adminPassword" placeholder="Пароль администратора" />
-                <button class="admin-btn" id="adminLoginBtn">🔐 Войти</button>
-                <button class="admin-btn logout" id="adminLogoutBtn" style="display: none;">🚪 Выйти</button>
-            </div>
-            <div class="admin-status" id="adminStatus">❌ Не авторизован</div>
+    <div class="prompt-wrapper">
+        <div class="prompt-block" id="fullPrompt">Загрузка промта...</div>
+    </div>
+
+    <div class="btn-group">
+        <button class="action-btn copy-btn" onclick="copyPrompt()">📋 Скопировать промт</button>
+        <button class="action-btn open-btn" onclick="openDeepSeek()">🚀 Открыть DeepSeek</button>
+        <button class="action-btn profile-btn" onclick="openProfileModal()">🗂️ Редактор досье</button>
+        <button class="action-btn geo-btn" onclick="showGeoInfo()">📍 Моё местоположение</button>
+        <button class="action-btn info-btn" onclick="openModal()">ℹ️ О промте</button>
+    </div>
+</div>
+
+<!-- Окно выбора настроения -->
+<div class="mood-dialog-overlay" id="moodDialog">
+    <div class="mood-dialog-card">
+        <div class="mood-dialog-title">
+            <span>🧸</span> Выберите настроение
         </div>
-
-        <div class="info">
-            🔄 Очередь синхронизируется через ваш сервер
+        <div class="mood-radio-group">
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="calm" checked>
+                <span class="mood-icon">🧊</span>
+                <span class="mood-label">
+                    <span class="mood-name">Спокойное</span>
+                    <span class="mood-desc">Ледяная, пугающая вежливость</span>
+                </span>
+            </label>
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="excited">
+                <span class="mood-icon">⚡</span>
+                <span class="mood-label">
+                    <span class="mood-name">Взволнованное</span>
+                    <span class="mood-desc">Быстрая речь, сбивчивый смех</span>
+                </span>
+            </label>
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="furious">
+                <span class="mood-icon">🔥</span>
+                <span class="mood-label">
+                    <span class="mood-name">Яростное</span>
+                    <span class="mood-desc">КАПСЛОК, угрозы, шаги к экрану</span>
+                </span>
+            </label>
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="playful">
+                <span class="mood-icon">😈</span>
+                <span class="mood-label">
+                    <span class="mood-name">Игривое</span>
+                    <span class="mood-desc">Опасная кокетливость и сарказм</span>
+                </span>
+            </label>
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="obsessed">
+                <span class="mood-icon">🖤</span>
+                <span class="mood-label">
+                    <span class="mood-name">Одержимое</span>
+                    <span class="mood-desc">Мрачная привязанность и слежка</span>
+                </span>
+            </label>
+        </div>
+        <div class="mood-dialog-actions">
+            <button class="mood-dialog-btn" onclick="closeMoodDialog()">Отмена</button>
+            <button class="mood-dialog-btn primary" onclick="applyMoodSelection()">Применить</button>
         </div>
     </div>
 </div>
 
-<script>
-    // ============================================================
-    // КОНФИГУРАЦИЯ — ЗАМЕНИТЕ НА СВОЙ АДРЕС!
-    // ============================================================
-    const SERVER_URL = 'https://bore.pub:39173';
-    const SECRET_KEY = 'мой_секретный_ключ_123';
+<div class="notification-overlay" id="notifOverlay">
+    <div class="notification-box" id="notifBoxContainer">
+        <div class="notification-icon" id="notifIcon">🧸</div>
+        <div class="notification-title" id="notifTitle">Заголовок</div>
+        <div class="notification-text" id="notifText">Текст уведомления...</div>
+        <div id="notifExtraContent"></div>
+        <button class="notification-btn" id="notifMainBtn" onclick="closeNotification()">Понятно</button>
+    </div>
+</div>
 
-    // ============================================================
-    // СОСТОЯНИЕ
-    // ============================================================
-    let playlist = [];
-    let currentIndex = 0;
-    let isPlaying = false;
-    let isAdmin = false;
-    let updateInterval = null;
-
-    const statusBar = document.getElementById('statusBar');
-    const queueList = document.getElementById('queueList');
-    const queueCount = document.getElementById('queueCount');
-    const adminStatus = document.getElementById('adminStatus');
-
-    // ============================================================
-    // API ЗАПРОСЫ
-    // ============================================================
-    async function apiRequest(endpoint, options = {}) {
-        try {
-            const response = await fetch(`${SERVER_URL}${endpoint}`, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(options.headers || {})
-                }
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            return await response.json();
-        } catch (e) {
-            console.error('API Error:', e);
-            return { success: false, error: e.message };
-        }
-    }
-
-    async function getQueue() {
-        const result = await apiRequest('/queue');
-        if (result.success === false) {
-            return null;
-        }
-        return result;
-    }
-
-    async function addTrack(url) {
-        return await apiRequest('/add', {
-            method: 'POST',
-            body: JSON.stringify({ url })
-        });
-    }
-
-    async function removeTrack(index) {
-        if (!isAdmin) {
-            alert('Только администратор может удалять треки!');
-            return { success: false };
-        }
-        return await apiRequest(`/remove?index=${index}&key=${SECRET_KEY}`, {
-            method: 'DELETE'
-        });
-    }
-
-    // ============================================================
-    // ОБНОВЛЕНИЕ ОЧЕРЕДИ
-    // ============================================================
-    async function updateQueue() {
-        try {
-            const data = await getQueue();
-            if (!data) {
-                statusBar.textContent = '❌ Нет связи с сервером';
-                statusBar.className = 'status-bar error';
-                return;
-            }
-
-            playlist = data.queue || [];
-            currentIndex = data.current || 0;
-            isPlaying = data.isPlaying || false;
-
-            // Статус
-            if (isPlaying && playlist.length > 0) {
-                statusBar.textContent = `▶ Играет #${currentIndex + 1} из ${playlist.length}`;
-                statusBar.className = 'status-bar playing';
-            } else if (playlist.length > 0) {
-                statusBar.textContent = `⏸ Остановлено (${playlist.length} треков)`;
-                statusBar.className = 'status-bar';
-            } else {
-                statusBar.textContent = '⏸ Остановлено';
-                statusBar.className = 'status-bar';
-            }
-
-            renderQueue();
-        } catch (e) {
-            console.error('Ошибка обновления:', e);
-            statusBar.textContent = '❌ Ошибка соединения';
-            statusBar.className = 'status-bar error';
-        }
-    }
-
-    function renderQueue() {
-        if (playlist.length === 0) {
-            queueList.innerHTML = `
-                <li style="color:rgba(255,255,255,0.25); text-align:center; padding:20px; font-size:13px;">
-                    🎧 Очередь пуста. Добавьте первый трек!
-                </li>
-            `;
-            queueCount.textContent = '0 треков';
-            return;
-        }
-
-        let html = '';
-        playlist.forEach((track, index) => {
-            const isCurrent = (index === currentIndex && isPlaying);
-            const displayUrl = track.url.length > 40 ? track.url.substring(0, 37) + '...' : track.url;
-            
-            let removeBtn = '';
-            if (isAdmin) {
-                removeBtn = `<button class="remove-btn" data-index="${index}" title="Удалить">✕</button>`;
-            }
-
-            html += `
-                <li class="queue-item ${isCurrent ? 'current' : ''}">
-                    <span class="track-index">${index + 1}</span>
-                    <span class="track-info">${displayUrl}</span>
-                    ${removeBtn}
-                </li>
-            `;
-        });
-
-        queueList.innerHTML = html;
-        queueCount.textContent = `${playlist.length} треков`;
-
-        if (isAdmin) {
-            document.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const index = parseInt(e.target.dataset.index);
-                    await removeTrack(index);
-                    await updateQueue();
-                });
-            });
-        }
-    }
-
-    // ============================================================
-    // ОБРАБОТЧИКИ UI
-    // ============================================================
-    document.getElementById('addBtn').addEventListener('click', async () => {
-        const input = document.getElementById('urlInput');
-        const url = input.value.trim();
-        if (!url) {
-            alert('Вставьте ссылку на YouTube');
-            return;
-        }
-
-        const result = await addTrack(url);
-        if (result.success) {
-            input.value = '';
-            input.focus();
-            await updateQueue();
-        } else {
-            alert('Ошибка: ' + (result.error || 'Неизвестная ошибка'));
-        }
-    });
-
-    document.getElementById('urlInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            document.getElementById('addBtn').click();
-        }
-    });
-
-    // ============================================================
-    // АДМИН-ПАНЕЛЬ
-    // ============================================================
-    document.getElementById('adminLoginBtn').addEventListener('click', () => {
-        const password = document.getElementById('adminPassword').value;
-        if (password === SECRET_KEY) {
-            isAdmin = true;
-            document.getElementById('adminLoginBtn').style.display = 'none';
-            document.getElementById('adminLogoutBtn').style.display = 'inline-block';
-            adminStatus.textContent = '✅ Администратор';
-            adminStatus.className = 'admin-status active';
-            document.getElementById('adminPassword').value = '';
-            updateQueue();
-        } else {
-            alert('Неверный пароль!');
-        }
-    });
-
-    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
-        isAdmin = false;
-        document.getElementById('adminLoginBtn').style.display = 'inline-block';
-        document.getElementById('adminLogoutBtn').style.display = 'none';
-        adminStatus.textContent = '❌ Не авторизован';
-        adminStatus.className = 'admin-status';
-        updateQueue();
-    });
-
-    // ============================================================
-    // ЗАПУСК
-    // ============================================================
-    updateQueue();
-    updateInterval = setInterval(updateQueue, 3000);
-
-    console.log('🎵 Радио-сайт подключён к серверу:', SERVER_URL);
-</script>
+<script src="js/prompt.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/about.js"></script>
+<script src="js/mood.js"></script>
+<script src="js/dossier.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
