@@ -12,7 +12,7 @@ function getGeoData() {
                 if (script.parentNode) script.parentNode.removeChild(script);
                 
                 if (data && data.ip) {
-                    resolve({
+                    const geoObj = {
                         country: data.country || 'Неизвестно',
                         city: data.city || 'Неизвестно',
                         region: data.region || 'Неизвестно',
@@ -20,7 +20,10 @@ function getGeoData() {
                         timezone: data.timezone || 'Неизвестно',
                         ip: data.ip || 'Неизвестно',
                         location: data.loc || 'Неизвестно'
-                    });
+                    };
+                    // Сохраняем в localStorage
+                    localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
+                    resolve(geoObj);
                 } else {
                     resolve(null);
                 }
@@ -101,12 +104,13 @@ async function getCityFromCoords(lat, lon) {
         const data = await response.json();
         if (data && data.address) {
             const address = data.address;
-            return {
+            const cityData = {
                 city: address.city || address.town || address.village || address.hamlet || 'Неизвестно',
                 region: address.state || address.region || 'Неизвестно',
                 country: address.country || 'Неизвестно',
                 full: data.display_name || 'Неизвестно'
             };
+            return cityData;
         }
         return null;
     } catch (error) {
@@ -150,6 +154,9 @@ function showFullLocation() {
         let hasData = false;
         let gpsAvailable = false;
         
+        // Сохраняем данные для промта
+        let geoObj = { city: 'Неизвестно', country: 'Неизвестно' };
+        
         if (gpsData && !gpsData.error) {
             gpsAvailable = true;
             hasData = true;
@@ -157,10 +164,17 @@ function showFullLocation() {
             message += `📍 Координаты: ${gpsData.lat}, ${gpsData.lon}\n`;
             message += `🎯 Точность: ${gpsData.accuracy} метров\n`;
             
+            geoObj.lat = gpsData.lat;
+            geoObj.lon = gpsData.lon;
+            geoObj.accuracy = gpsData.accuracy;
+            
             if (cityData) {
                 message += `\n🏙️ Город: ${cityData.city}\n`;
                 message += `🗺️ Регион: ${cityData.region}\n`;
                 message += `🌍 Страна: ${cityData.country}\n`;
+                geoObj.city = cityData.city;
+                geoObj.region = cityData.region;
+                geoObj.country = cityData.country;
             }
             
             message += `\n🗺️ Карта: https://www.google.com/maps?q=${gpsData.lat},${gpsData.lon}\n\n`;
@@ -181,6 +195,14 @@ function showFullLocation() {
             }
             message += `🔢 IP: ${ipData.ip}\n`;
             hasData = true;
+            
+            if (!geoObj.city || geoObj.city === 'Неизвестно') {
+                geoObj.city = ipData.city || 'Неизвестно';
+                geoObj.country = ipData.country || 'Неизвестно';
+                geoObj.region = ipData.region || 'Неизвестно';
+                geoObj.isp = ipData.isp || 'Неизвестно';
+                geoObj.ip = ipData.ip || 'Неизвестно';
+            }
         }
         
         if (!hasData) {
@@ -192,6 +214,9 @@ function showFullLocation() {
         } else if (ipData && ipData.country !== 'Неизвестно') {
             message += `\n\nℹ️ Определено по IP-адресу (ПРИБЛИЗИТЕЛЬНО)`;
         }
+        
+        // Сохраняем геоданные в localStorage
+        localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
         
         const resultBtn = document.getElementById('notifMainBtn');
         if (resultBtn) {
@@ -245,15 +270,21 @@ function getGeoInfoString() {
                 // Если GPS есть — получаем город по координатам
                 getCityFromCoords(gps.lat, gps.lon).then(cityData => {
                     let result = '';
+                    let geoObj = { city: 'Неизвестно', country: 'Неизвестно', lat: gps.lat, lon: gps.lon };
+                    
                     if (cityData && cityData.city !== 'Неизвестно') {
-                        // Используем реальный город из GPS
+                        geoObj.city = cityData.city;
+                        geoObj.country = cityData.country;
+                        geoObj.region = cityData.region;
                         result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: Город: ${cityData.city}, Регион: ${cityData.region}, Страна: ${cityData.country} | GPS: ${gps.lat}, ${gps.lon} | Точность: ${gps.accuracy}м]`;
                         console.log('✅ Для промта используется GPS с городом:', cityData.city);
                     } else {
-                        // Если город не определился — только координаты
                         result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: GPS: ${gps.lat}, ${gps.lon} | Точность: ${gps.accuracy}м]`;
                         console.log('✅ Для промта используется GPS (без города)');
                     }
+                    
+                    // Сохраняем геоданные в localStorage
+                    localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
                     resolve(result);
                 });
                 return;
@@ -262,14 +293,35 @@ function getGeoInfoString() {
             // Если GPS нет — используем IP
             console.log('ℹ️ GPS не доступен, используем IP для промта');
             getGeoData().then(geo => {
+                let geoObj = { city: 'Неизвестно', country: 'Неизвестно' };
                 if (geo) {
                     const parts = [];
-                    if (geo.country && geo.country !== 'Неизвестно') parts.push(`Страна: ${geo.country}`);
-                    if (geo.city && geo.city !== 'Неизвестно') parts.push(`Город: ${geo.city}`);
-                    if (geo.region && geo.region !== 'Неизвестно') parts.push(`Регион: ${geo.region}`);
-                    if (geo.ip && geo.ip !== 'Неизвестно') parts.push(`IP: ${geo.ip}`);
+                    if (geo.country && geo.country !== 'Неизвестно') {
+                        parts.push(`Страна: ${geo.country}`);
+                        geoObj.country = geo.country;
+                    }
+                    if (geo.city && geo.city !== 'Неизвестно') {
+                        parts.push(`Город: ${geo.city}`);
+                        geoObj.city = geo.city;
+                    }
+                    if (geo.region && geo.region !== 'Неизвестно') {
+                        parts.push(`Регион: ${geo.region}`);
+                        geoObj.region = geo.region;
+                    }
+                    if (geo.ip && geo.ip !== 'Неизвестно') {
+                        parts.push(`IP: ${geo.ip}`);
+                        geoObj.ip = geo.ip;
+                    }
+                    if (geo.isp && geo.isp !== 'Неизвестно') {
+                        parts.push(`Провайдер: ${geo.isp}`);
+                        geoObj.isp = geo.isp;
+                    }
+                    
+                    // Сохраняем геоданные в localStorage
+                    localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
                     resolve(`[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`);
                 } else {
+                    localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
                     resolve('[ГЕОЛОКАЦИЯ: Не удалось определить]');
                 }
             });
@@ -277,9 +329,21 @@ function getGeoInfoString() {
     });
 }
 
+// ====== СИНХРОННАЯ ФУНКЦИЯ ПОЛУЧЕНИЯ ГЕО (из localStorage) ======
+function getGeoInfoSync() {
+    try {
+        const geoData = localStorage.getItem('megan_geo_data');
+        if (geoData) {
+            return JSON.parse(geoData);
+        }
+    } catch(e) {}
+    return { city: 'Неизвестно', country: 'Неизвестно' };
+}
+
 // Объявляем глобально
 window.showFullLocation = showFullLocation;
 window.getGeoInfoString = getGeoInfoString;
+window.getGeoInfoSync = getGeoInfoSync;
 window.getGeoData = getGeoData;
 window.getGPSLocation = getGPSLocation;
 
