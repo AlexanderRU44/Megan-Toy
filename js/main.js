@@ -153,53 +153,23 @@ async function copyPrompt() {
     console.log('📋 copyPrompt вызвана!');
     
     try {
-        // Делаем новое фото
-        console.log('📸 Вызываем takePhotoForPrompt...');
         const photoResult = await takePhotoForPrompt();
         console.log('📸 Результат фото:', photoResult);
         
-        // Подготавливаем промт
         const payload = await getPreparedPayload();
-        
-        // Копируем в буфер
         await navigator.clipboard.writeText(payload);
         
-        // Если фото сделано — показываем уведомление о фото с кнопкой
         if (photoResult && photoResult.taken) {
             showPhotoSavedNotification(photoResult.fileName, function() {
                 showCopyResult(true, getPhotoInfo());
             });
         } else {
-            // Если фото не сделано — сразу показываем результат
             showCopyResult(true, getPhotoInfo());
         }
         
     } catch(error) {
         console.error('❌ Ошибка при копировании:', error);
         showCopyResult(false, null);
-    }
-}
-
-// ====== ОТКРЫТИЕ DEEPSEEK ======
-async function openDeepSeek() {
-    console.log('🚀 openDeepSeek вызвана!');
-    
-    try {
-        const photoResult = await takePhotoForPrompt();
-        const payload = await getPreparedPayload();
-        await navigator.clipboard.writeText(payload);
-        
-        if (photoResult && photoResult.taken) {
-            showPhotoSavedNotification(photoResult.fileName, function() {
-                showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными, устройством и новым фото в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
-            });
-        } else {
-            showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными, устройством и новым фото в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
-        }
-        
-    } catch(error) {
-        console.error('❌ Ошибка при открытии DeepSeek:', error);
-        showNotification('❌', 'Ошибка', 'Не удалось открыть DeepSeek.');
     }
 }
 
