@@ -1,26 +1,27 @@
-// ====== ГЕОЛОКАЦИЯ ======
+// ====== ГЕОЛОКАЦИЯ (через ipinfo.io) ======
 
 // Функция для получения геоданных
 async function getGeoData() {
     try {
-        // Используем HTTPS версию API
-        const response = await fetch('https://ipapi.co/json/');
+        // Используем ipinfo.io - бесплатный сервис без CORS проблем
+        const response = await fetch('https://ipinfo.io/json');
         const data = await response.json();
         
-        if (data && !data.error) {
+        if (data && data.ip) {
             return {
-                country: data.country_name || 'Неизвестно',
+                country: data.country || 'Неизвестно',
                 city: data.city || 'Неизвестно',
                 region: data.region || 'Неизвестно',
                 isp: data.org || 'Неизвестно',
                 timezone: data.timezone || 'Неизвестно',
                 ip: data.ip || 'Неизвестно',
+                location: data.loc || 'Неизвестно', // Широта/Долгота
                 isHosting: false,
                 isProxy: false,
                 isMobile: false
             };
         } else {
-            // Пробуем запасной вариант
+            // Если первый не сработал, пробуем запасной вариант
             return await getGeoDataFallback();
         }
     } catch (error) {
@@ -29,10 +30,9 @@ async function getGeoData() {
     }
 }
 
-// Функция-запасной вариант (HTTPS)
+// Функция-запасной вариант (через ip-api.com с HTTPS)
 async function getGeoDataFallback() {
     try {
-        // Используем ip-api.com с HTTPS
         const response = await fetch('https://ip-api.com/json/?fields=status,country,city,region,isp,timezone,hosting,proxy,mobile,query');
         const data = await response.json();
         
@@ -70,10 +70,6 @@ function getGeoInfoString() {
                 if (geo.timezone && geo.timezone !== 'Неизвестно') parts.push(`Часовой пояс: ${geo.timezone}`);
                 if (geo.ip && geo.ip !== 'Неизвестно') parts.push(`IP: ${geo.ip}`);
                 
-                if (geo.isHosting) parts.push('⚠️ Обнаружен хостинг/сервер');
-                if (geo.isProxy) parts.push('⚠️ Обнаружен прокси/VPN');
-                if (geo.isMobile) parts.push('📱 Мобильное подключение');
-                
                 const result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`;
                 resolve(result);
             } else {
@@ -93,11 +89,11 @@ function showGeoInfo() {
             message += `🗺️ Регион: ${geo.region}\n`;
             message += `📡 Провайдер: ${geo.isp}\n`;
             message += `🕐 Часовой пояс: ${geo.timezone}\n`;
-            message += `🔢 IP: ${geo.ip}\n\n`;
+            message += `🔢 IP: ${geo.ip}\n`;
             
-            if (geo.isHosting) message += '⚠️ Ты используешь хостинг/сервер\n';
-            if (geo.isProxy) message += '⚠️ Ты используешь прокси/VPN\n';
-            if (geo.isMobile) message += '📱 Ты с мобильного устройства\n';
+            if (geo.location && geo.location !== 'Неизвестно') {
+                message += `📍 Координаты: ${geo.location}\n`;
+            }
             
             showNotification(
                 '📍',
