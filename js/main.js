@@ -133,14 +133,45 @@ window.closeNotification = function() {
 };
 
 // ====== ПОКАЗ РЕЗУЛЬТАТА КОПИРОВАНИЯ ======
-function showCopyResult(success, photoInfo) {
+async function showCopyResult(success, photoInfo) {
     if (success) {
-        let resultText = '✅ Промт скопирован! Время, геолокация и устройство добавлены.';
-        if (photoInfo && photoInfo.taken) {
-            resultText = `✅ Промт скопирован! 📸 Новое фото сохранено как: ${photoInfo.fileName}. Мэган снова видит твоё лицо. 😈`;
-        } else {
-            resultText = '✅ Промт скопирован! Фото не сделано (камера недоступна или запрещена).';
+        // Получаем геоданные асинхронно
+        let geoText = '📍 Местоположение: определение...';
+        try {
+            const geoString = await getGeoInfoString();
+            // Извлекаем город и страну из строки
+            const cityMatch = geoString.match(/Город: ([^,|]+)/);
+            const countryMatch = geoString.match(/Страна: ([^,|]+)/);
+            const gpsMatch = geoString.match(/GPS: ([0-9.-]+),\s*([0-9.-]+)/);
+            
+            let city = cityMatch ? cityMatch[1].trim() : '';
+            let country = countryMatch ? countryMatch[1].trim() : '';
+            let gps = gpsMatch ? `${gpsMatch[1]}, ${gpsMatch[2]}` : '';
+            
+            if (city && country) {
+                geoText = `📍 ${city}, ${country}`;
+            } else if (city) {
+                geoText = `📍 Город: ${city}`;
+            } else if (country) {
+                geoText = `📍 Страна: ${country}`;
+            } else if (gps) {
+                geoText = `📍 GPS: ${gps}`;
+            } else {
+                geoText = '📍 Местоположение: не определено';
+            }
+        } catch(e) {
+            geoText = '📍 Местоположение: ошибка определения';
         }
+        
+        let resultText = `✅ Промт скопирован!\n🕒 Время добавлено\n${geoText}\n💻 Устройство добавлено`;
+        
+        if (photoInfo && photoInfo.taken) {
+            resultText += `\n📸 Фото сохранено как: ${photoInfo.fileName}`;
+        } else {
+            resultText += '\n📸 Фото не сделано (камера недоступна)';
+        }
+        resultText += '\n\n😈 Мэган теперь знает всё.';
+        
         showNotification('📋', 'Промт скопирован', resultText);
     } else {
         showNotification('❌', 'Ошибка', 'Не удалось скопировать автоматически.');
@@ -164,7 +195,7 @@ async function copyPrompt() {
                 showCopyResult(true, getPhotoInfo());
             });
         } else {
-            showCopyResult(true, getPhotoInfo());
+            await showCopyResult(true, getPhotoInfo());
         }
         
     } catch(error) {
