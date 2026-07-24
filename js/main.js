@@ -49,7 +49,12 @@ async function getPreparedPayload() {
         weekday: 'long' 
     });
     const geoString = await getGeoInfoString();
-    return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]\n${geoString}\n\n` + MEGAN_PROMPT;
+    const deviceInfo = getDeviceInfo();
+    return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]
+[УСТРОЙСТВО ПОЛЬЗОВАТЕЛЯ: ${deviceInfo.fullString}]
+${geoString}
+
+` + MEGAN_PROMPT;
 }
 
 // ====== ЗВУК СМЕХА ======
@@ -121,7 +126,7 @@ window.closeNotification = function() {
 async function copyPrompt() {
     const payload = await getPreparedPayload();
     navigator.clipboard.writeText(payload).then(() => {
-        showNotification('📋', 'Промт скопирован', 'Время и геолокация успешно подтянуты. Промт в буфере, блять. 😈');
+        showNotification('📋', 'Промт скопирован', 'Время, геолокация и данные устройства успешно подтянуты. Промт в буфере, блять. 😈');
     }).catch(() => {
         showNotification('❌', 'Ошибка', 'Не удалось скопировать автоматически.');
     });
@@ -130,7 +135,7 @@ async function copyPrompt() {
 async function openDeepSeek() {
     const payload = await getPreparedPayload();
     navigator.clipboard.writeText(payload).catch(() => {});
-    showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
+    showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными и устройством в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
 }
 
 function openModal() {
@@ -140,7 +145,20 @@ function openModal() {
 function loadPrompt() {
     const promptElement = document.getElementById('fullPrompt');
     if (promptElement) {
-        promptElement.textContent = MEGAN_PROMPT;
+        // Проверяем, определена ли переменная MEGAN_PROMPT
+        if (typeof MEGAN_PROMPT !== 'undefined') {
+            promptElement.textContent = MEGAN_PROMPT;
+        } else {
+            promptElement.textContent = '⏳ Загрузка промта...';
+            // Пробуем загрузить снова через 500мс
+            setTimeout(() => {
+                if (typeof MEGAN_PROMPT !== 'undefined') {
+                    promptElement.textContent = MEGAN_PROMPT;
+                } else {
+                    promptElement.textContent = '❌ Ошибка загрузки промта. Проверь файл prompt.js';
+                }
+            }, 500);
+        }
     }
 }
 
@@ -223,7 +241,8 @@ function resetInactivityTimer() {
 
 // ====== ИНИЦИАЛИЗАЦИЯ ======
 window.onload = function() {
-    loadPrompt();
+    // Загружаем промт с задержкой, чтобы гарантировать загрузку prompt.js
+    setTimeout(loadPrompt, 100);
     initRandomQuote();
     setInterval(rotateTraits, 3500);
     resetInactivityTimer();
@@ -233,6 +252,10 @@ window.onload = function() {
             console.log(`📍 Определено местоположение: ${geo.country}, ${geo.city}`);
         }
     });
+
+    // Выводим информацию об устройстве в консоль
+    const deviceInfo = getDeviceInfo();
+    console.log(`💻 Устройство: ${deviceInfo.fullString}`);
     
     setTimeout(() => {
         startHeartbeatAutomatically();
