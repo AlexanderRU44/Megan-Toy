@@ -106,15 +106,6 @@ Megan-Toy/
 
 ---
 
-## 📸 Скриншоты
-
-<p align="center">
-  <img src="https://via.placeholder.com/400x200/1a1a1a/ff6b6b?text=🧸+Megan+Prompt" alt="Megan Prompt" width="45%">
-  <img src="https://via.placeholder.com/400x200/1a1a1a/ff6b6b?text=📍+Geolocation" alt="Geolocation" width="45%">
-</p>
-
----
-
 ## 📝 Лицензия
 
 MIT License © 2026 AlexanderRU44
