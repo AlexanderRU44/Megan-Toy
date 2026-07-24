@@ -49,7 +49,6 @@ function applyMoodSelection() {
     document.body.style.overflow = '';
 }
 
-// Восстановление при загрузке
 window.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('megan_site_mood');
     if (saved) {
