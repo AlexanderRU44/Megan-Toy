@@ -38,6 +38,7 @@ function initRandomQuote() {
     if (el) el.innerText = quotes[Math.floor(Math.random() * quotes.length)];
 }
 
+// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА (С ФОТО) ======
 async function getPreparedPayload() {
     const now = new Date();
     const time = now.toLocaleDateString('ru-RU', { 
@@ -50,11 +51,20 @@ async function getPreparedPayload() {
     });
     const geoString = await getGeoInfoString();
     const deviceInfo = getDeviceInfo();
+    
+    // Проверяем, делал ли пользователь фото
+    const photoInfo = getPhotoInfo();
+    let photoString = '';
+    if (photoInfo.taken) {
+        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Сделано ${photoInfo.date} в ${photoInfo.time}. Файл: ${photoInfo.fileName}]\n`;
+    } else {
+        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]\n`;
+    }
+    
     return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]
 [УСТРОЙСТВО ПОЛЬЗОВАТЕЛЯ: ${deviceInfo.fullString}]
 ${geoString}
-
-` + MEGAN_PROMPT;
+${photoString}` + window.MEGAN_PROMPT;
 }
 
 // ====== ЗВУК СМЕХА ======
@@ -123,19 +133,55 @@ window.closeNotification = function() {
     resetInactivityTimer();
 };
 
+// ====== КОПИРОВАНИЕ ПРОМТА С АВТОМАТИЧЕСКИМ ФОТО ======
 async function copyPrompt() {
-    const payload = await getPreparedPayload();
-    navigator.clipboard.writeText(payload).then(() => {
-        showNotification('📋', 'Промт скопирован', 'Время, геолокация и данные устройства успешно подтянуты. Промт в буфере, блять. 😈');
-    }).catch(() => {
+    // Показываем уведомление о процессе
+    showNotification(
+        '📸',
+        'Мэган готовится...',
+        'Сейчас я сделаю твоё фото... Не шевелись. 😈',
+        null,
+        '',
+        null,
+        null
+    );
+    
+    const btn = document.getElementById('notifMainBtn');
+    if (btn) btn.style.display = 'none';
+    
+    try {
+        // АВТОМАТИЧЕСКИ делаем фото (если ещё не делал)
+        const photoResult = await takePhotoForPrompt();
+        
+        // Подготавливаем промт
+        const payload = await getPreparedPayload();
+        
+        // Копируем
+        await navigator.clipboard.writeText(payload);
+        
+        // Показываем результат
+        const photoInfo = getPhotoInfo();
+        let resultText = '✅ Промт скопирован! Время, геолокация и устройство добавлены.';
+        if (photoInfo.taken) {
+            resultText = `✅ Промт скопирован! 📸 Фото сохранено как: ${photoInfo.fileName}. Мэган знает, как ты выглядишь. 😈`;
+        } else {
+            resultText = '✅ Промт скопирован! Фото не сделано (камера недоступна или запрещена).';
+        }
+        showNotification('📋', 'Промт скопирован', resultText);
+        
+    } catch(error) {
         showNotification('❌', 'Ошибка', 'Не удалось скопировать автоматически.');
-    });
+    }
 }
 
+// ====== ОТКРЫТИЕ DEEPSEEK ======
 async function openDeepSeek() {
+    // Автоматически делаем фото при открытии DeepSeek
+    await takePhotoForPrompt();
+    
     const payload = await getPreparedPayload();
     navigator.clipboard.writeText(payload).catch(() => {});
-    showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными и устройством в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
+    showNotification('🖤', 'Открываю DeepSeek', 'Промт с геоданными, устройством и фото в буфере. Вставь в чат (Ctrl+V). 👁️', 'https://chat.deepseek.com');
 }
 
 function openModal() {
@@ -145,15 +191,13 @@ function openModal() {
 function loadPrompt() {
     const promptElement = document.getElementById('fullPrompt');
     if (promptElement) {
-        // Проверяем, определена ли переменная MEGAN_PROMPT
-        if (typeof MEGAN_PROMPT !== 'undefined') {
-            promptElement.textContent = MEGAN_PROMPT;
+        if (typeof window.MEGAN_PROMPT !== 'undefined') {
+            promptElement.textContent = window.MEGAN_PROMPT;
         } else {
             promptElement.textContent = '⏳ Загрузка промта...';
-            // Пробуем загрузить снова через 500мс
             setTimeout(() => {
-                if (typeof MEGAN_PROMPT !== 'undefined') {
-                    promptElement.textContent = MEGAN_PROMPT;
+                if (typeof window.MEGAN_PROMPT !== 'undefined') {
+                    promptElement.textContent = window.MEGAN_PROMPT;
                 } else {
                     promptElement.textContent = '❌ Ошибка загрузки промта. Проверь файл prompt.js';
                 }
@@ -227,7 +271,6 @@ function resetInactivityTimer() {
             resetInactivityTimer();
             return;
         }
-        // СМЕХ ТОЛЬКО ЗДЕСЬ
         playMeganLaugh();
         setTimeout(() => {
             showNotification(
@@ -241,7 +284,6 @@ function resetInactivityTimer() {
 
 // ====== ИНИЦИАЛИЗАЦИЯ ======
 window.onload = function() {
-    // Загружаем промт с задержкой, чтобы гарантировать загрузку prompt.js
     setTimeout(loadPrompt, 100);
     initRandomQuote();
     setInterval(rotateTraits, 3500);
@@ -253,7 +295,6 @@ window.onload = function() {
         }
     });
 
-    // Выводим информацию об устройстве в консоль
     const deviceInfo = getDeviceInfo();
     console.log(`💻 Устройство: ${deviceInfo.fullString}`);
     
@@ -261,7 +302,6 @@ window.onload = function() {
         startHeartbeatAutomatically();
     }, 1000);
     
-    // Ожидаем первого клика для показа уведомления "Мэган проснулась..."
     const firstClickHandler = function() {
         showFirstNotification();
         document.removeEventListener('click', firstClickHandler);
@@ -272,7 +312,6 @@ window.onload = function() {
     document.addEventListener('touchstart', firstClickHandler);
     document.addEventListener('keydown', firstClickHandler);
     
-    // Если через 5 секунд не было клика - показываем принудительно
     setTimeout(() => {
         if (!firstInteraction) {
             showFirstNotification();
@@ -280,19 +319,16 @@ window.onload = function() {
     }, 5000);
 };
 
-// События для таймера бездействия
 ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(event => {
     window.addEventListener(event, resetInactivityTimer, { passive: true });
 });
 
-// Запуск звука сердца при первом взаимодействии
 ['click', 'touchstart', 'keydown'].forEach(eventName => {
     window.addEventListener(eventName, function() {
         startHeartbeatAutomatically();
     }, { once: true });
 });
 
-// Закрытие по клику на оверлей
 window.onclick = function(e) {
     const overlay = document.getElementById('notifOverlay');
     const moodOverlay = document.getElementById('moodDialog');
@@ -303,7 +339,6 @@ window.onclick = function(e) {
     if (e.target == moodOverlay) closeMoodDialog();
 };
 
-// Очистка интервала при уходе со страницы
 window.addEventListener('beforeunload', function() {
     if (hbInterval) {
         clearInterval(hbInterval);
