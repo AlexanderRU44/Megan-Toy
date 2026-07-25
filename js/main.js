@@ -38,7 +38,7 @@ function initRandomQuote() {
     if (el) el.innerText = quotes[Math.floor(Math.random() * quotes.length)];
 }
 
-// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА (С ЗАМЕНОЙ ПЛЕЙСХОЛДЕРОВ) ======
+// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА (ДЛЯ КОПИРОВАНИЯ) ======
 async function getPreparedPayload() {
     const now = new Date();
     const time = now.toLocaleDateString('ru-RU', { 
@@ -50,11 +50,9 @@ async function getPreparedPayload() {
         weekday: 'long' 
     });
     
-    // Получаем гео-строку
     const geoString = await getGeoInfoString();
     const deviceInfo = getDeviceInfo();
     
-    // Получаем информацию о фото
     const photoInfo = getPhotoInfo();
     let photoString = '';
     if (photoInfo && photoInfo.taken) {
@@ -63,10 +61,8 @@ async function getPreparedPayload() {
         photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]`;
     }
     
-    // Получаем промт из локалей
     let promptText = t('prompt');
     
-    // ЗАМЕНЯЕМ ВСЕ ПЛЕЙСХОЛДЕРЫ ВНУТРИ ПРОМТА
     promptText = promptText
         .replace(/\{\{ВРЕМЯ\}\}/g, time)
         .replace(/\{\{УСТРОЙСТВО\}\}/g, deviceInfo.fullString || 'Неизвестно')
@@ -74,6 +70,60 @@ async function getPreparedPayload() {
         .replace(/\{\{ФОТО\}\}/g, photoString);
     
     return promptText;
+}
+
+// ====== ФУНКЦИЯ ЗАГРУЗКИ ПРОМТА НА СТРАНИЦУ ======
+async function loadPrompt() {
+    const promptElement = document.getElementById('fullPrompt');
+    if (!promptElement) return;
+    
+    try {
+        let promptText = t('prompt');
+        
+        if (promptText && promptText !== 'prompt') {
+            const now = new Date();
+            const time = now.toLocaleDateString('ru-RU', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                weekday: 'long' 
+            });
+            
+            const geoString = await getGeoInfoString();
+            const deviceInfo = getDeviceInfo();
+            
+            const photoInfo = getPhotoInfo();
+            let photoString = '';
+            if (photoInfo && photoInfo.taken) {
+                photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Сделано ${photoInfo.date} в ${photoInfo.time}. Файл: ${photoInfo.fileName}]`;
+            } else {
+                photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]`;
+            }
+            
+            promptText = promptText
+                .replace(/\{\{ВРЕМЯ\}\}/g, time)
+                .replace(/\{\{УСТРОЙСТВО\}\}/g, deviceInfo.fullString || 'Неизвестно')
+                .replace(/\{\{ГЕО\}\}/g, geoString || '📍 Местоположение: не определено')
+                .replace(/\{\{ФОТО\}\}/g, photoString);
+            
+            promptElement.textContent = promptText;
+            console.log('✅ Промт загружен с подстановкой данных');
+        } else {
+            promptElement.textContent = t('notifications.loading');
+            setTimeout(() => {
+                if (typeof window.MEGAN_PROMPT !== 'undefined') {
+                    promptElement.textContent = window.MEGAN_PROMPT;
+                } else {
+                    promptElement.textContent = t('notifications.error');
+                }
+            }, 500);
+        }
+    } catch(e) {
+        console.error('❌ Ошибка загрузки промта:', e);
+        promptElement.textContent = t('notifications.error');
+    }
 }
 
 // ====== ЗВУК СМЕХА ======
@@ -212,39 +262,6 @@ async function copyPrompt() {
     }
 }
 
-function openModal() {
-    openAboutPrompt();
-}
-
-// ====== ФУНКЦИЯ ЗАГРУЗКИ ПРОМТА (С ПЕРЕВОДОМ) ======
-function loadPrompt() {
-    const promptElement = document.getElementById('fullPrompt');
-    if (!promptElement) return;
-    
-    // Получаем промт из локалей
-    const promptText = t('prompt');
-    
-    if (promptText && promptText !== 'prompt') {
-        promptElement.textContent = promptText;
-        console.log('✅ Промт загружен из локалей');
-    } else {
-        // Резервный вариант — пробуем загрузить из window.MEGAN_PROMPT
-        if (typeof window.MEGAN_PROMPT !== 'undefined') {
-            promptElement.textContent = window.MEGAN_PROMPT;
-            console.log('✅ Промт загружен из prompt.js (резерв)');
-        } else {
-            promptElement.textContent = t('notifications.loading');
-            setTimeout(() => {
-                if (typeof window.MEGAN_PROMPT !== 'undefined') {
-                    promptElement.textContent = window.MEGAN_PROMPT;
-                } else {
-                    promptElement.textContent = t('notifications.error');
-                }
-            }, 500);
-        }
-    }
-}
-
 // ====== ЗВУК СЕРДЦА ======
 let hbAudioCtx = null;
 let hbInterval = null;
@@ -342,11 +359,10 @@ window.onload = function() {
         startHeartbeatAutomatically();
     }, 1000);
     
-    // === МГНОВЕННЫЙ ПОКАЗ ПРИВЕТСТВИЯ ===
     showFirstNotification();
 };
 
-// ====== ТАЙМЕРЫ БЕЗДЕЙСТВИЯ ======
+// ====== СОБЫТИЯ ======
 ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(event => {
     window.addEventListener(event, resetInactivityTimer, { passive: true });
 });
