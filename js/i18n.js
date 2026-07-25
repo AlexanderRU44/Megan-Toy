@@ -19,9 +19,11 @@ function setLanguage(lang) {
     if (lang === 'ru' || lang === 'en') {
         localStorage.setItem('megan_language', lang);
         applyTranslations();
-        // Перезагружаем промт
         if (typeof loadPrompt === 'function') {
             loadPrompt();
+        }
+        if (typeof initRandomQuote === 'function') {
+            initRandomQuote();
         }
         return true;
     }
@@ -45,33 +47,76 @@ function t(key) {
     return result;
 }
 
+// Получение массива по ключу
+function tArray(key) {
+    const lang = getCurrentLanguage();
+    const keys = key.split('.');
+    let result = LOCALES[lang];
+    
+    for (const k of keys) {
+        if (result && result[k] !== undefined) {
+            result = result[k];
+        } else {
+            console.warn(`Translation missing: ${key}`);
+            return [];
+        }
+    }
+    return Array.isArray(result) ? result : [];
+}
+
 // Применение переводов на странице
 function applyTranslations() {
+    // Элементы с data-i18n
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         el.textContent = t(key);
     });
     
+    // Элементы с data-i18n-placeholder
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         el.placeholder = t(key);
     });
     
+    // Элементы с data-i18n-value
     document.querySelectorAll('[data-i18n-value]').forEach(el => {
         const key = el.getAttribute('data-i18n-value');
         el.value = t(key);
     });
     
-    const lang = getCurrentLanguage();
-    document.title = lang === 'ru' ? '🧸 Megan-Toy — Промт Мэган' : '🧸 Megan-Toy — Megan\'s Prompt';
-    document.documentElement.lang = lang;
+    // Заголовок страницы
+    document.title = t('ui.title');
+    document.documentElement.lang = getCurrentLanguage();
     
-    console.log(`🌍 Язык установлен: ${lang}`);
+    // Обновляем badge traits
+    updateTraits();
+    
+    console.log(`🌍 Язык установлен: ${getCurrentLanguage()}`);
 }
 
-document.addEventListener('DOMContentLoaded', applyTranslations);
+// Обновление черт характера
+function updateTraits() {
+    const badge = document.getElementById('traitBadge');
+    if (!badge) return;
+    
+    const traits = tArray('traits');
+    if (traits.length > 0) {
+        // Сохраняем в глобальную переменную для rotateTraits
+        window._characterTraits = traits;
+        if (window.traitIndex !== undefined) {
+            const idx = window.traitIndex || 0;
+            const [label, heart] = traits[idx % traits.length].split(' 🫀');
+            badge.innerHTML = `<span>${label}</span><span class="inline-heart">🫀</span>`;
+        }
+    }
+}
 
+// Экспорт
 window.getCurrentLanguage = getCurrentLanguage;
 window.setLanguage = setLanguage;
 window.t = t;
+window.tArray = tArray;
 window.applyTranslations = applyTranslations;
+window.updateTraits = updateTraits;
+
+document.addEventListener('DOMContentLoaded', applyTranslations);
