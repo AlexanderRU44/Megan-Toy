@@ -28,7 +28,7 @@ function openProfileModal() {
                 <div class="panel-title">📋 ${t('dossier.title')}</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>🆔 ${t('dossier.number') || 'Номер профиля'}</label>
+                        <label>📌 ${t('dossier.number')}</label>
                         <input type="text" id="edNumber" value="${number}" placeholder="001">
                     </div>
                     <div class="form-group">
@@ -41,8 +41,8 @@ function openProfileModal() {
                     <input type="text" id="edName" value="${name}" placeholder="${t('dossier.name')}">
                 </div>
                 <div class="form-group">
-                    <label>🎭 ${t('dossier.aliases') || 'Клички'}</label>
-                    <input type="text" id="edAliases" value="${aliases}" placeholder="${t('dossier.aliases') || 'Клички'}">
+                    <label>🎭 ${t('dossier.aliases')}</label>
+                    <input type="text" id="edAliases" value="${aliases}" placeholder="${t('dossier.aliases')}">
                 </div>
                 <div class="form-group">
                     <label>📊 ${t('dossier.status')}</label>
@@ -74,8 +74,8 @@ function openProfileModal() {
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>📍 ${t('dossier.street') || 'Улица'}</label>
-                        <input type="text" id="edStreet" value="${street}" placeholder="${t('dossier.street') || 'Улица'}">
+                        <label>📍 ${t('dossier.street')}</label>
+                        <input type="text" id="edStreet" value="${street}" placeholder="${t('dossier.street')}">
                     </div>
                     <div class="form-group" style="display: flex; align-items: flex-end; gap: 8px;">
                         <button class="action-btn geo-btn" style="padding:8px 16px; font-size:0.7rem; min-height:36px; width:100%;" onclick="loadLocationToDossier()">📍 ${t('buttons.geo')}</button>
@@ -115,11 +115,11 @@ function openProfileModal() {
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>${t('dossier.interest')}</label>
+                        <label>⭐ ${t('dossier.interest')}</label>
                         <input type="text" id="edInterest" value="${interest}" placeholder="0/10">
                     </div>
                     <div class="form-group">
-                        <label>${t('dossier.rating')}</label>
+                        <label>🏆 ${t('dossier.rating')}</label>
                         <input type="text" id="edRating" value="${rating}" placeholder="${t('dossier.rating')}">
                     </div>
                 </div>
@@ -134,7 +134,7 @@ function openProfileModal() {
         <div class="btn-row-modal">
             <button class="notification-btn back-btn" onclick="closeDossierEditor()">⬅️ ${t('about.close')}</button>
             <button class="notification-btn" onclick="saveDossierData()">💾 ${t('dossier.save')}</button>
-            <button class="notification-btn" onclick="copyDossierFromFields()">📋 ${t('dossier.copy_dossier') || 'Скопировать профиль'}</button>
+            <button class="notification-btn" onclick="copyDossierFromFields()">📋 ${t('dossier.copy_dossier')}</button>
             <button class="notification-btn" onclick="resetDossierFields()" style="background: linear-gradient(135deg, #5a1a1a 0%, #3a0a0a 100%);">🗑️ ${t('dossier.reset')}</button>
         </div>
     `;
