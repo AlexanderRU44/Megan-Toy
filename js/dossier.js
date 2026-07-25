@@ -24,20 +24,20 @@ function openProfileModal() {
                 <div class="panel-title">📋 ${t('dossier.title')}</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>${t('dossier.name')}</label>
+                        <label>🆔 ${t('dossier.name')}</label>
                         <input type="text" id="edName" value="" placeholder="${t('dossier.name')}">
                     </div>
                     <div class="form-group">
-                        <label>${t('dossier.age')}</label>
+                        <label>📅 ${t('dossier.age')}</label>
                         <input type="text" id="edAge" value="" placeholder="${t('dossier.age')}">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>🎭 ${t('dossier.name')}</label>
                     <input type="text" id="edAliases" value="" placeholder="${t('dossier.name')}">
                 </div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>📊 ${t('dossier.name')}</label>
                     <input type="text" id="edStatus" value="" placeholder="${t('dossier.name')}">
                 </div>
                 <div class="form-group">
@@ -47,7 +47,7 @@ function openProfileModal() {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>⚠️ ${t('dossier.name')}</label>
                     <input type="text" id="edThreat" value="" placeholder="${t('dossier.name')}">
                 </div>
             </div>
@@ -55,11 +55,11 @@ function openProfileModal() {
             <div class="panel-box">
                 <div class="panel-title">🧠 ${t('dossier.name')}</div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>📝 ${t('dossier.name')}</label>
                     <textarea id="edBehavior" placeholder="${t('dossier.name')}" style="min-height:80px;"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>📜 ${t('dossier.name')}</label>
                     <textarea id="edHistory" placeholder="${t('dossier.name')}" style="min-height:60px;"></textarea>
                 </div>
                 <div class="form-group">
@@ -71,11 +71,11 @@ function openProfileModal() {
             <div class="panel-box">
                 <div class="panel-title">📌 ${t('dossier.name')}</div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>😨 ${t('dossier.name')}</label>
                     <textarea id="edPhobias" placeholder="${t('dossier.name')}" style="min-height:50px;"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>⚡ ${t('dossier.name')}</label>
                     <textarea id="edTriggers" placeholder="${t('dossier.name')}" style="min-height:34px;"></textarea>
                 </div>
             </div>
@@ -104,16 +104,16 @@ function openProfileModal() {
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>${t('geo.coords')}</label>
+                        <label>📍 ${t('geo.coords')}</label>
                         <input type="text" id="edLat" value="" placeholder="55.7558">
                     </div>
                     <div class="form-group">
-                        <label>${t('geo.coords')}</label>
+                        <label>📍 ${t('geo.coords')}</label>
                         <input type="text" id="edLon" value="" placeholder="37.6176">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>${t('geo.accuracy')}</label>
+                    <label>🎯 ${t('geo.accuracy')}</label>
                     <input type="text" id="edAccuracy" value="" placeholder="65">
                 </div>
                 <div class="form-group">
@@ -130,7 +130,7 @@ function openProfileModal() {
             <div class="panel-box" style="grid-column: 1 / -1;">
                 <div class="panel-title">📝 ${t('dossier.name')}</div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>💀 ${t('dossier.name')}</label>
                     <textarea id="edNotes" placeholder="${t('dossier.name')}" style="min-height:60px;"></textarea>
                 </div>
                 <div class="form-row">
@@ -150,7 +150,7 @@ function openProfileModal() {
                 <div class="preview-output" id="edPreview">📭 ${t('dossier.name')}</div>
                 <div id="copyStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
                 <div class="form-group" style="margin-top:6px;">
-                    <label>${t('dossier.name')}</label>
+                    <label>📥 ${t('dossier.name')}</label>
                     <textarea id="edImport" placeholder="${t('dossier.name')}" style="min-height:80px;"></textarea>
                 </div>
                 <button class="action-btn open-btn" style="padding:8px; font-size:0.7rem; margin-top:4px; min-height:36px;" onclick="parseImportedProfile()">📥 ${t('dossier.name')}</button>
