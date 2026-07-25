@@ -1,83 +1,99 @@
-// ====== НАСТРОЕНИЕ (С ПОДДЕРЖКОЙ I18N) ======
+// ====== НАСТРОЕНИЯ (С ПОДДЕРЖКОЙ I18N) ======
 
-// Текущее настроение
-let currentMood = localStorage.getItem('megan_mood') || 'calm';
-
-// Применение настроения
-function applyMood(mood) {
-    currentMood = mood;
-    localStorage.setItem('megan_mood', mood);
-    
-    // Удаляем все классы настроения
-    document.body.className = document.body.className
-        .split(' ')
-        .filter(c => !c.startsWith('mood-'))
-        .join(' ');
-    
-    // Добавляем новый класс
-    document.body.classList.add(`mood-${mood}`);
-    
-    console.log(`🎭 Настроение изменено на: ${mood}`);
+function getMoodLabels() {
+    return {
+        'calm': t('mood.calm'),
+        'excited': t('mood.excited'),
+        'furious': t('mood.furious'),
+        'playful': t('mood.playful'),
+        'obsessed': t('mood.obsessed')
+    };
 }
 
-// Открытие диалога выбора настроения
+function getMoodDescriptions() {
+    return {
+        'calm': t('mood_descriptions.calm'),
+        'excited': t('mood_descriptions.excited'),
+        'furious': t('mood_descriptions.furious'),
+        'playful': t('mood_descriptions.playful'),
+        'obsessed': t('mood_descriptions.obsessed')
+    };
+}
+
 function openMoodDialog() {
-    const dialog = document.getElementById('moodDialog');
-    if (!dialog) return;
+    const currentMood = document.body.getAttribute('data-mood') || 'calm';
+    const radios = document.querySelectorAll('input[name="moodRadio"]');
+    radios.forEach(r => { r.checked = (r.value === currentMood); });
     
-    dialog.style.display = 'flex';
+    // Обновляем заголовок
+    const title = document.querySelector('.mood-dialog-title');
+    if (title) title.innerHTML = `${t('mood_dialog.title')}`;
     
-    // Устанавливаем заголовок через i18n
-    const title = document.getElementById('moodTitle');
-    if (title) title.innerText = t('mood.title');
+    // Обновляем кнопки
+    const cancelBtn = document.querySelector('.mood-dialog-actions .mood-dialog-btn:not(.primary)');
+    if (cancelBtn) cancelBtn.textContent = t('mood_dialog.cancel');
     
-    // Устанавливаем текст кнопок через i18n
-    const moodButtons = [
-        { id: 'moodCalm', key: 'mood.calm' },
-        { id: 'moodExcited', key: 'mood.excited' },
-        { id: 'moodAngry', key: 'mood.angry' },
-        { id: 'moodPlayful', key: 'mood.playful' },
-        { id: 'moodObsessed', key: 'mood.obsessed' }
-    ];
+    const applyBtn = document.querySelector('.mood-dialog-actions .primary');
+    if (applyBtn) applyBtn.textContent = t('mood_dialog.apply');
     
-    moodButtons.forEach(({ id, key }) => {
-        const btn = document.getElementById(id);
-        if (btn) btn.innerText = t(key);
+    // Обновляем названия настроений
+    const labels = getMoodLabels();
+    const descriptions = getMoodDescriptions();
+    
+    document.querySelectorAll('.mood-radio-item').forEach(item => {
+        const radio = item.querySelector('input[type="radio"]');
+        if (radio) {
+            const mood = radio.value;
+            const nameEl = item.querySelector('.mood-name');
+            const descEl = item.querySelector('.mood-desc');
+            if (nameEl) nameEl.textContent = labels[mood] || mood;
+            if (descEl) descEl.textContent = descriptions[mood] || '';
+        }
     });
+    
+    document.getElementById('moodDialog').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
 
-// Закрытие диалога
 function closeMoodDialog() {
-    const dialog = document.getElementById('moodDialog');
-    if (dialog) dialog.style.display = 'none';
+    const savedMood = localStorage.getItem('megan_site_mood') || 'calm';
+    document.body.setAttribute('data-mood', savedMood);
+    document.getElementById('moodDialog').style.display = 'none';
+    document.body.style.overflow = '';
 }
 
-// Выбор настроения
-function selectMood(mood) {
-    applyMood(mood);
-    closeMoodDialog();
-    showNotification('🎭', 
-        t('mood.title') || 'Настроение', 
-        `${t(`mood.${mood}`) || mood} ${t('mood.title') || 'выбрано'}`
-    );
-}
-
-// Загрузка сохранённого настроения
-function loadMood() {
-    const saved = localStorage.getItem('megan_mood');
-    if (saved) {
-        applyMood(saved);
-    } else {
-        applyMood('calm');
+function applyMoodSelection() {
+    const selected = document.querySelector('input[name="moodRadio"]:checked');
+    if (selected) {
+        const mood = selected.value;
+        document.body.setAttribute('data-mood', mood);
+        localStorage.setItem('megan_site_mood', mood);
+        
+        const moodElement = document.getElementById('edMoodValue');
+        if (moodElement) {
+            const labels = getMoodLabels();
+            const descriptions = getMoodDescriptions();
+            moodElement.textContent = labels[mood] + ' (' + descriptions[mood] + ')';
+        }
+        if (typeof liveUpdateDossier === 'function') {
+            liveUpdateDossier();
+        }
     }
+    document.getElementById('moodDialog').style.display = 'none';
+    document.body.style.overflow = '';
 }
 
-// Экспорт функций
-window.applyMood = applyMood;
+// Восстановление при загрузке
+window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('megan_site_mood');
+    if (saved) {
+        document.body.setAttribute('data-mood', saved);
+        const radio = document.querySelector(`input[name="moodRadio"][value="${saved}"]`);
+        if (radio) radio.checked = true;
+    }
+});
+
+// Экспорт
 window.openMoodDialog = openMoodDialog;
 window.closeMoodDialog = closeMoodDialog;
-window.selectMood = selectMood;
-window.loadMood = loadMood;
-
-// Загружаем настроение при старте
-document.addEventListener('DOMContentLoaded', loadMood);
+window.applyMoodSelection = applyMoodSelection;
