@@ -66,42 +66,35 @@ function tArray(key) {
 
 // Применение переводов на странице
 function applyTranslations() {
-    // Элементы с data-i18n
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         el.textContent = t(key);
     });
     
-    // Элементы с data-i18n-placeholder
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         el.placeholder = t(key);
     });
     
-    // Элементы с data-i18n-value
     document.querySelectorAll('[data-i18n-value]').forEach(el => {
         const key = el.getAttribute('data-i18n-value');
         el.value = t(key);
     });
     
-    // Заголовок страницы
     document.title = t('ui.title');
     document.documentElement.lang = getCurrentLanguage();
     
-    // Обновляем badge traits
     updateTraits();
     
     console.log(`🌍 Язык установлен: ${getCurrentLanguage()}`);
 }
 
-// Обновление черт характера
 function updateTraits() {
     const badge = document.getElementById('traitBadge');
     if (!badge) return;
     
     const traits = tArray('traits');
     if (traits.length > 0) {
-        // Сохраняем в глобальную переменную для rotateTraits
         window._characterTraits = traits;
         if (window.traitIndex !== undefined) {
             const idx = window.traitIndex || 0;
