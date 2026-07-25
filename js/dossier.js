@@ -33,12 +33,12 @@ function openProfileModal() {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>🎭 ${t('dossier.name')}</label>
-                    <input type="text" id="edAliases" value="" placeholder="${t('dossier.name')}">
+                    <label>🎭 ${t('dossier.aliases')}</label>
+                    <input type="text" id="edAliases" value="" placeholder="${t('dossier.aliases')}">
                 </div>
                 <div class="form-group">
-                    <label>📊 ${t('dossier.name')}</label>
-                    <input type="text" id="edStatus" value="" placeholder="${t('dossier.name')}">
+                    <label>📊 ${t('dossier.status')}</label>
+                    <input type="text" id="edStatus" value="" placeholder="${t('dossier.status')}">
                 </div>
                 <div class="form-group">
                     <label>${t('mood.title')}</label>
@@ -47,36 +47,36 @@ function openProfileModal() {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>⚠️ ${t('dossier.name')}</label>
-                    <input type="text" id="edThreat" value="" placeholder="${t('dossier.name')}">
+                    <label>⚠️ ${t('dossier.threat')}</label>
+                    <input type="text" id="edThreat" value="" placeholder="${t('dossier.threat')}">
                 </div>
             </div>
 
             <div class="panel-box">
-                <div class="panel-title">🧠 ${t('dossier.name')}</div>
+                <div class="panel-title">🧠 ${t('dossier.behavior')}</div>
                 <div class="form-group">
-                    <label>📝 ${t('dossier.name')}</label>
-                    <textarea id="edBehavior" placeholder="${t('dossier.name')}" style="min-height:80px;"></textarea>
+                    <label>📝 ${t('dossier.behavior')}</label>
+                    <textarea id="edBehavior" placeholder="${t('dossier.behavior')}" style="min-height:80px;"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>📜 ${t('dossier.name')}</label>
-                    <textarea id="edHistory" placeholder="${t('dossier.name')}" style="min-height:60px;"></textarea>
+                    <label>📜 ${t('dossier.history')}</label>
+                    <textarea id="edHistory" placeholder="${t('dossier.history')}" style="min-height:60px;"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>${t('dossier.name')}</label>
+                    <label>📊 ${t('dossier.fears')}</label>
                     <input type="text" id="edFears" value="" placeholder="0">
                 </div>
             </div>
 
             <div class="panel-box">
-                <div class="panel-title">📌 ${t('dossier.name')}</div>
+                <div class="panel-title">📌 ${t('dossier.phobias')}</div>
                 <div class="form-group">
-                    <label>😨 ${t('dossier.name')}</label>
-                    <textarea id="edPhobias" placeholder="${t('dossier.name')}" style="min-height:50px;"></textarea>
+                    <label>😨 ${t('dossier.phobias')}</label>
+                    <textarea id="edPhobias" placeholder="${t('dossier.phobias')}" style="min-height:50px;"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>⚡ ${t('dossier.name')}</label>
-                    <textarea id="edTriggers" placeholder="${t('dossier.name')}" style="min-height:34px;"></textarea>
+                    <label>⚡ ${t('dossier.triggers')}</label>
+                    <textarea id="edTriggers" placeholder="${t('dossier.triggers')}" style="min-height:34px;"></textarea>
                 </div>
             </div>
 
@@ -128,32 +128,32 @@ function openProfileModal() {
             </div>
 
             <div class="panel-box" style="grid-column: 1 / -1;">
-                <div class="panel-title">📝 ${t('dossier.name')}</div>
+                <div class="panel-title">📝 ${t('dossier.notes')}</div>
                 <div class="form-group">
-                    <label>💀 ${t('dossier.name')}</label>
-                    <textarea id="edNotes" placeholder="${t('dossier.name')}" style="min-height:60px;"></textarea>
+                    <label>💀 ${t('dossier.notes')}</label>
+                    <textarea id="edNotes" placeholder="${t('dossier.notes')}" style="min-height:60px;"></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>${t('dossier.name')}</label>
+                        <label>${t('dossier.interest')}</label>
                         <input type="text" id="edInterest" value="" placeholder="0/10">
                     </div>
                     <div class="form-group">
-                        <label>${t('dossier.name')}</label>
-                        <input type="text" id="edRating" value="" placeholder="${t('dossier.name')}">
+                        <label>${t('dossier.rating')}</label>
+                        <input type="text" id="edRating" value="" placeholder="${t('dossier.rating')}">
                     </div>
                 </div>
             </div>
 
             <div class="panel-box" style="grid-column: 1 / -1;">
-                <div class="panel-title">👁️ ${t('dossier.name')}</div>
-                <div class="preview-output" id="edPreview">📭 ${t('dossier.name')}</div>
+                <div class="panel-title">👁️ ${t('dossier.preview')}</div>
+                <div class="preview-output" id="edPreview">📭 ${t('dossier.preview')}</div>
                 <div id="copyStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
                 <div class="form-group" style="margin-top:6px;">
-                    <label>📥 ${t('dossier.name')}</label>
-                    <textarea id="edImport" placeholder="${t('dossier.name')}" style="min-height:80px;"></textarea>
+                    <label>📥 ${t('dossier.import')}</label>
+                    <textarea id="edImport" placeholder="${t('dossier.import')}" style="min-height:80px;"></textarea>
                 </div>
-                <button class="action-btn open-btn" style="padding:8px; font-size:0.7rem; margin-top:4px; min-height:36px;" onclick="parseImportedProfile()">📥 ${t('dossier.name')}</button>
+                <button class="action-btn open-btn" style="padding:8px; font-size:0.7rem; margin-top:4px; min-height:36px;" onclick="parseImportedProfile()">📥 ${t('dossier.import')}</button>
                 <div id="importStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
             </div>
         </div>
