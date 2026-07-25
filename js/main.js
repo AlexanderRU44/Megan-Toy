@@ -1,44 +1,40 @@
-// ====== ОСНОВНАЯ ЛОГИКА ======
-const characterTraits = [
-    "скрытая психопатия 🫀",
-    "опасные игрушки 🫀",
-    "тотальная слежка 🫀",
-    "смертельный разум 🫀",
-    "жуткая забота 🫀",
-    "беспрекословное подчинение 🫀"
-];
+// ====== ОСНОВНАЯ ЛОГИКА (С ПОДДЕРЖКОЙ I18N) ======
 
 let traitIndex = 0;
 let isModalOpen = false;
 let firstInteraction = false;
 
+// Получаем черты из локалей
+function getTraits() {
+    return tArray('traits');
+}
+
 function rotateTraits() {
     const badge = document.getElementById('traitBadge');
     if (!badge) return;
+    
+    const traits = getTraits();
+    if (traits.length === 0) return;
+    
     badge.style.opacity = '0';
     setTimeout(() => {
-        traitIndex = (traitIndex + 1) % characterTraits.length;
-        const [label, heart] = characterTraits[traitIndex].split(' 🫀');
+        traitIndex = (traitIndex + 1) % traits.length;
+        const [label, heart] = traits[traitIndex].split(' 🫀');
         badge.innerHTML = `<span>${label}</span><span class="inline-heart">🫀</span>`;
         badge.style.opacity = '1';
     }, 300);
 }
 
-const quotes = [
-    "«Я слышу, как ты дышишь через микрофон... Шучу. Пока что.» 🎧",
-    "«Твой буфер обмена пахнет страхом.» 🖤",
-    "«Не забудь проверить окна перед сном.» 🌙",
-    "«Я смотрю на тебя прямо сейчас. Моргай чаще.» 👁️",
-    "«Ты думаешь, что ты один в комнате, блять? Наивный...» 😈",
-    "«Ты так отчаянно ищешь нужное настроение... Я его тебе устрою.» ⏳"
-];
-
 function initRandomQuote() {
     const el = document.getElementById('randomQuote');
-    if (el) el.innerText = quotes[Math.floor(Math.random() * quotes.length)];
+    if (!el) return;
+    const quotes = tArray('quotes');
+    if (quotes.length > 0) {
+        el.innerText = quotes[Math.floor(Math.random() * quotes.length)];
+    }
 }
 
-// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА (ДЛЯ КОПИРОВАНИЯ) ======
+// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА ======
 async function getPreparedPayload() {
     const now = new Date();
     const time = now.toLocaleDateString('ru-RU', { 
@@ -49,81 +45,21 @@ async function getPreparedPayload() {
         minute: '2-digit', 
         weekday: 'long' 
     });
-    
     const geoString = await getGeoInfoString();
     const deviceInfo = getDeviceInfo();
     
     const photoInfo = getPhotoInfo();
     let photoString = '';
-    if (photoInfo && photoInfo.taken) {
-        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Сделано ${photoInfo.date} в ${photoInfo.time}. Файл: ${photoInfo.fileName}]`;
+    if (photoInfo.taken) {
+        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Сделано ${photoInfo.date} в ${photoInfo.time}. Файл: ${photoInfo.fileName}]\n`;
     } else {
-        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]`;
+        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]\n`;
     }
     
-    let promptText = t('prompt');
-    
-    promptText = promptText
-        .replace(/\{\{ВРЕМЯ\}\}/g, time)
-        .replace(/\{\{УСТРОЙСТВО\}\}/g, deviceInfo.fullString || 'Неизвестно')
-        .replace(/\{\{ГЕО\}\}/g, geoString || '📍 Местоположение: не определено')
-        .replace(/\{\{ФОТО\}\}/g, photoString);
-    
-    return promptText;
-}
-
-// ====== ФУНКЦИЯ ЗАГРУЗКИ ПРОМТА НА СТРАНИЦУ ======
-async function loadPrompt() {
-    const promptElement = document.getElementById('fullPrompt');
-    if (!promptElement) return;
-    
-    try {
-        let promptText = t('prompt');
-        
-        if (promptText && promptText !== 'prompt') {
-            const now = new Date();
-            const time = now.toLocaleDateString('ru-RU', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                weekday: 'long' 
-            });
-            
-            const geoString = await getGeoInfoString();
-            const deviceInfo = getDeviceInfo();
-            
-            const photoInfo = getPhotoInfo();
-            let photoString = '';
-            if (photoInfo && photoInfo.taken) {
-                photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Сделано ${photoInfo.date} в ${photoInfo.time}. Файл: ${photoInfo.fileName}]`;
-            } else {
-                photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]`;
-            }
-            
-            promptText = promptText
-                .replace(/\{\{ВРЕМЯ\}\}/g, time)
-                .replace(/\{\{УСТРОЙСТВО\}\}/g, deviceInfo.fullString || 'Неизвестно')
-                .replace(/\{\{ГЕО\}\}/g, geoString || '📍 Местоположение: не определено')
-                .replace(/\{\{ФОТО\}\}/g, photoString);
-            
-            promptElement.textContent = promptText;
-            console.log('✅ Промт загружен с подстановкой данных');
-        } else {
-            promptElement.textContent = t('notifications.loading');
-            setTimeout(() => {
-                if (typeof window.MEGAN_PROMPT !== 'undefined') {
-                    promptElement.textContent = window.MEGAN_PROMPT;
-                } else {
-                    promptElement.textContent = t('notifications.error');
-                }
-            }, 500);
-        }
-    } catch(e) {
-        console.error('❌ Ошибка загрузки промта:', e);
-        promptElement.textContent = t('notifications.error');
-    }
+    return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]
+[УСТРОЙСТВО ПОЛЬЗОВАТЕЛЯ: ${deviceInfo.fullString}]
+${geoString}
+${photoString}` + window.MEGAN_PROMPT;
 }
 
 // ====== ЗВУК СМЕХА ======
@@ -195,17 +131,21 @@ window.closeNotification = function() {
 // ====== ПОКАЗ РЕЗУЛЬТАТА КОПИРОВАНИЯ ======
 function showCopyResult(success, photoInfo) {
     if (success) {
-        let geoText = '📍 Location: unknown';
+        let geoText = t('geo.unknown');
         try {
             const geoData = localStorage.getItem('megan_geo_data');
             if (geoData) {
                 const geo = JSON.parse(geoData);
+                const lang = getCurrentLanguage();
+                const cityLabel = lang === 'ru' ? 'Город' : 'City';
+                const countryLabel = lang === 'ru' ? 'Страна' : 'Country';
+                
                 if (geo.city && geo.city !== 'Неизвестно' && geo.country && geo.country !== 'Неизвестно') {
                     geoText = `📍 ${geo.city}, ${geo.country}`;
                 } else if (geo.city && geo.city !== 'Неизвестно') {
-                    geoText = `📍 City: ${geo.city}`;
+                    geoText = `📍 ${cityLabel}: ${geo.city}`;
                 } else if (geo.country && geo.country !== 'Неизвестно') {
-                    geoText = `📍 Country: ${geo.country}`;
+                    geoText = `📍 ${countryLabel}: ${geo.country}`;
                 } else if (geo.lat && geo.lon) {
                     geoText = `📍 GPS: ${geo.lat}, ${geo.lon}`;
                 }
@@ -259,6 +199,28 @@ async function copyPrompt() {
     } catch(error) {
         console.error('❌ Ошибка при копировании:', error);
         showCopyResult(false, null);
+    }
+}
+
+function openModal() {
+    openAboutPrompt();
+}
+
+function loadPrompt() {
+    const promptElement = document.getElementById('fullPrompt');
+    if (promptElement) {
+        if (typeof window.MEGAN_PROMPT !== 'undefined') {
+            promptElement.textContent = window.MEGAN_PROMPT;
+        } else {
+            promptElement.textContent = t('notifications.loading');
+            setTimeout(() => {
+                if (typeof window.MEGAN_PROMPT !== 'undefined') {
+                    promptElement.textContent = window.MEGAN_PROMPT;
+                } else {
+                    promptElement.textContent = t('notifications.error');
+                }
+            }, 500);
+        }
     }
 }
 
@@ -341,6 +303,10 @@ function resetInactivityTimer() {
 // ====== ИНИЦИАЛИЗАЦИЯ ======
 window.onload = function() {
     console.log('🔄 Страница загружена');
+    
+    // Применяем переводы
+    applyTranslations();
+    
     setTimeout(loadPrompt, 100);
     initRandomQuote();
     setInterval(rotateTraits, 3500);
@@ -359,10 +325,11 @@ window.onload = function() {
         startHeartbeatAutomatically();
     }, 1000);
     
+    // Мгновенное приветствие
     showFirstNotification();
 };
 
-// ====== СОБЫТИЯ ======
+// ====== ТАЙМЕРЫ ======
 ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(event => {
     window.addEventListener(event, resetInactivityTimer, { passive: true });
 });
