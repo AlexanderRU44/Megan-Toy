@@ -80,7 +80,7 @@ function playMeganLaugh() {
     }
 }
 
-// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ ======
+// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ (МГНОВЕННОЕ) ======
 function showFirstNotification() {
     if (!firstInteraction) {
         firstInteraction = true;
@@ -304,7 +304,7 @@ function resetInactivityTimer() {
     }, INACTIVITY_LIMIT);
 }
 
-// ====== ИНИЦИАЛИЗАЦИЯ ======
+// ====== ИНИЦИАЛИЗАЦИЯ (С МГНОВЕННЫМ ПРИВЕТСТВИЕМ) ======
 window.onload = function() {
     console.log('🔄 Страница загружена');
     setTimeout(loadPrompt, 100);
@@ -325,23 +325,11 @@ window.onload = function() {
         startHeartbeatAutomatically();
     }, 1000);
     
-    const firstClickHandler = function() {
-        showFirstNotification();
-        document.removeEventListener('click', firstClickHandler);
-        document.removeEventListener('touchstart', firstClickHandler);
-        document.removeEventListener('keydown', firstClickHandler);
-    };
-    document.addEventListener('click', firstClickHandler);
-    document.addEventListener('touchstart', firstClickHandler);
-    document.addEventListener('keydown', firstClickHandler);
-    
-    setTimeout(() => {
-        if (!firstInteraction) {
-            showFirstNotification();
-        }
-    }, 5000);
+    // ====== МГНОВЕННЫЙ ПОКАЗ ПРИВЕТСТВИЯ ПРИ ЗАГРУЗКЕ ======
+    showFirstNotification();
 };
 
+// ====== ТАЙМЕРЫ БЕЗДЕЙСТВИЯ ======
 ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(event => {
     window.addEventListener(event, resetInactivityTimer, { passive: true });
 });
