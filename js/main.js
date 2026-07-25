@@ -34,7 +34,7 @@ function initRandomQuote() {
     }
 }
 
-// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА ======
+// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА (ДЛЯ КОПИРОВАНИЯ) ======
 async function getPreparedPayload() {
     const now = new Date();
     const time = now.toLocaleDateString('ru-RU', { 
@@ -56,10 +56,13 @@ async function getPreparedPayload() {
         photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]\n`;
     }
     
+    // БЕРЁМ ПРОМТ ИЗ ЛОКАЛЕЙ (АВТОМАТИЧЕСКИ ПОДСТАВЛЯЕТСЯ НУЖНЫЙ ЯЗЫК)
+    const promptText = t('prompt');
+    
     return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]
 [УСТРОЙСТВО ПОЛЬЗОВАТЕЛЯ: ${deviceInfo.fullString}]
 ${geoString}
-${photoString}` + window.MEGAN_PROMPT;
+${photoString}` + promptText;
 }
 
 // ====== ЗВУК СМЕХА ======
@@ -206,20 +209,30 @@ function openModal() {
     openAboutPrompt();
 }
 
+// ====== ФУНКЦИЯ ЗАГРУЗКИ ПРОМТА НА СТРАНИЦУ ======
 function loadPrompt() {
     const promptElement = document.getElementById('fullPrompt');
     if (promptElement) {
-        if (typeof window.MEGAN_PROMPT !== 'undefined') {
-            promptElement.textContent = window.MEGAN_PROMPT;
+        // БЕРЁМ ПРОМТ ИЗ ЛОКАЛЕЙ
+        const promptText = t('prompt');
+        if (promptText && promptText !== 'prompt') {
+            promptElement.textContent = promptText;
+            console.log('✅ Промт загружен из локалей');
         } else {
-            promptElement.textContent = t('notifications.loading');
-            setTimeout(() => {
-                if (typeof window.MEGAN_PROMPT !== 'undefined') {
-                    promptElement.textContent = window.MEGAN_PROMPT;
-                } else {
-                    promptElement.textContent = t('notifications.error');
-                }
-            }, 500);
+            // РЕЗЕРВ: если промт не найден в локалях
+            if (typeof window.MEGAN_PROMPT !== 'undefined') {
+                promptElement.textContent = window.MEGAN_PROMPT;
+                console.log('✅ Промт загружен из prompt.js (резерв)');
+            } else {
+                promptElement.textContent = t('notifications.loading');
+                setTimeout(() => {
+                    if (typeof window.MEGAN_PROMPT !== 'undefined') {
+                        promptElement.textContent = window.MEGAN_PROMPT;
+                    } else {
+                        promptElement.textContent = t('notifications.error');
+                    }
+                }, 500);
+            }
         }
     }
 }
