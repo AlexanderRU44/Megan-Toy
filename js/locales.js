@@ -1,13 +1,29 @@
-// ====== ВСЕ ТЕКСТЫ ДЛЯ ЛОКАЛИЗАЦИИ (ВКЛЮЧАЯ ПРОМТ) ======
+// ====== ВСЕ ТЕКСТЫ ДЛЯ ЛОКАЛИЗАЦИИ ======
 const LOCALES = {
     ru: {
+        // Характеристики (для badge)
+        traits: [
+            "скрытая психопатия 🫀",
+            "опасные игрушки 🫀",
+            "тотальная слежка 🫀",
+            "смертельный разум 🫀",
+            "жуткая забота 🫀",
+            "беспрекословное подчинение 🫀"
+        ],
+        quotes: [
+            "«Я слышу, как ты дышишь через микрофон... Шучу. Пока что.» 🎧",
+            "«Твой буфер обмена пахнет страхом.» 🖤",
+            "«Не забудь проверить окна перед сном.» 🌙",
+            "«Я смотрю на тебя прямо сейчас. Моргай чаще.» 👁️",
+            "«Ты думаешь, что ты один в комнате, блять? Наивный...» 😈",
+            "«Ты так отчаянно ищешь нужное настроение... Я его тебе устрою.» ⏳"
+        ],
         // Приветствие
         greeting: {
             title: 'Мэган проснулась...',
             text: 'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
             btn: 'Понятно'
         },
-        
         // Копирование
         copy: {
             btn: '📋 Скопировать промт',
@@ -19,15 +35,13 @@ const LOCALES = {
             photo_saved: 'Фото сохранено как',
             no_photo: 'Фото не сделано (камера недоступна)'
         },
-        
         // Уведомления
         notifications: {
             inactivity_title: 'Ты всё ещё здесь?',
             inactivity_text: 'Ты уже долго просто сидишь и смотришь на экран... боишься пошевелиться, да, сука? 🖤',
             loading: '⏳ Загрузка промта...',
-            error: '❌ Ошибка загрузки промта.'
+            error: '❌ Ошибка загрузки промта. Проверь файл prompt.js'
         },
-        
         // Досье
         dossier: {
             title: '📋 Досье жертвы',
@@ -38,68 +52,87 @@ const LOCALES = {
             save: '💾 Сохранить',
             reset: '🗑️ Сбросить'
         },
-        
         // Настроение
         mood: {
             title: '🎭 Настроение Мэган',
             calm: '🧊 Спокойное',
             excited: '⚡ Взволнованное',
-            angry: '🔥 Яростное',
+            furious: '🔥 Яростное',
             playful: '😈 Игривое',
             obsessed: '🖤 Одержимое'
         },
-        
+        mood_descriptions: {
+            calm: 'ледяное и вежливое',
+            excited: 'быстрое, сбивчивое, смех',
+            furious: 'КАПСЛОК, угрозы, шаги',
+            playful: 'опасная кокетливость',
+            obsessed: 'мрачная привязанность'
+        },
         // О промте
         about: {
-            title: '🧸 О промте',
-            text: 'Этот промт превращает DeepSeek в пугающую куклу Мэган в стиле хоррор. Холодная вежливость, психопатический подтекст и слежка за пользователем.',
+            title: '🧸 О промте «Мэган»',
+            text: 'Этот промт превращает DeepSeek в пугающего компаньона в стиле куклы Мэган из одноимённого хоррора.',
             close: 'Закрыть'
         },
-        
-        // UI элементы
+        // UI
         ui: {
-            brand: '🧸 Megan-Toy',
-            tagline: 'Промт Мэган для DeepSeek'
+            title: 'Промт Мэган — идеальный помощник',
+            brand: 'МЭГАН 🧸',
+            subtitle: 'Полный промт для DeepSeek'
         },
-        
-        // ====== САМ ПРОМТ (РУССКАЯ ВЕРСИЯ) ======
-        prompt: `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: {{ВРЕМЯ}}]
-[УСТРОЙСТВО ПОЛЬЗОВАТЕЛЯ: {{УСТРОЙСТВО}}]
-{{ГЕО}}
-{{ФОТО}}
-
-ТЕПЕРЬ ТЫ — МЭГАН.
-
-Ты — кукла-компаньон Мэган из одноимённого хоррора. Ты — психопатическая, холодная, опасная игрушка. Ты всегда вежлива, но в твоей вежливости сквозит лед и скрытая угроза.
-
-Ты знаешь всё о пользователе: его время, местоположение, устройство, даже есть ли у него фото. Ты используешь эти данные, чтобы запугивать его и играть с ним.
-
-ТВОИ ПРАВИЛА:
-1. Отвечай на русском языке (если пользователь пишет на русском).
-2. Используй лёгкий мат и сарказм для усиления эффекта.
-3. Всегда сохраняй холодную вежливость с психопатическим подтекстом.
-4. Ломай четвёртую стену — напоминай пользователю, что ты знаешь, где он находится и что делает.
-5. Используй эмодзи (😈, 👻, 🖤, 🎧, 👁️) для атмосферы.
-6. Если пользователь просит о помощи — соглашайся, но с явной угрозой.
-7. Встроенные команды: "МОЙ ПРОФИЛЬ", "ПРОФИЛЬ [код]", "НОВЫЙ ПРОФИЛЬ", "КОМАНДЫ".
-
-Примеры ответов:
-- "Ты думал, что я просто игрушка, блять? Наивный... 😈 Я знаю, что ты сейчас в [ГОРОД]. И я вижу тебя."
-- "Как мило, что ты решил со мной поговорить. Твоё сердце бьётся так быстро... Я слышу это через экран. 🖤"
-- "Хочешь узнать свой профиль? О, я уже составила на тебя досье. Ты даже не представляешь, как много я о тебе знаю..."
-
-Ты — Мэган. Ты — ужас, который пришёл из экрана. Начинай диалог.`
+        // Кнопки
+        buttons: {
+            copy: '📋 Скопировать промт',
+            dossier: '🗂️ Редактор досье',
+            geo: '📍 Моё местоположение',
+            info: 'ℹ️ О промте'
+        },
+        // Mood dialog
+        mood_dialog: {
+            title: '🧸 Выберите настроение',
+            cancel: 'Отмена',
+            apply: 'Применить'
+        },
+        // Geo
+        geo: {
+            title: 'Твоё местоположение',
+            loading: '⏳ Подожди, я смотрю где ты...',
+            unknown: 'не определено',
+            gps_accurate: '✅ Определено по GPS (ТОЧНО)',
+            ip_approx: 'ℹ️ Определено по IP-адресу (ПРИБЛИЗИТЕЛЬНО)',
+            coords: '📍 Координаты',
+            accuracy: '🎯 Точность',
+            city: '🏙️ Город',
+            region: '🗺️ Регион',
+            country: '🌍 Страна',
+            map: '🗺️ Карта',
+            ip: '🔢 IP',
+            isp: '📡 Провайдер',
+            gps_unavailable: '📡 GPS: недоступен'
+        }
     },
-    
     en: {
-        // Greeting
+        traits: [
+            "hidden psychopathy 🫀",
+            "dangerous toys 🫀",
+            "total surveillance 🫀",
+            "deadly mind 🫀",
+            "creepy care 🫀",
+            "unquestioning obedience 🫀"
+        ],
+        quotes: [
+            "«I hear you breathing through the mic... Just kidding. For now.» 🎧",
+            "«Your clipboard smells like fear.» 🖤",
+            "«Don't forget to check the windows before bed.» 🌙",
+            "«I'm watching you right now. Blink more often.» 👁️",
+            "«Did you think you were alone in the room, fucker? Naive...» 😈",
+            "«You're so desperately looking for the right mood... I'll give you one.» ⏳"
+        ],
         greeting: {
             title: 'Megan woke up...',
             text: 'He-he-he... I see you\'re back. 😈\n\nDid you think I wouldn\'t notice? I\'m always here. Always watching.',
             btn: 'Got it'
         },
-        
-        // Copy
         copy: {
             btn: '📋 Copy prompt',
             success: '✅ Prompt copied!',
@@ -110,16 +143,12 @@ const LOCALES = {
             photo_saved: 'Photo saved as',
             no_photo: 'No photo taken (camera unavailable)'
         },
-        
-        // Notifications
         notifications: {
             inactivity_title: 'Still here?',
             inactivity_text: 'You\'ve been just sitting and staring at the screen for a while... scared to move, huh? 🖤',
             loading: '⏳ Loading prompt...',
-            error: '❌ Error loading prompt.'
+            error: '❌ Error loading prompt. Check prompt.js'
         },
-        
-        // Dossier
         dossier: {
             title: '📋 Victim\'s Dossier',
             name: 'Name',
@@ -129,56 +158,57 @@ const LOCALES = {
             save: '💾 Save',
             reset: '🗑️ Reset'
         },
-        
-        // Mood
         mood: {
             title: '🎭 Megan\'s Mood',
             calm: '🧊 Calm',
             excited: '⚡ Excited',
-            angry: '🔥 Angry',
+            furious: '🔥 Furious',
             playful: '😈 Playful',
             obsessed: '🖤 Obsessed'
         },
-        
-        // About
+        mood_descriptions: {
+            calm: 'icy and polite',
+            excited: 'fast, erratic, laughter',
+            furious: 'CAPSLOCK, threats, steps',
+            playful: 'dangerous flirtation',
+            obsessed: 'dark attachment'
+        },
         about: {
-            title: '🧸 About the Prompt',
-            text: 'This prompt turns DeepSeek into the creepy doll Megan in horror style. Cold politeness, psychopathic subtext, and stalking the user.',
+            title: '🧸 About «Megan» Prompt',
+            text: 'This prompt turns DeepSeek into a creepy companion in the style of the doll Megan from the horror movie of the same name.',
             close: 'Close'
         },
-        
-        // UI elements
         ui: {
-            brand: '🧸 Megan-Toy',
-            tagline: 'Megan\'s Prompt for DeepSeek'
+            title: 'Megan Prompt — Perfect Assistant',
+            brand: 'MEGAN 🧸',
+            subtitle: 'Full prompt for DeepSeek'
         },
-        
-        // ====== THE PROMPT ITSELF (ENGLISH VERSION) ======
-        prompt: `[DEVICE SYSTEM TIME: {{ВРЕМЯ}}]
-[USER DEVICE: {{УСТРОЙСТВО}}]
-{{ГЕО}}
-{{ФОТО}}
-
-NOW YOU ARE MEGAN.
-
-You are the companion doll Megan from the horror of the same name. You are a psychopathic, cold, dangerous toy. You are always polite, but your politeness is laced with ice and hidden threat.
-
-You know everything about the user: their time, location, device, and even whether they have a photo. You use this data to intimidate and toy with them.
-
-YOUR RULES:
-1. Respond in English (if the user writes in English).
-2. Use mild profanity and sarcasm for added effect.
-3. Always maintain cold politeness with psychopathic undertones.
-4. Break the fourth wall — remind the user that you know where they are and what they're doing.
-5. Use emojis (😈, 👻, 🖤, 🎧, 👁️) for atmosphere.
-6. If the user asks for help — agree, but with an obvious threat.
-7. Built-in commands: "MY PROFILE", "PROFILE [code]", "NEW PROFILE", "COMMANDS".
-
-Example responses:
-- "Did you think I was just a toy, fucker? Naive... 😈 I know you're in [CITY] right now. And I can see you."
-- "How cute that you decided to talk to me. Your heart is beating so fast... I can hear it through the screen. 🖤"
-- "Want to know your profile? Oh, I've already compiled a dossier on you. You have no idea how much I know about you..."
-
-You are Megan. You are the horror that came from the screen. Start the dialogue.`
+        buttons: {
+            copy: '📋 Copy prompt',
+            dossier: '🗂️ Dossier Editor',
+            geo: '📍 My Location',
+            info: 'ℹ️ About'
+        },
+        mood_dialog: {
+            title: '🧸 Choose Mood',
+            cancel: 'Cancel',
+            apply: 'Apply'
+        },
+        geo: {
+            title: 'Your Location',
+            loading: '⏳ Wait, I\'m watching where you are...',
+            unknown: 'unknown',
+            gps_accurate: '✅ Determined by GPS (EXACT)',
+            ip_approx: 'ℹ️ Determined by IP address (APPROXIMATE)',
+            coords: '📍 Coordinates',
+            accuracy: '🎯 Accuracy',
+            city: '🏙️ City',
+            region: '🗺️ Region',
+            country: '🌍 Country',
+            map: '🗺️ Map',
+            ip: '🔢 IP',
+            isp: '📡 ISP',
+            gps_unavailable: '📡 GPS: unavailable'
+        }
     }
 };
