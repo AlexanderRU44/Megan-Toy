@@ -134,7 +134,7 @@ function resetDossierToTemplate() {
     }
 }
 
-// ====== ЗАГРУЗКА ГЕО В ДОСЬЕ (ИСПРАВЛЕННАЯ) ======
+// ====== ЗАГРУЗКА ГЕО В ДОСЬЕ (ИСПРАВЛЕННАЯ — БЕЗ МУСОРА) ======
 function loadCurrentLocationToDossier() {
     const textarea = document.getElementById('edDossierText');
     const statusEl = document.getElementById('dossierStatus');
@@ -168,8 +168,20 @@ function loadCurrentLocationToDossier() {
                         geoText = `GPS: ${gpsData.lat}, ${gpsData.lon}`;
                     }
                     
+                    // ОБНОВЛЯЕМ ТОЛЬКО СТРОКУ МЕСТОПОЛОЖЕНИЕ
                     let currentText = textarea.value;
                     
+                    // Удаляем мусорные строки (если они появились)
+                    currentText = currentText
+                        .replace(/^ЕНВЕ\s*$/m, '')
+                        .replace(/^ГОРОД\s*$/m, '')
+                        .replace(/^НЕ ОПРЕДЕЛЕНО\s*$/m, '')
+                        .replace(/^не определено\s*$/m, '')
+                        .replace(/^КООРДИНАТЫ\s*$/m, '')
+                        .replace(/^\d+\.\d+\s*$/m, '')
+                        .replace(/\n{3,}/g, '\n\n'); // убираем лишние пустые строки
+                    
+                    // Обновляем местоположение
                     if (currentText.includes('📍 МЕСТОПОЛОЖЕНИЕ:')) {
                         currentText = currentText.replace(
                             /📍 МЕСТОПОЛОЖЕНИЕ:.*$/m,
@@ -182,6 +194,7 @@ function loadCurrentLocationToDossier() {
                         );
                     }
                     
+                    // Обновляем время
                     const now = new Date();
                     const timeStr = now.toLocaleString('ru-RU', {
                         day: '2-digit',
@@ -213,6 +226,16 @@ function loadCurrentLocationToDossier() {
                 geoText = `${city}, ${region}, ${country}`;
                 
                 let currentText = textarea.value;
+                
+                // Удаляем мусорные строки
+                currentText = currentText
+                    .replace(/^ЕНВЕ\s*$/m, '')
+                    .replace(/^ГОРОД\s*$/m, '')
+                    .replace(/^НЕ ОПРЕДЕЛЕНО\s*$/m, '')
+                    .replace(/^не определено\s*$/m, '')
+                    .replace(/^КООРДИНАТЫ\s*$/m, '')
+                    .replace(/^\d+\.\d+\s*$/m, '')
+                    .replace(/\n{3,}/g, '\n\n');
                 
                 if (currentText.includes('📍 МЕСТОПОЛОЖЕНИЕ:')) {
                     currentText = currentText.replace(
