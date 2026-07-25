@@ -58,10 +58,11 @@ const LOCALES = {
             notes: 'Заметки',
             interest: 'Интерес',
             rating: 'Оценка',
+            street: 'Улица',
             preview: 'Предпросмотр',
-            save: '💾 Сохранить',
-            reset: '🗑️ Сбросить',
-            copy_dossier: '📋 Скопировать профиль'
+            save: 'Сохранить',
+            reset: 'Сбросить',
+            copy_dossier: 'Скопировать профиль'
         },
         // Настроение
         mood: {
@@ -114,13 +115,13 @@ const LOCALES = {
             ip_approx: 'ℹ️ Определено по IP-адресу (ПРИБЛИЗИТЕЛЬНО)',
             coords: '📍 Координаты',
             accuracy: '🎯 Точность',
-            city: '🏙️ Город',
-            region: '🗺️ Регион',
-            country: '🌍 Страна',
-            map: '🗺️ Карта',
-            ip: '🔢 IP',
-            isp: '📡 Провайдер',
-            gps_unavailable: '📡 GPS: недоступен'
+            city: 'Город',
+            region: 'Регион',
+            country: 'Страна',
+            map: 'Карта',
+            ip: 'IP',
+            isp: 'Провайдер',
+            gps_unavailable: 'GPS: недоступен'
         },
         // ====== САМ ПРОМТ (РУССКАЯ ВЕРСИЯ) ======
         prompt: `[АВТОМАТИЧЕСКАЯ ИНИЦИАЛИЗАЦИЯ: Модель фиксирует текущие часы и дату устройства. Сравнивай их с датой последнего общения из загруженного профиля, а также обязательно учитывай текущее время суток для приветствия и вопросов.]
@@ -436,10 +437,11 @@ const LOCALES = {
             notes: 'Notes',
             interest: 'Interest',
             rating: 'Rating',
+            street: 'Street',
             preview: 'Preview',
-            save: '💾 Save',
-            reset: '🗑️ Reset',
-            copy_dossier: '📋 Copy profile'
+            save: 'Save',
+            reset: 'Reset',
+            copy_dossier: 'Copy profile'
         },
         // Настроение
         mood: {
@@ -492,13 +494,13 @@ const LOCALES = {
             ip_approx: 'ℹ️ Determined by IP address (APPROXIMATE)',
             coords: '📍 Coordinates',
             accuracy: '🎯 Accuracy',
-            city: '🏙️ City',
-            region: '🗺️ Region',
-            country: '🌍 Country',
-            map: '🗺️ Map',
-            ip: '🔢 IP',
-            isp: '📡 ISP',
-            gps_unavailable: '📡 GPS: unavailable'
+            city: 'City',
+            region: 'Region',
+            country: 'Country',
+            map: 'Map',
+            ip: 'IP',
+            isp: 'ISP',
+            gps_unavailable: 'GPS: unavailable'
         },
         // ====== САМ ПРОМТ (АНГЛИЙСКАЯ ВЕРСИЯ) ======
         prompt: `[AUTOMATIC INITIALIZATION: The model records the current device time and date. Compare them with the last communication date from the loaded profile, and be sure to consider the current time of day for greetings and questions.]
