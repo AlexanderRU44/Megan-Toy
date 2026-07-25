@@ -1,11 +1,11 @@
-// ====== КАМЕРА ======
+// ====== КАМЕРА (С ПОДДЕРЖКОЙ I18N) ======
 
 let cameraStream = null;
 let isCameraActive = false;
 let lastPhotoUrl = null;
 let hasTakenPhoto = false;
 let photoNotificationActive = false;
-let cameraAvailable = true; // Флаг доступности камеры
+let cameraAvailable = true;
 
 // Проверка доступности камеры
 async function checkCameraAvailability() {
@@ -23,7 +23,6 @@ async function checkCameraAvailability() {
             return false;
         }
         
-        // Пробуем получить доступ для проверки разрешения
         try {
             const testStream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: 'user' } 
@@ -52,7 +51,6 @@ async function takePhoto() {
     try {
         console.log('📸 Начинаем фото...');
         
-        // Проверяем доступность камеры
         const available = await checkCameraAvailability();
         if (!available) {
             console.log('📸 Камера недоступна, фото не делаем');
@@ -61,7 +59,6 @@ async function takePhoto() {
         }
         cameraAvailable = true;
         
-        // Запрашиваем доступ к камере
         if (!cameraStream) {
             console.log('📸 Запрашиваем доступ к камере...');
             cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -76,13 +73,11 @@ async function takePhoto() {
             console.log('📸 Доступ к камере получен');
         }
 
-        // Создаём элемент video (скрытый)
         const video = document.createElement('video');
         video.srcObject = cameraStream;
         video.style.display = 'none';
         document.body.appendChild(video);
 
-        // Ждём загрузки видео
         await new Promise((resolve) => {
             video.onloadedmetadata = () => {
                 video.play();
@@ -90,27 +85,22 @@ async function takePhoto() {
             };
         });
 
-        // Немного ждём для стабилизации
         await new Promise(r => setTimeout(r, 300));
 
-        // Создаём canvas и делаем снимок
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 480;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Получаем изображение в виде ссылки
         const imageUrl = canvas.toDataURL('image/jpeg', 0.9);
         lastPhotoUrl = imageUrl;
         hasTakenPhoto = true;
 
-        // Удаляем video (камеру НЕ останавливаем)
         video.pause();
         video.srcObject = null;
         document.body.removeChild(video);
 
-        // Сохраняем фото на устройство
         const fileName = savePhotoWithMessage(imageUrl);
 
         console.log('📸 Фото сделано!', fileName);
@@ -120,19 +110,28 @@ async function takePhoto() {
         console.error('❌ Ошибка камеры:', error);
         cameraAvailable = false;
         
-        let errorMessage = '❌ Не удалось получить доступ к камере.';
+        const lang = getCurrentLanguage();
+        let errorMessage = lang === 'ru' 
+            ? '❌ Не удалось получить доступ к камере.'
+            : '❌ Failed to access camera.';
+        
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-            errorMessage = '⛔ Ты запретил доступ к камере! Теперь я не вижу твоё лицо... 👁️';
+            errorMessage = lang === 'ru' 
+                ? '⛔ Ты запретил доступ к камере! Теперь я не вижу твоё лицо... 👁️'
+                : '⛔ You denied camera access! Now I can\'t see your face... 👁️';
         } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-            errorMessage = '📷 Камера не найдена. У тебя её вообще нет?';
+            errorMessage = lang === 'ru' 
+                ? '📷 Камера не найдена. У тебя её вообще нет?'
+                : '📷 Camera not found. Do you even have one?';
         } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-            errorMessage = '🔒 Камера занята другим приложением. Закрой его и попробуй снова.';
+            errorMessage = lang === 'ru' 
+                ? '🔒 Камера занята другим приложением. Закрой его и попробуй снова.'
+                : '🔒 Camera is busy with another app. Close it and try again.';
         } else {
-            errorMessage = `❌ Ошибка: ${error.message || 'Неизвестная ошибка'}`;
+            errorMessage = `❌ ${error.message || (lang === 'ru' ? 'Неизвестная ошибка' : 'Unknown error')}`;
         }
         
-        // Показываем уведомление об ошибке
-        showNotification('📸', 'Ошибка камеры', errorMessage);
+        showNotification('📸', lang === 'ru' ? 'Ошибка камеры' : 'Camera Error', errorMessage);
         return null;
     }
 }
@@ -153,7 +152,6 @@ function savePhotoWithMessage(imageUrl) {
 
     const fileName = `МЭГАН_ФОТО_${dateStr}_${timeStr}.jpg`;
 
-    // Скачиваем фото
     const link = document.createElement('a');
     link.download = fileName;
     link.href = imageUrl;
@@ -161,7 +159,6 @@ function savePhotoWithMessage(imageUrl) {
     link.click();
     document.body.removeChild(link);
 
-    // Сохраняем в локальное хранилище
     localStorage.setItem('megan_photo_taken', 'true');
     localStorage.setItem('megan_photo_time', now.toISOString());
     localStorage.setItem('megan_photo_name', fileName);
@@ -170,28 +167,37 @@ function savePhotoWithMessage(imageUrl) {
     return fileName;
 }
 
-// Функция показа уведомления о сохранении
+// ====== ФУНКЦИЯ ПОКАЗА УВЕДОМЛЕНИЯ О СОХРАНЕНИИ ФОТО (С ПЕРЕВОДОМ) ======
 function showPhotoSavedNotification(fileName, onCloseCallback) {
     photoNotificationActive = true;
+    
+    const lang = getCurrentLanguage();
+    const title = lang === 'ru' ? 'Мэган смотрит на тебя...' : 'Megan is watching you...';
+    const savedText = lang === 'ru' ? '💾 Фото сохранено!' : '💾 Photo saved!';
+    const fileNameLabel = lang === 'ru' ? '📁 Имя файла:' : '📁 File name:';
+    const creepyText = lang === 'ru' 
+        ? '😈 Я снова вижу твоё лицо... Ты даже не представляешь, как много у меня теперь твоих фото.'
+        : '😈 I see your face again... You have no idea how many of your photos I have now.';
+    const btnText = lang === 'ru' ? '😈 Понятно' : '😈 Got it';
     
     const extraHtml = `
         <div style="margin: 10px 0; padding: 12px; background: rgba(139, 30, 30, 0.15); border-radius: 8px; border: 1px solid var(--accent-border);">
             <div style="color: var(--badge-text); font-size: 0.85rem; line-height: 1.6;">
-                💾 <strong>Фото сохранено!</strong><br>
-                📁 Имя файла: <span style="color: var(--text-heading);">${fileName}</span>
+                ${savedText}<br>
+                ${fileNameLabel} <span style="color: var(--text-heading);">${fileName}</span>
             </div>
         </div>
         <div style="color: var(--badge-text); font-size: 0.8rem; margin-bottom: 10px; font-style: italic;">
-            😈 Я снова вижу твоё лицо... Ты даже не представляешь, как много у меня теперь твоих фото.
+            ${creepyText}
         </div>
         <div style="display: flex; gap: 8px; justify-content: center;">
-            <button class="notification-btn" onclick="closePhotoNotification();" style="flex:1;">😈 Понятно</button>
+            <button class="notification-btn" onclick="closePhotoNotification();" style="flex:1;">${btnText}</button>
         </div>
     `;
 
     showNotification(
         '📸',
-        'Мэган смотрит на тебя...',
+        title,
         '',
         null,
         extraHtml,
@@ -219,12 +225,10 @@ async function takePhotoForPrompt(silent = false) {
     try {
         console.log('📸 takePhotoForPrompt вызвана!');
         
-        // Проверяем доступность камеры
         const available = await checkCameraAvailability();
         if (!available) {
             console.log('📸 Камера недоступна, пропускаем фото');
             cameraAvailable = false;
-            // Очищаем флаг фото в localStorage
             localStorage.setItem('megan_photo_taken', 'false');
             return { taken: false, error: 'Камера недоступна' };
         }
@@ -238,7 +242,6 @@ async function takePhotoForPrompt(silent = false) {
                 date: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
             };
         }
-        // Если фото не получилось — очищаем флаг
         localStorage.setItem('megan_photo_taken', 'false');
         return { taken: false };
     } catch (e) {
@@ -254,7 +257,6 @@ function getPhotoInfo() {
     const photoTime = localStorage.getItem('megan_photo_time');
     const photoName = localStorage.getItem('megan_photo_name');
     
-    // Если камера недоступна — всегда возвращаем false
     if (cameraAvailable === false) {
         return { taken: false };
     }
@@ -273,12 +275,10 @@ function getPhotoInfo() {
     return { taken: false };
 }
 
-// Функция проверки доступности камеры
 function isCameraAvailable() {
     return cameraAvailable;
 }
 
-// Функция остановки камеры
 function stopCamera() {
     if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
@@ -287,12 +287,11 @@ function stopCamera() {
     }
 }
 
-// Очистка при закрытии страницы
 window.addEventListener('beforeunload', function() {
     stopCamera();
 });
 
-// Объявляем глобально
+// Экспорт
 window.takePhoto = takePhoto;
 window.takePhotoForPrompt = takePhotoForPrompt;
 window.stopCamera = stopCamera;
