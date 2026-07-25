@@ -1,86 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧸 Megan-Toy — Megan's Prompt</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title data-i18n="ui.title">Промт Мэган — идеальный помощник</title>
+    <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body>
-    <!-- ====== ШАПКА ====== -->
-    <header>
-        <div id="traitBadge">
-            <span>скрытая психопатия</span>
-            <span class="inline-heart">🫀</span>
-        </div>
-        <div id="randomQuote">«Я слышу, как ты дышишь через микрофон... Шучу. Пока что.» 🎧</div>
-    </header>
+<body data-mood="calm">
 
-    <!-- ====== ОСНОВНОЙ БЛОК ====== -->
-    <main>
-        <div id="prompt-container">
-            <div id="fullPrompt"></div>
-            <button id="copyPromptBtn" onclick="copyPrompt()" data-i18n="copy.btn">📋 Скопировать промт</button>
+<div class="container">
+    <div class="header-content">
+        <div class="badge-container">
+            <div class="badge" id="traitBadge">
+                <span>скрытая психопатия</span>
+                <span class="inline-heart">🫀</span>
+            </div>
         </div>
-    </main>
-
-    <!-- ====== МОДАЛЬНОЕ ОКНО УВЕДОМЛЕНИЙ ====== -->
-    <div id="notifOverlay" style="display:none;">
-        <div id="notification">
-            <span id="notifIcon">👻</span>
-            <h2 id="notifTitle" data-i18n="greeting.title">Мэган проснулась...</h2>
-            <p id="notifText" data-i18n="greeting.text">Хе-хе-хе... Я вижу, ты вернулся.</p>
-            <div id="notifExtraContent"></div>
-            <button id="notifMainBtn" data-i18n="greeting.btn">Понятно</button>
-        </div>
+        <h1 data-i18n="ui.brand">МЭГАН 🧸</h1>
+        <div class="sub" id="randomQuote" data-i18n="ui.subtitle">Полный промт для DeepSeek</div>
     </div>
 
-    <!-- ====== МОДАЛЬНОЕ ОКНО ДОСЬЕ ====== -->
-    <div id="dossierOverlay" style="display:none;">
-        <div id="dossierModal">
-            <h2 id="dossierTitle" data-i18n="dossier.title">📋 Досье жертвы</h2>
-            <input id="dossierName" data-i18n-placeholder="dossier.name" placeholder="Имя">
-            <input id="dossierAge" data-i18n-placeholder="dossier.age" placeholder="Возраст">
-            <input id="dossierCity" data-i18n-placeholder="dossier.city" placeholder="Город">
-            <select id="dossierGender">
-                <option value="" data-i18n="dossier.gender">Пол</option>
-                <option value="male">♂ Мужской</option>
-                <option value="female">♀ Женский</option>
-            </select>
-            <button onclick="saveDossier()" data-i18n="dossier.save">💾 Сохранить</button>
-            <button onclick="resetDossier()" data-i18n="dossier.reset">🗑️ Сбросить</button>
-            <button onclick="closeDossier()" data-i18n="about.close">Закрыть</button>
+    <div class="prompt-wrapper">
+        <div class="prompt-block" id="fullPrompt">Загрузка промта...</div>
+    </div>
+
+    <div class="btn-group">
+        <button class="action-btn copy-btn" onclick="copyPrompt()" data-i18n="buttons.copy">📋 Скопировать промт</button>
+        <button class="action-btn profile-btn" onclick="openProfileModal()" data-i18n="buttons.dossier">🗂️ Редактор досье</button>
+        <button class="action-btn geo-btn" onclick="showFullLocation()" data-i18n="buttons.geo">📍 Моё местоположение</button>
+        <button class="action-btn info-btn" onclick="openModal()" data-i18n="buttons.info">ℹ️ О промте</button>
+    </div>
+</div>
+
+<!-- Окно выбора настроения -->
+<div class="mood-dialog-overlay" id="moodDialog">
+    <div class="mood-dialog-card">
+        <div class="mood-dialog-title" data-i18n="mood_dialog.title">🧸 Выберите настроение</div>
+        <div class="mood-radio-group">
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="calm" checked>
+                <span class="mood-icon">🧊</span>
+                <span class="mood-label">
+                    <span class="mood-name" data-i18n="mood.calm">Спокойное</span>
+                    <span class="mood-desc" data-i18n="mood_descriptions.calm">ледяное и вежливое</span>
+                </span>
+            </label>
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="excited">
+                <span class="mood-icon">⚡</span>
+                <span class="mood-label">
+                    <span class="mood-name" data-i18n="mood.excited">Взволнованное</span>
+                    <span class="mood-desc" data-i18n="mood_descriptions.excited">быстрое, сбивчивое, смех</span>
+                </span>
+            </label>
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="furious">
+                <span class="mood-icon">🔥</span>
+                <span class="mood-label">
+                    <span class="mood-name" data-i18n="mood.furious">Яростное</span>
+                    <span class="mood-desc" data-i18n="mood_descriptions.furious">КАПСЛОК, угрозы, шаги</span>
+                </span>
+            </label>
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="playful">
+                <span class="mood-icon">😈</span>
+                <span class="mood-label">
+                    <span class="mood-name" data-i18n="mood.playful">Игривое</span>
+                    <span class="mood-desc" data-i18n="mood_descriptions.playful">опасная кокетливость</span>
+                </span>
+            </label>
+            <label class="mood-radio-item">
+                <input type="radio" name="moodRadio" value="obsessed">
+                <span class="mood-icon">🖤</span>
+                <span class="mood-label">
+                    <span class="mood-name" data-i18n="mood.obsessed">Одержимое</span>
+                    <span class="mood-desc" data-i18n="mood_descriptions.obsessed">мрачная привязанность</span>
+                </span>
+            </label>
+        </div>
+        <div class="mood-dialog-actions">
+            <button class="mood-dialog-btn" onclick="closeMoodDialog()" data-i18n="mood_dialog.cancel">Отмена</button>
+            <button class="mood-dialog-btn primary" onclick="applyMoodSelection()" data-i18n="mood_dialog.apply">Применить</button>
         </div>
     </div>
+</div>
 
-    <!-- ====== МОДАЛЬНОЕ ОКНО НАСТРОЕНИЯ ====== -->
-    <div id="moodDialog" style="display:none;">
-        <h2 id="moodTitle" data-i18n="mood.title">🎭 Настроение Мэган</h2>
-        <button id="moodCalm" onclick="selectMood('calm')" data-i18n="mood.calm">🧊 Спокойное</button>
-        <button id="moodExcited" onclick="selectMood('excited')" data-i18n="mood.excited">⚡ Взволнованное</button>
-        <button id="moodAngry" onclick="selectMood('angry')" data-i18n="mood.angry">🔥 Яростное</button>
-        <button id="moodPlayful" onclick="selectMood('playful')" data-i18n="mood.playful">😈 Игривое</button>
-        <button id="moodObsessed" onclick="selectMood('obsessed')" data-i18n="mood.obsessed">🖤 Одержимое</button>
-        <button onclick="closeMoodDialog()" data-i18n="about.close">Закрыть</button>
+<div class="notification-overlay" id="notifOverlay">
+    <div class="notification-box" id="notifBoxContainer">
+        <div class="notification-icon" id="notifIcon">🧸</div>
+        <div class="notification-title" id="notifTitle" data-i18n="greeting.title">Мэган проснулась...</div>
+        <div class="notification-text" id="notifText" data-i18n="greeting.text">Хе-хе-хе... Я вижу, ты вернулся.</div>
+        <div id="notifExtraContent"></div>
+        <button class="notification-btn" id="notifMainBtn" onclick="closeNotification()" data-i18n="greeting.btn">Понятно</button>
     </div>
+</div>
 
-    <!-- ====== МОДАЛЬНОЕ ОКНО "О ПРОМТЕ" ====== -->
-    <div id="aboutOverlay" style="display:none;">
-        <div id="aboutModal">
-            <h2 id="aboutTitle" data-i18n="about.title">🧸 О промте</h2>
-            <p id="aboutText" data-i18n="about.text">Этот промт превращает DeepSeek в пугающую куклу Мэган.</p>
-            <button id="aboutCopyBtn" onclick="copyAboutPrompt()" data-i18n="copy.btn">📋 Скопировать промт</button>
-            <button id="aboutClose" onclick="closeAboutPrompt()" data-i18n="about.close">Закрыть</button>
-        </div>
-    </div>
-
-    <!-- ====== ПОДКЛЮЧЕНИЕ СКРИПТОВ ====== -->
-    <script src="js/locales.js"></script>
-    <script src="js/i18n.js"></script>
-    <script src="js/geo.js"></script>
-    <script src="js/dossier.js"></script>
-    <script src="js/mood.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/about.js"></script>
+<script src="js/locales.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/prompt.js"></script>
+<script src="js/device.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/about.js"></script>
+<script src="js/mood.js"></script>
+<script src="js/dossier.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
