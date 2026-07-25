@@ -50,7 +50,20 @@ const LOCALES = {
             city: 'Город',
             gender: 'Пол',
             save: '💾 Сохранить',
-            reset: '🗑️ Сбросить'
+            reset: '🗑️ Сбросить',
+            aliases: 'Псевдонимы',
+            status: 'Статус',
+            threat: 'Угроза',
+            behavior: 'Поведение',
+            history: 'История',
+            fears: 'Счётчик страхов',
+            phobias: 'Фобии',
+            triggers: 'Триггеры',
+            notes: 'Заметки',
+            interest: 'Интерес',
+            rating: 'Оценка',
+            import: 'Импорт',
+            preview: 'Предпросмотр'
         },
         // Настроение
         mood: {
@@ -85,7 +98,8 @@ const LOCALES = {
             copy: '📋 Скопировать промт',
             dossier: '🗂️ Редактор досье',
             geo: '📍 Моё местоположение',
-            info: 'ℹ️ О промте'
+            info: 'ℹ️ О промте',
+            deepseek: '🚀 Перейти в DeepSeek'
         },
         // Mood dialog
         mood_dialog: {
@@ -416,7 +430,20 @@ const LOCALES = {
             city: 'City',
             gender: 'Gender',
             save: '💾 Save',
-            reset: '🗑️ Reset'
+            reset: '🗑️ Reset',
+            aliases: 'Aliases',
+            status: 'Status',
+            threat: 'Threat Level',
+            behavior: 'Behavior',
+            history: 'History',
+            fears: 'Fear Counter',
+            phobias: 'Phobias',
+            triggers: 'Triggers',
+            notes: 'Notes',
+            interest: 'Interest',
+            rating: 'Rating',
+            import: 'Import',
+            preview: 'Preview'
         },
         // Настроение
         mood: {
@@ -451,7 +478,8 @@ const LOCALES = {
             copy: '📋 Copy prompt',
             dossier: '🗂️ Dossier Editor',
             geo: '📍 My Location',
-            info: 'ℹ️ About'
+            info: 'ℹ️ About',
+            deepseek: '🚀 Go to DeepSeek'
         },
         // Mood dialog
         mood_dialog: {
