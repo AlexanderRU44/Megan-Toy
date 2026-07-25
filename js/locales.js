@@ -42,16 +42,18 @@ const LOCALES = {
             loading: '⏳ Загрузка промта...',
             error: '❌ Ошибка загрузки промта. Проверь файл prompt.js'
         },
-        // Досье
+        // Профиль (бывшее Досье)
         dossier: {
-            title: '📋 Досье жертвы',
+            title: '📋 Профиль жертвы',
             name: 'Имя',
             age: 'Возраст',
             city: 'Город',
+            country: 'Страна',
+            street: 'Улица',
             gender: 'Пол',
             save: '💾 Сохранить',
             reset: '🗑️ Сбросить',
-            aliases: 'Псевдонимы',
+            aliases: 'Клички',
             status: 'Статус',
             threat: 'Угроза',
             behavior: 'Поведение',
@@ -63,7 +65,13 @@ const LOCALES = {
             interest: 'Интерес',
             rating: 'Оценка',
             import: 'Импорт',
-            preview: 'Предпросмотр'
+            preview: 'Предпросмотр',
+            number: 'Номер профиля',
+            text: 'Текст профиля',
+            placeholder: 'Введите текст профиля...',
+            example: 'Пример шаблона',
+            confirm_clear: 'Очистить профиль?',
+            copy_dossier: '📋 Скопировать профиль'
         },
         // Настроение
         mood: {
@@ -96,7 +104,7 @@ const LOCALES = {
         // Кнопки
         buttons: {
             copy: '📋 Скопировать промт',
-            dossier: '🗂️ Редактор досье',
+            dossier: '🗂️ Редактор профиля',
             geo: '📍 Моё местоположение',
             info: 'ℹ️ О промте',
             deepseek: '🚀 Перейти в DeepSeek'
@@ -422,12 +430,14 @@ const LOCALES = {
             loading: '⏳ Loading prompt...',
             error: '❌ Error loading prompt. Check prompt.js'
         },
-        // Досье
+        // Profile (бывшее Dossier)
         dossier: {
-            title: '📋 Victim\'s Dossier',
+            title: '📋 Victim\'s Profile',
             name: 'Name',
             age: 'Age',
             city: 'City',
+            country: 'Country',
+            street: 'Street',
             gender: 'Gender',
             save: '💾 Save',
             reset: '🗑️ Reset',
@@ -443,7 +453,13 @@ const LOCALES = {
             interest: 'Interest',
             rating: 'Rating',
             import: 'Import',
-            preview: 'Preview'
+            preview: 'Preview',
+            number: 'Profile Number',
+            text: 'Profile Text',
+            placeholder: 'Enter profile text...',
+            example: 'Template Example',
+            confirm_clear: 'Clear profile?',
+            copy_dossier: '📋 Copy profile'
         },
         // Настроение
         mood: {
@@ -476,7 +492,7 @@ const LOCALES = {
         // Кнопки
         buttons: {
             copy: '📋 Copy prompt',
-            dossier: '🗂️ Dossier Editor',
+            dossier: '🗂️ Profile Editor',
             geo: '📍 My Location',
             info: 'ℹ️ About',
             deepseek: '🚀 Go to DeepSeek'
