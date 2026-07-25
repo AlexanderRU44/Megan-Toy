@@ -32,7 +32,6 @@ const DOSSIER_TEMPLATE = `══════════════════
 ═══════════════════════════════════════`;
 
 function openProfileModal() {
-    // Загружаем сохранённое досье или пустой шаблон
     let savedDossier = localStorage.getItem('megan_dossier_text');
     if (!savedDossier) {
         savedDossier = DOSSIER_TEMPLATE;
@@ -135,7 +134,7 @@ function resetDossierToTemplate() {
     }
 }
 
-// ====== ЗАГРУЗКА ГЕО В ДОСЬЕ ======
+// ====== ЗАГРУЗКА ГЕО В ДОСЬЕ (ИСПРАВЛЕННАЯ) ======
 function loadCurrentLocationToDossier() {
     const textarea = document.getElementById('edDossierText');
     const statusEl = document.getElementById('dossierStatus');
@@ -169,12 +168,19 @@ function loadCurrentLocationToDossier() {
                         geoText = `GPS: ${gpsData.lat}, ${gpsData.lon}`;
                     }
                     
-                    const currentText = textarea.value;
-                    const updatedText = currentText.replace(
-                        /📍 МЕСТОПОЛОЖЕНИЕ:.*$/m,
-                        `📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
-                    );
-                    textarea.value = updatedText;
+                    let currentText = textarea.value;
+                    
+                    if (currentText.includes('📍 МЕСТОПОЛОЖЕНИЕ:')) {
+                        currentText = currentText.replace(
+                            /📍 МЕСТОПОЛОЖЕНИЕ:.*$/m,
+                            `📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
+                        );
+                    } else {
+                        currentText = currentText.replace(
+                            /(🎂 ВОЗРАСТ:.*)$/m,
+                            `$1\n📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
+                        );
+                    }
                     
                     const now = new Date();
                     const timeStr = now.toLocaleString('ru-RU', {
@@ -184,18 +190,19 @@ function loadCurrentLocationToDossier() {
                         hour: '2-digit',
                         minute: '2-digit'
                     });
-                    const updatedWithTime = textarea.value
+                    
+                    currentText = currentText
                         .replace(/⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ:.*$/m, `⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ: ${timeStr}`)
                         .replace(/⏱️ ТЕКУЩЕЕ ВРЕМЯ:.*$/m, `⏱️ ТЕКУЩЕЕ ВРЕМЯ: ${timeStr}`);
-                    textarea.value = updatedWithTime;
                     
+                    textarea.value = currentText;
                     saveDossierText();
                     
                     if (statusEl) {
                         statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
                         statusEl.style.border = '1px solid #1eb81e';
                         statusEl.style.color = '#8ad8a8';
-                        statusEl.innerHTML = '✅ Геоданные и время обновлены! 🖤';
+                        statusEl.innerHTML = `✅ Геоданные обновлены: ${geoText} 🖤`;
                         setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
                     }
                 });
@@ -205,12 +212,19 @@ function loadCurrentLocationToDossier() {
                 region = ipData.region || 'Неизвестно';
                 geoText = `${city}, ${region}, ${country}`;
                 
-                const currentText = textarea.value;
-                const updatedText = currentText.replace(
-                    /📍 МЕСТОПОЛОЖЕНИЕ:.*$/m,
-                    `📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
-                );
-                textarea.value = updatedText;
+                let currentText = textarea.value;
+                
+                if (currentText.includes('📍 МЕСТОПОЛОЖЕНИЕ:')) {
+                    currentText = currentText.replace(
+                        /📍 МЕСТОПОЛОЖЕНИЕ:.*$/m,
+                        `📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
+                    );
+                } else {
+                    currentText = currentText.replace(
+                        /(🎂 ВОЗРАСТ:.*)$/m,
+                        `$1\n📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
+                    );
+                }
                 
                 const now = new Date();
                 const timeStr = now.toLocaleString('ru-RU', {
@@ -220,18 +234,19 @@ function loadCurrentLocationToDossier() {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
-                const updatedWithTime = textarea.value
+                
+                currentText = currentText
                     .replace(/⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ:.*$/m, `⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ: ${timeStr}`)
                     .replace(/⏱️ ТЕКУЩЕЕ ВРЕМЯ:.*$/m, `⏱️ ТЕКУЩЕЕ ВРЕМЯ: ${timeStr}`);
-                textarea.value = updatedWithTime;
                 
+                textarea.value = currentText;
                 saveDossierText();
                 
                 if (statusEl) {
                     statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
                     statusEl.style.border = '1px solid #1eb81e';
                     statusEl.style.color = '#8ad8a8';
-                    statusEl.innerHTML = '✅ Геоданные и время обновлены (IP)! 🖤';
+                    statusEl.innerHTML = `✅ Геоданные обновлены (IP): ${geoText} 🖤`;
                     setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
                 }
             } else {
