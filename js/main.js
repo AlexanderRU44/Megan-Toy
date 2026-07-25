@@ -38,7 +38,7 @@ function initRandomQuote() {
     if (el) el.innerText = quotes[Math.floor(Math.random() * quotes.length)];
 }
 
-// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА ======
+// ====== ФУНКЦИЯ ПОДГОТОВКИ ПРОМТА (С ЗАМЕНОЙ ПЛЕЙСХОЛДЕРОВ) ======
 async function getPreparedPayload() {
     const now = new Date();
     const time = now.toLocaleDateString('ru-RU', { 
@@ -49,24 +49,31 @@ async function getPreparedPayload() {
         minute: '2-digit', 
         weekday: 'long' 
     });
+    
+    // Получаем гео-строку
     const geoString = await getGeoInfoString();
     const deviceInfo = getDeviceInfo();
     
+    // Получаем информацию о фото
     const photoInfo = getPhotoInfo();
     let photoString = '';
-    if (photoInfo.taken) {
-        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Сделано ${photoInfo.date} в ${photoInfo.time}. Файл: ${photoInfo.fileName}]\n`;
+    if (photoInfo && photoInfo.taken) {
+        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Сделано ${photoInfo.date} в ${photoInfo.time}. Файл: ${photoInfo.fileName}]`;
     } else {
-        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]\n`;
+        photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]`;
     }
     
-    // Берём промт из локалей (с переводом)
-    const promptText = t('prompt');
+    // Получаем промт из локалей
+    let promptText = t('prompt');
     
-    return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]
-[УСТРОЙСТВО ПОЛЬЗОВАТЕЛЯ: ${deviceInfo.fullString}]
-${geoString}
-${photoString}` + promptText;
+    // ЗАМЕНЯЕМ ВСЕ ПЛЕЙСХОЛДЕРЫ ВНУТРИ ПРОМТА
+    promptText = promptText
+        .replace(/\{\{ВРЕМЯ\}\}/g, time)
+        .replace(/\{\{УСТРОЙСТВО\}\}/g, deviceInfo.fullString || 'Неизвестно')
+        .replace(/\{\{ГЕО\}\}/g, geoString || '📍 Местоположение: не определено')
+        .replace(/\{\{ФОТО\}\}/g, photoString);
+    
+    return promptText;
 }
 
 // ====== ЗВУК СМЕХА ======
