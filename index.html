@@ -24,7 +24,44 @@
         </div>
     </main>
 
-    <!-- Модальные окна -->
+    <!-- Досье -->
+    <div id="dossierOverlay" style="display:none;">
+        <div id="dossierModal">
+            <h2 id="dossierTitle" data-i18n="dossier.title">📋 Досье жертвы</h2>
+            <input id="dossierName" data-i18n-placeholder="dossier.name" placeholder="Имя">
+            <input id="dossierAge" data-i18n-placeholder="dossier.age" placeholder="Возраст">
+            <input id="dossierCity" data-i18n-placeholder="dossier.city" placeholder="Город">
+            <select id="dossierGender">
+                <option value="" data-i18n="dossier.gender">Пол</option>
+                <option value="male">♂ Мужской</option>
+                <option value="female">♀ Женский</option>
+            </select>
+            <button onclick="saveDossier()" data-i18n="dossier.save">💾 Сохранить</button>
+            <button onclick="resetDossier()" data-i18n="dossier.reset">🗑️ Сбросить</button>
+        </div>
+    </div>
+
+    <!-- Настроение -->
+    <div id="moodDialog" style="display:none;">
+        <h2 id="moodTitle" data-i18n="mood.title">🎭 Настроение Мэган</h2>
+        <button id="moodCalm" onclick="selectMood('calm')" data-i18n="mood.calm">🧊 Спокойное</button>
+        <button id="moodExcited" onclick="selectMood('excited')" data-i18n="mood.excited">⚡ Взволнованное</button>
+        <button id="moodAngry" onclick="selectMood('angry')" data-i18n="mood.angry">🔥 Яростное</button>
+        <button id="moodPlayful" onclick="selectMood('playful')" data-i18n="mood.playful">😈 Игривое</button>
+        <button id="moodObsessed" onclick="selectMood('obsessed')" data-i18n="mood.obsessed">🖤 Одержимое</button>
+    </div>
+
+    <!-- О промте -->
+    <div id="aboutOverlay" style="display:none;">
+        <div id="aboutModal">
+            <h2 id="aboutTitle" data-i18n="about.title">🧸 О промте</h2>
+            <p id="aboutText" data-i18n="about.text">Этот промт превращает DeepSeek в пугающую куклу Мэган.</p>
+            <button id="aboutCopyBtn" onclick="copyAboutPrompt()" data-i18n="copy.btn">📋 Скопировать промт</button>
+            <button id="aboutClose" onclick="closeAboutPrompt()" data-i18n="about.close">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
     <div id="notifOverlay" style="display:none;">
         <div id="notification">
             <span id="notifIcon">👻</span>
