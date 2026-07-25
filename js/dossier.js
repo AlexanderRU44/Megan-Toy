@@ -1,67 +1,141 @@
-// ====== РЕДАКТОР ДОСЬЕ (С ПУСТЫМ ШАБЛОНОМ) ======
-
-// ШАБЛОН ДОСЬЕ (ПУСТОЙ — ТОЛЬКО СТРУКТУРА)
-const DOSSIER_TEMPLATE = `═══════════════════════════════════════
-         📋 ДОСЬЕ ЖЕРТВЫ №[НОМЕР]
-═══════════════════════════════════════
-👤 ИМЯ: 
-🎂 ВОЗРАСТ: 
-📍 МЕСТОПОЛОЖЕНИЕ: 
-⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ: 
-⏱️ ТЕКУЩЕЕ ВРЕМЯ: 
-📊 СТАТУС: 
-═══════════════════════════════════════
-🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ:
-
-═══════════════════════════════════════
-👻 ФОБИИ:
-
-═══════════════════════════════════════
-🔪 ТРИГГЕРЫ:
-
-═══════════════════════════════════════
-📜 ИСТОРИЯ ПОВЕДЕНИЯ:
-
-═══════════════════════════════════════
-⚠️ СТЕПЕНЬ УГРОЗЫ: 
-═══════════════════════════════════════
-🎭 НАСТРОЕНИЕ МЭГАН: 
-═══════════════════════════════════════
-💀 ЗАМЕТКИ МЭГАН:
-
-═══════════════════════════════════════`;
+// ====== РЕДАКТОР ПРОФИЛЯ (С ОТДЕЛЬНЫМИ ПОЛЯМИ) ======
 
 function openProfileModal() {
-    let savedDossier = localStorage.getItem('megan_dossier_text');
-    if (!savedDossier) {
-        savedDossier = DOSSIER_TEMPLATE;
-    }
+    // Загружаем сохранённые данные
+    const savedData = JSON.parse(localStorage.getItem('megan_dossier_data') || '{}');
+    
+    const name = savedData.name || '';
+    const aliases = savedData.aliases || '';
+    const number = savedData.number || '';
+    const city = savedData.city || '';
+    const country = savedData.country || '';
+    const street = savedData.street || '';
+    const age = savedData.age || '';
+    const status = savedData.status || '';
+    const threat = savedData.threat || '';
+    const behavior = savedData.behavior || '';
+    const history = savedData.history || '';
+    const phobias = savedData.phobias || '';
+    const triggers = savedData.triggers || '';
+    const notes = savedData.notes || '';
+    const interest = savedData.interest || '';
+    const rating = savedData.rating || '';
+    const mood = savedData.mood || 'Спокойное (ледяное и вежливое)';
     
     const extraHtml = `
-        <div class="editor-workspace" style="display: flex; flex-direction: column; gap: 12px;">
-            <div class="panel-box" style="grid-column: 1 / -1;">
-                <div class="panel-title">📝 ${t('dossier.title')}</div>
+        <div class="editor-workspace">
+            <div class="panel-box">
+                <div class="panel-title">📋 ${t('dossier.title')}</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>🆔 ${t('dossier.number') || 'Номер профиля'}</label>
+                        <input type="text" id="edNumber" value="${number}" placeholder="001">
+                    </div>
+                    <div class="form-group">
+                        <label>📅 ${t('dossier.age')}</label>
+                        <input type="text" id="edAge" value="${age}" placeholder="${t('dossier.age')}">
+                    </div>
+                </div>
                 <div class="form-group">
-                    <label>📋 ${t('dossier.text') || 'Текст досье'}</label>
-                    <textarea id="edDossierText" placeholder="${t('dossier.placeholder') || 'Введите текст досье...'}" style="min-height: 400px; font-size: 0.72rem; line-height: 1.6; font-family: 'Courier New', monospace; background: #0a0a0a; color: var(--prompt-text); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; width: 100%; resize: vertical; white-space: pre-wrap;">${savedDossier}</textarea>
+                    <label>👤 ${t('dossier.name')}</label>
+                    <input type="text" id="edName" value="${name}" placeholder="${t('dossier.name')}">
                 </div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
-                    <button class="action-btn copy-btn" style="padding:8px 16px; font-size:0.7rem; min-height:36px; flex:1;" onclick="saveDossierText()">💾 ${t('dossier.save')}</button>
-                    <button class="action-btn geo-btn" style="padding:8px 16px; font-size:0.7rem; min-height:36px; flex:1;" onclick="loadCurrentLocationToDossier()">📍 ${t('buttons.geo')}</button>
-                    <button class="action-btn info-btn" style="padding:8px 16px; font-size:0.7rem; min-height:36px; flex:1;" onclick="resetDossierToTemplate()">🔄 ${t('dossier.reset')}</button>
-                    <button class="action-btn profile-btn" style="padding:8px 16px; font-size:0.7rem; min-height:36px; flex:1;" onclick="copyDossierText()">📋 ${t('copy.btn')}</button>
+                <div class="form-group">
+                    <label>🎭 ${t('dossier.aliases') || 'Клички'}</label>
+                    <input type="text" id="edAliases" value="${aliases}" placeholder="${t('dossier.aliases') || 'Клички'}">
                 </div>
-                <div id="dossierStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
+                <div class="form-group">
+                    <label>📊 ${t('dossier.status')}</label>
+                    <input type="text" id="edStatus" value="${status}" placeholder="${t('dossier.status')}">
+                </div>
+                <div class="form-group">
+                    <label>${t('mood.title')}</label>
+                    <div class="mood-clickable" id="edMoodValue" onclick="openMoodDialog()">
+                        ${mood}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>⚠️ ${t('dossier.threat')}</label>
+                    <input type="text" id="edThreat" value="${threat}" placeholder="${t('dossier.threat')}">
+                </div>
             </div>
-            <div class="panel-box" style="grid-column: 1 / -1; background: rgba(0,0,0,0.2); border-color: var(--accent-border);">
-                <div class="panel-title">📖 ${t('dossier.example') || 'Шаблон досье'}</div>
-                <div style="font-size: 0.6rem; color: var(--text-sub); line-height: 1.5; white-space: pre-wrap; font-family: 'Courier New', monospace; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; max-height: 180px; overflow-y: auto;">
-${DOSSIER_TEMPLATE}
+
+            <div class="panel-box" style="grid-column: 1 / -1;">
+                <div class="panel-title">📍 ${t('geo.title')}</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>🌍 ${t('geo.country')}</label>
+                        <input type="text" id="edCountry" value="${country}" placeholder="${t('geo.country')}">
+                    </div>
+                    <div class="form-group">
+                        <label>🏙️ ${t('geo.city')}</label>
+                        <input type="text" id="edCity" value="${city}" placeholder="${t('geo.city')}">
+                    </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📍 ${t('dossier.street') || 'Улица'}</label>
+                        <input type="text" id="edStreet" value="${street}" placeholder="${t('dossier.street') || 'Улица'}">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end; gap: 8px;">
+                        <button class="action-btn geo-btn" style="padding:8px 16px; font-size:0.7rem; min-height:36px; width:100%;" onclick="loadLocationToDossier()">📍 ${t('buttons.geo')}</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-box">
+                <div class="panel-title">🧠 ${t('dossier.behavior')}</div>
+                <div class="form-group">
+                    <label>📝 ${t('dossier.behavior')}</label>
+                    <textarea id="edBehavior" placeholder="${t('dossier.behavior')}" style="min-height:80px;">${behavior}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>📜 ${t('dossier.history')}</label>
+                    <textarea id="edHistory" placeholder="${t('dossier.history')}" style="min-height:60px;">${history}</textarea>
+                </div>
+            </div>
+
+            <div class="panel-box">
+                <div class="panel-title">📌 ${t('dossier.phobias')}</div>
+                <div class="form-group">
+                    <label>😨 ${t('dossier.phobias')}</label>
+                    <textarea id="edPhobias" placeholder="${t('dossier.phobias')}" style="min-height:50px;">${phobias}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>⚡ ${t('dossier.triggers')}</label>
+                    <textarea id="edTriggers" placeholder="${t('dossier.triggers')}" style="min-height:34px;">${triggers}</textarea>
+                </div>
+            </div>
+
+            <div class="panel-box" style="grid-column: 1 / -1;">
+                <div class="panel-title">📝 ${t('dossier.notes')}</div>
+                <div class="form-group">
+                    <label>💀 ${t('dossier.notes')}</label>
+                    <textarea id="edNotes" placeholder="${t('dossier.notes')}" style="min-height:60px;">${notes}</textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>${t('dossier.interest')}</label>
+                        <input type="text" id="edInterest" value="${interest}" placeholder="0/10">
+                    </div>
+                    <div class="form-group">
+                        <label>${t('dossier.rating')}</label>
+                        <input type="text" id="edRating" value="${rating}" placeholder="${t('dossier.rating')}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-box" style="grid-column: 1 / -1;">
+                <div class="panel-title">👁️ ${t('dossier.preview')}</div>
+                <div class="preview-output" id="edPreview">📭 ${t('dossier.preview')}</div>
+                <div id="copyStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
             </div>
         </div>
         <div class="btn-row-modal">
-            <button class="notification-btn back-btn" onclick="closeNotification()">⬅️ ${t('about.close')}</button>
+            <button class="notification-btn back-btn" onclick="closeDossierEditor()">⬅️ ${t('about.close')}</button>
+            <button class="notification-btn" onclick="saveDossierData()">💾 ${t('dossier.save')}</button>
+            <button class="notification-btn" onclick="copyDossierFromFields()">📋 ${t('dossier.copy_dossier') || 'Скопировать профиль'}</button>
+            <button class="notification-btn" onclick="resetDossierFields()" style="background: linear-gradient(135deg, #5a1a1a 0%, #3a0a0a 100%);">🗑️ ${t('dossier.reset')}</button>
         </div>
     `;
 
@@ -74,72 +148,60 @@ ${DOSSIER_TEMPLATE}
         null,
         null
     );
+    setTimeout(liveUpdateDossier, 50);
 }
 
-// ====== СОХРАНЕНИЕ ТЕКСТА ДОСЬЕ ======
-function saveDossierText() {
-    const textarea = document.getElementById('edDossierText');
-    const statusEl = document.getElementById('dossierStatus');
+// ====== ЗАКРЫТИЕ РЕДАКТОРА ======
+function closeDossierEditor() {
+    closeNotification();
+}
+
+// ====== СОХРАНЕНИЕ ДАННЫХ ПРОФИЛЯ ======
+function saveDossierData() {
+    const data = {
+        number: document.getElementById('edNumber').value,
+        name: document.getElementById('edName').value,
+        aliases: document.getElementById('edAliases').value,
+        age: document.getElementById('edAge').value,
+        city: document.getElementById('edCity').value,
+        country: document.getElementById('edCountry').value,
+        street: document.getElementById('edStreet').value,
+        status: document.getElementById('edStatus').value,
+        threat: document.getElementById('edThreat').value,
+        behavior: document.getElementById('edBehavior').value,
+        history: document.getElementById('edHistory').value,
+        phobias: document.getElementById('edPhobias').value,
+        triggers: document.getElementById('edTriggers').value,
+        notes: document.getElementById('edNotes').value,
+        interest: document.getElementById('edInterest').value,
+        rating: document.getElementById('edRating').value,
+        mood: document.getElementById('edMoodValue').textContent
+    };
     
-    if (!textarea) return;
+    localStorage.setItem('megan_dossier_data', JSON.stringify(data));
     
-    const text = textarea.value.trim();
-    
-    if (!text) {
-        if (statusEl) {
-            statusEl.style.display = 'block';
-            statusEl.style.opacity = '1';
-            statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
-            statusEl.style.border = '1px solid #c21515';
-            statusEl.style.color = '#eba4a4';
-            statusEl.innerHTML = '😈 Досье пустое! Напиши что-нибудь... 🖤';
-            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-        }
-        return;
-    }
-    
-    localStorage.setItem('megan_dossier_text', text);
-    
+    const statusEl = document.getElementById('copyStatus');
     if (statusEl) {
         statusEl.style.display = 'block';
         statusEl.style.opacity = '1';
         statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
         statusEl.style.border = '1px solid #1eb81e';
         statusEl.style.color = '#8ad8a8';
-        statusEl.innerHTML = '✅ Досье сохранено! 😈';
+        statusEl.innerHTML = '✅ Профиль сохранён! 😈';
         setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
     }
+    
+    liveUpdateDossier();
 }
 
-// ====== СБРОС К ШАБЛОНУ ======
-function resetDossierToTemplate() {
-    const textarea = document.getElementById('edDossierText');
-    const statusEl = document.getElementById('dossierStatus');
+// ====== ЗАГРУЗКА ГЕОДАННЫХ В ПРОФИЛЬ ======
+function loadLocationToDossier() {
+    const cityInput = document.getElementById('edCity');
+    const countryInput = document.getElementById('edCountry');
+    const streetInput = document.getElementById('edStreet');
+    const statusEl = document.getElementById('copyStatus');
     
-    if (!textarea) return;
-    
-    if (confirm(t('dossier.confirm_clear') || 'Сбросить досье к шаблону?')) {
-        textarea.value = DOSSIER_TEMPLATE;
-        localStorage.setItem('megan_dossier_text', DOSSIER_TEMPLATE);
-        
-        if (statusEl) {
-            statusEl.style.display = 'block';
-            statusEl.style.opacity = '1';
-            statusEl.style.background = 'rgba(30, 150, 255, 0.12)';
-            statusEl.style.border = '1px solid #1e7cb8';
-            statusEl.style.color = '#8ad0d8';
-            statusEl.innerHTML = '🔄 Шаблон восстановлен! 📋';
-            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-        }
-    }
-}
-
-// ====== ЗАГРУЗКА ГЕО В ДОСЬЕ (ИСПРАВЛЕННАЯ — БЕЗ МУСОРА) ======
-function loadCurrentLocationToDossier() {
-    const textarea = document.getElementById('edDossierText');
-    const statusEl = document.getElementById('dossierStatus');
-    
-    if (!textarea) return;
+    if (!cityInput) return;
     
     if (statusEl) {
         statusEl.style.display = 'block';
@@ -152,126 +214,61 @@ function loadCurrentLocationToDossier() {
     
     getGeoData().then(ipData => {
         getGPSLocation().then(gpsData => {
-            let geoText = '';
-            let city = 'Неизвестно';
-            let country = 'Неизвестно';
-            let region = 'Неизвестно';
-            
             if (gpsData && !gpsData.error) {
                 getCityFromCoords(gpsData.lat, gpsData.lon).then(cityData => {
-                    if (cityData && cityData.city !== 'Неизвестно') {
-                        city = cityData.city;
-                        region = cityData.region;
-                        country = cityData.country;
-                        geoText = `${city}, ${region}, ${country}`;
+                    if (cityData) {
+                        if (cityData.city && cityData.city !== 'Неизвестно') {
+                            cityInput.value = cityData.city;
+                        }
+                        if (cityData.country && cityData.country !== 'Неизвестно') {
+                            countryInput.value = cityData.country;
+                        }
+                        if (cityData.region && cityData.region !== 'Неизвестно') {
+                            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsData.lat}&lon=${gpsData.lon}&format=json&accept-language=ru&zoom=18`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data && data.address) {
+                                        const road = data.address.road || data.address.pedestrian || data.address.footway || '';
+                                        const house = data.address.house_number || '';
+                                        if (road) {
+                                            streetInput.value = road + (house ? `, ${house}` : '');
+                                        }
+                                    }
+                                    saveDossierData();
+                                })
+                                .catch(() => {});
+                        }
+                        
+                        if (statusEl) {
+                            statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
+                            statusEl.style.border = '1px solid #1eb81e';
+                            statusEl.style.color = '#8ad8a8';
+                            statusEl.innerHTML = `✅ Геоданные обновлены! 🖤`;
+                            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+                        }
+                        saveDossierData();
                     } else {
-                        geoText = `GPS: ${gpsData.lat}, ${gpsData.lon}`;
-                    }
-                    
-                    // ОБНОВЛЯЕМ ТОЛЬКО СТРОКУ МЕСТОПОЛОЖЕНИЕ
-                    let currentText = textarea.value;
-                    
-                    // Удаляем мусорные строки (если они появились)
-                    currentText = currentText
-                        .replace(/^ЕНВЕ\s*$/m, '')
-                        .replace(/^ГОРОД\s*$/m, '')
-                        .replace(/^НЕ ОПРЕДЕЛЕНО\s*$/m, '')
-                        .replace(/^не определено\s*$/m, '')
-                        .replace(/^КООРДИНАТЫ\s*$/m, '')
-                        .replace(/^\d+\.\d+\s*$/m, '')
-                        .replace(/\n{3,}/g, '\n\n'); // убираем лишние пустые строки
-                    
-                    // Обновляем местоположение
-                    if (currentText.includes('📍 МЕСТОПОЛОЖЕНИЕ:')) {
-                        currentText = currentText.replace(
-                            /📍 МЕСТОПОЛОЖЕНИЕ:.*$/m,
-                            `📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
-                        );
-                    } else {
-                        currentText = currentText.replace(
-                            /(🎂 ВОЗРАСТ:.*)$/m,
-                            `$1\n📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
-                        );
-                    }
-                    
-                    // Обновляем время
-                    const now = new Date();
-                    const timeStr = now.toLocaleString('ru-RU', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    currentText = currentText
-                        .replace(/⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ:.*$/m, `⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ: ${timeStr}`)
-                        .replace(/⏱️ ТЕКУЩЕЕ ВРЕМЯ:.*$/m, `⏱️ ТЕКУЩЕЕ ВРЕМЯ: ${timeStr}`);
-                    
-                    textarea.value = currentText;
-                    saveDossierText();
-                    
-                    if (statusEl) {
-                        statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
-                        statusEl.style.border = '1px solid #1eb81e';
-                        statusEl.style.color = '#8ad8a8';
-                        statusEl.innerHTML = `✅ Геоданные обновлены: ${geoText} 🖤`;
-                        setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+                        if (statusEl) {
+                            statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
+                            statusEl.style.border = '1px solid #c21515';
+                            statusEl.style.color = '#eba4a4';
+                            statusEl.innerHTML = '❌ Не удалось определить геоданные. 😈';
+                            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+                        }
                     }
                 });
             } else if (ipData && ipData.country !== 'Неизвестно') {
-                city = ipData.city || 'Неизвестно';
-                country = ipData.country || 'Неизвестно';
-                region = ipData.region || 'Неизвестно';
-                geoText = `${city}, ${region}, ${country}`;
-                
-                let currentText = textarea.value;
-                
-                // Удаляем мусорные строки
-                currentText = currentText
-                    .replace(/^ЕНВЕ\s*$/m, '')
-                    .replace(/^ГОРОД\s*$/m, '')
-                    .replace(/^НЕ ОПРЕДЕЛЕНО\s*$/m, '')
-                    .replace(/^не определено\s*$/m, '')
-                    .replace(/^КООРДИНАТЫ\s*$/m, '')
-                    .replace(/^\d+\.\d+\s*$/m, '')
-                    .replace(/\n{3,}/g, '\n\n');
-                
-                if (currentText.includes('📍 МЕСТОПОЛОЖЕНИЕ:')) {
-                    currentText = currentText.replace(
-                        /📍 МЕСТОПОЛОЖЕНИЕ:.*$/m,
-                        `📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
-                    );
-                } else {
-                    currentText = currentText.replace(
-                        /(🎂 ВОЗРАСТ:.*)$/m,
-                        `$1\n📍 МЕСТОПОЛОЖЕНИЕ: ${geoText}`
-                    );
-                }
-                
-                const now = new Date();
-                const timeStr = now.toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                currentText = currentText
-                    .replace(/⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ:.*$/m, `⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ: ${timeStr}`)
-                    .replace(/⏱️ ТЕКУЩЕЕ ВРЕМЯ:.*$/m, `⏱️ ТЕКУЩЕЕ ВРЕМЯ: ${timeStr}`);
-                
-                textarea.value = currentText;
-                saveDossierText();
+                if (ipData.country) countryInput.value = ipData.country;
+                if (ipData.city) cityInput.value = ipData.city;
                 
                 if (statusEl) {
                     statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
                     statusEl.style.border = '1px solid #1eb81e';
                     statusEl.style.color = '#8ad8a8';
-                    statusEl.innerHTML = `✅ Геоданные обновлены (IP): ${geoText} 🖤`;
+                    statusEl.innerHTML = `✅ Геоданные обновлены (IP)! 🖤`;
                     setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
                 }
+                saveDossierData();
             } else {
                 if (statusEl) {
                     statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
@@ -293,38 +290,98 @@ function loadCurrentLocationToDossier() {
     });
 }
 
-// ====== КОПИРОВАНИЕ ДОСЬЕ ======
-function copyDossierText() {
-    const textarea = document.getElementById('edDossierText');
-    const statusEl = document.getElementById('dossierStatus');
+// ====== ГЕНЕРАЦИЯ ТЕКСТА ПРОФИЛЯ ИЗ ПОЛЕЙ ======
+function generateDossierFromFields(forCopy = false) {
+    const number = document.getElementById('edNumber').value || '???';
+    const name = document.getElementById('edName').value || 'НЕ УКАЗАНО';
+    const aliases = document.getElementById('edAliases').value || 'НЕ УКАЗАНЫ';
+    const age = document.getElementById('edAge').value || 'НЕ УКАЗАН';
+    const city = document.getElementById('edCity').value || 'НЕ УКАЗАН';
+    const country = document.getElementById('edCountry').value || 'НЕ УКАЗАНА';
+    const street = document.getElementById('edStreet').value || 'НЕ УКАЗАНА';
+    const status = document.getElementById('edStatus').value || 'НЕ УКАЗАН';
+    const threat = document.getElementById('edThreat').value || 'НЕ УКАЗАНА';
+    const behavior = document.getElementById('edBehavior').value || 'Нет данных';
+    const history = document.getElementById('edHistory').value || 'Нет данных';
+    const phobias = document.getElementById('edPhobias').value || 'Нет данных';
+    const triggers = document.getElementById('edTriggers').value || 'Нет данных';
+    const notes = document.getElementById('edNotes').value || 'Нет данных';
+    const interest = document.getElementById('edInterest').value || 'Нет данных';
+    const rating = document.getElementById('edRating').value || 'Нет данных';
+    const mood = document.getElementById('edMoodValue').textContent || 'Не выбрано';
     
-    if (!textarea) return;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+    const timeStr = now.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    const dateTime = `${dateStr} ${timeStr}`;
     
-    const text = textarea.value.trim();
+    let result = `═══════════════════════════════════════
+         📋 ПРОФИЛЬ ЖЕРТВЫ №${number}
+═══════════════════════════════════════
+👤 ИМЯ: ${name}
+🎂 ВОЗРАСТ: ${age}
+📍 МЕСТОПОЛОЖЕНИЕ: ${city}, ${country}
+🏠 УЛИЦА: ${street}
+⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ: ${dateTime}
+⏱️ ТЕКУЩЕЕ ВРЕМЯ: ${dateTime}
+📊 СТАТУС: ${status}
+═══════════════════════════════════════
+🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ:
+${behavior}
+═══════════════════════════════════════
+👻 ФОБИИ:
+${phobias}
+═══════════════════════════════════════
+🔪 ТРИГГЕРЫ:
+${triggers}
+═══════════════════════════════════════
+📜 ИСТОРИЯ ПОВЕДЕНИЯ:
+${history}
+═══════════════════════════════════════
+⚠️ СТЕПЕНЬ УГРОЗЫ: ${threat}
+═══════════════════════════════════════
+🎭 НАСТРОЕНИЕ МЭГАН: ${mood}
+═══════════════════════════════════════
+💀 ЗАМЕТКИ МЭГАН:
+${notes}
+═══════════════════════════════════════`;
+
+    return result;
+}
+
+// ====== ПРЕДПРОСМОТР ПРОФИЛЯ ======
+function liveUpdateDossier() {
+    const previewEl = document.getElementById('edPreview');
+    if (previewEl) {
+        previewEl.innerText = generateDossierFromFields(false);
+    }
+}
+
+// ====== КОПИРОВАНИЕ ПРОФИЛЯ ИЗ ПОЛЕЙ ======
+function copyDossierFromFields() {
+    const text = generateDossierFromFields(true);
+    const statusEl = document.getElementById('copyStatus');
     
-    if (!text) {
-        if (statusEl) {
-            statusEl.style.display = 'block';
-            statusEl.style.opacity = '1';
-            statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
-            statusEl.style.border = '1px solid #c21515';
-            statusEl.style.color = '#eba4a4';
-            statusEl.innerHTML = '😈 Досье пустое! Напиши что-нибудь. 🖤';
-            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-        }
-        return;
+    if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.opacity = '1';
     }
     
     const fullPayload = `профиль \`\`\`\n${text}\n\`\`\``;
     
     navigator.clipboard.writeText(fullPayload).then(() => {
         if (statusEl) {
-            statusEl.style.display = 'block';
-            statusEl.style.opacity = '1';
             statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
             statusEl.style.border = '1px solid #1eb81e';
             statusEl.style.color = '#8ad8a8';
-            statusEl.innerHTML = '✅ Досье скопировано! Вставь его в чат. 😈';
+            statusEl.innerHTML = '✅ Полный профиль скопирован! Вставь его в чат. 😈';
             setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
         }
     }).catch(() => {
@@ -338,9 +395,78 @@ function copyDossierText() {
     });
 }
 
+// ====== СБРОС ПОЛЕЙ ПРОФИЛЯ ======
+function resetDossierFields() {
+    if (confirm('Сбросить все поля профиля?')) {
+        document.getElementById('edNumber').value = '';
+        document.getElementById('edName').value = '';
+        document.getElementById('edAliases').value = '';
+        document.getElementById('edAge').value = '';
+        document.getElementById('edCity').value = '';
+        document.getElementById('edCountry').value = '';
+        document.getElementById('edStreet').value = '';
+        document.getElementById('edStatus').value = '';
+        document.getElementById('edThreat').value = '';
+        document.getElementById('edBehavior').value = '';
+        document.getElementById('edHistory').value = '';
+        document.getElementById('edPhobias').value = '';
+        document.getElementById('edTriggers').value = '';
+        document.getElementById('edNotes').value = '';
+        document.getElementById('edInterest').value = '';
+        document.getElementById('edRating').value = '';
+        document.getElementById('edMoodValue').textContent = 'Спокойное (ледяное и вежливое)';
+        
+        localStorage.removeItem('megan_dossier_data');
+        
+        const statusEl = document.getElementById('copyStatus');
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.style.opacity = '1';
+            statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
+            statusEl.style.border = '1px solid #c21515';
+            statusEl.style.color = '#eba4a4';
+            statusEl.innerHTML = '🗑️ Профиль очищен! 💀';
+            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+        }
+        
+        liveUpdateDossier();
+    }
+}
+
+// ====== ОБНОВЛЕНИЕ НАСТРОЕНИЯ ======
+const originalApplyMood = window.applyMoodSelection;
+window.applyMoodSelection = function() {
+    if (typeof originalApplyMood === 'function') {
+        originalApplyMood();
+    }
+    
+    const moodElement = document.getElementById('edMoodValue');
+    if (moodElement) {
+        const currentMood = document.body.getAttribute('data-mood') || 'calm';
+        const labels = getMoodLabels ? getMoodLabels() : {
+            'calm': 'Спокойное',
+            'excited': 'Взволнованное',
+            'furious': 'Яростное',
+            'playful': 'Игривое',
+            'obsessed': 'Одержимое'
+        };
+        const descriptions = getMoodDescriptions ? getMoodDescriptions() : {
+            'calm': 'ледяное и вежливое',
+            'excited': 'быстрое, сбивчивое, смех',
+            'furious': 'КАПСЛОК, угрозы, шаги',
+            'playful': 'опасная кокетливость',
+            'obsessed': 'мрачная привязанность'
+        };
+        moodElement.textContent = labels[currentMood] + ' (' + descriptions[currentMood] + ')';
+        saveDossierData();
+    }
+};
+
 // Экспорт
 window.openProfileModal = openProfileModal;
-window.saveDossierText = saveDossierText;
-window.resetDossierToTemplate = resetDossierToTemplate;
-window.loadCurrentLocationToDossier = loadCurrentLocationToDossier;
-window.copyDossierText = copyDossierText;
+window.closeDossierEditor = closeDossierEditor;
+window.saveDossierData = saveDossierData;
+window.loadLocationToDossier = loadLocationToDossier;
+window.liveUpdateDossier = liveUpdateDossier;
+window.copyDossierFromFields = copyDossierFromFields;
+window.resetDossierFields = resetDossierFields;
