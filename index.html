@@ -7,16 +7,16 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Шапка -->
+    <!-- ====== ШАПКА ====== -->
     <header>
         <div id="traitBadge">
             <span>скрытая психопатия</span>
             <span class="inline-heart">🫀</span>
         </div>
-        <div id="randomQuote">«Я слышу, как ты дышишь...» 🎧</div>
+        <div id="randomQuote">«Я слышу, как ты дышишь через микрофон... Шучу. Пока что.» 🎧</div>
     </header>
 
-    <!-- Основной блок -->
+    <!-- ====== ОСНОВНОЙ БЛОК ====== -->
     <main>
         <div id="prompt-container">
             <div id="fullPrompt"></div>
@@ -24,7 +24,18 @@
         </div>
     </main>
 
-    <!-- Досье -->
+    <!-- ====== МОДАЛЬНОЕ ОКНО УВЕДОМЛЕНИЙ ====== -->
+    <div id="notifOverlay" style="display:none;">
+        <div id="notification">
+            <span id="notifIcon">👻</span>
+            <h2 id="notifTitle" data-i18n="greeting.title">Мэган проснулась...</h2>
+            <p id="notifText" data-i18n="greeting.text">Хе-хе-хе... Я вижу, ты вернулся.</p>
+            <div id="notifExtraContent"></div>
+            <button id="notifMainBtn" data-i18n="greeting.btn">Понятно</button>
+        </div>
+    </div>
+
+    <!-- ====== МОДАЛЬНОЕ ОКНО ДОСЬЕ ====== -->
     <div id="dossierOverlay" style="display:none;">
         <div id="dossierModal">
             <h2 id="dossierTitle" data-i18n="dossier.title">📋 Досье жертвы</h2>
@@ -38,10 +49,11 @@
             </select>
             <button onclick="saveDossier()" data-i18n="dossier.save">💾 Сохранить</button>
             <button onclick="resetDossier()" data-i18n="dossier.reset">🗑️ Сбросить</button>
+            <button onclick="closeDossier()" data-i18n="about.close">Закрыть</button>
         </div>
     </div>
 
-    <!-- Настроение -->
+    <!-- ====== МОДАЛЬНОЕ ОКНО НАСТРОЕНИЯ ====== -->
     <div id="moodDialog" style="display:none;">
         <h2 id="moodTitle" data-i18n="mood.title">🎭 Настроение Мэган</h2>
         <button id="moodCalm" onclick="selectMood('calm')" data-i18n="mood.calm">🧊 Спокойное</button>
@@ -49,9 +61,10 @@
         <button id="moodAngry" onclick="selectMood('angry')" data-i18n="mood.angry">🔥 Яростное</button>
         <button id="moodPlayful" onclick="selectMood('playful')" data-i18n="mood.playful">😈 Игривое</button>
         <button id="moodObsessed" onclick="selectMood('obsessed')" data-i18n="mood.obsessed">🖤 Одержимое</button>
+        <button onclick="closeMoodDialog()" data-i18n="about.close">Закрыть</button>
     </div>
 
-    <!-- О промте -->
+    <!-- ====== МОДАЛЬНОЕ ОКНО "О ПРОМТЕ" ====== -->
     <div id="aboutOverlay" style="display:none;">
         <div id="aboutModal">
             <h2 id="aboutTitle" data-i18n="about.title">🧸 О промте</h2>
@@ -61,17 +74,7 @@
         </div>
     </div>
 
-    <!-- Уведомления -->
-    <div id="notifOverlay" style="display:none;">
-        <div id="notification">
-            <span id="notifIcon">👻</span>
-            <h2 id="notifTitle" data-i18n="greeting.title">Мэган проснулась...</h2>
-            <p id="notifText" data-i18n="greeting.text">Хе-хе-хе... Я вижу, ты вернулся.</p>
-            <button id="notifMainBtn" data-i18n="greeting.btn">Понятно</button>
-        </div>
-    </div>
-
-    <!-- Подключение скриптов -->
+    <!-- ====== ПОДКЛЮЧЕНИЕ СКРИПТОВ ====== -->
     <script src="js/locales.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/geo.js"></script>
