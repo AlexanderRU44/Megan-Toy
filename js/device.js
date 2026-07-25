@@ -1,15 +1,18 @@
-// ====== ОПРЕДЕЛЕНИЕ УСТРОЙСТВА ======
+// ====== ОПРЕДЕЛЕНИЕ УСТРОЙСТВА (С ПОДДЕРЖКОЙ I18N) ======
 
 function getDeviceInfo() {
     const ua = navigator.userAgent;
-    let os = 'Неизвестно';
-    let browser = 'Неизвестно';
-    let deviceType = 'Компьютер';
+    const lang = getCurrentLanguage();
+    
+    // --- ОПРЕДЕЛЕНИЕ ОС (С ПЕРЕВОДОМ) ---
+    let os = lang === 'ru' ? 'Неизвестно' : 'Unknown';
+    let browser = lang === 'ru' ? 'Неизвестно' : 'Unknown';
+    let deviceType = lang === 'ru' ? 'Компьютер' : 'Computer';
     let osVersion = '';
 
     // --- ОПРЕДЕЛЕНИЕ ОС ---
     if (ua.indexOf('Windows NT 10.0') !== -1) {
-        os = 'Windows 10/11';
+        os = lang === 'ru' ? 'Windows 10/11' : 'Windows 10/11';
         osVersion = '10.0';
     } else if (ua.indexOf('Windows NT 6.3') !== -1) {
         os = 'Windows 8.1';
@@ -31,9 +34,9 @@ function getDeviceInfo() {
         const match = ua.match(/OS ([0-9_]+)/);
         if (match) osVersion = match[1].replace(/_/g, '.');
         if (ua.indexOf('iPad') !== -1) {
-            deviceType = 'Планшет';
+            deviceType = lang === 'ru' ? 'Планшет' : 'Tablet';
         } else {
-            deviceType = 'Телефон';
+            deviceType = lang === 'ru' ? 'Телефон' : 'Phone';
         }
     } else if (ua.indexOf('Android') !== -1) {
         os = 'Android';
@@ -43,20 +46,20 @@ function getDeviceInfo() {
         os = 'Linux';
     }
 
-    // --- ОПРЕДЕЛЕНИЕ ТИПА УСТРОЙСТВА ---
-    if (deviceType === 'Компьютер') {
+    // --- ОПРЕДЕЛЕНИЕ ТИПА УСТРОЙСТВА (С ПЕРЕВОДОМ) ---
+    if (deviceType === (lang === 'ru' ? 'Компьютер' : 'Computer')) {
         if (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(ua)) {
             if (/iPad|Tablet|PlayBook|Silk|Kindle|KFAPWI|Tab|SM-T/i.test(ua)) {
-                deviceType = 'Планшет';
+                deviceType = lang === 'ru' ? 'Планшет' : 'Tablet';
             } else {
-                deviceType = 'Телефон';
+                deviceType = lang === 'ru' ? 'Телефон' : 'Phone';
             }
         } else {
-            deviceType = 'Компьютер';
+            deviceType = lang === 'ru' ? 'Компьютер' : 'Computer';
         }
     }
 
-    // --- ОПРЕДЕЛЕНИЕ БРАУЗЕРА ---
+    // --- ОПРЕДЕЛЕНИЕ БРАУЗЕРА (С ПЕРЕВОДОМ) ---
     if (ua.indexOf('Firefox') !== -1) {
         browser = 'Firefox';
     } else if (ua.indexOf('OPR') !== -1 || ua.indexOf('Opera') !== -1) {
@@ -68,21 +71,41 @@ function getDeviceInfo() {
     } else if (ua.indexOf('Safari') !== -1 && ua.indexOf('Chrome') === -1 && ua.indexOf('OPR') === -1) {
         browser = 'Safari';
     } else if (ua.indexOf('MSIE') !== -1 || ua.indexOf('Trident') !== -1) {
-        browser = 'Internet Explorer';
+        browser = lang === 'ru' ? 'Internet Explorer' : 'Internet Explorer';
     } else if (ua.indexOf('YaBrowser') !== -1) {
-        browser = 'Яндекс Браузер';
+        browser = lang === 'ru' ? 'Яндекс Браузер' : 'Yandex Browser';
     }
 
     // --- ДОПОЛНИТЕЛЬНЫЕ ДАННЫЕ ---
     const screenRes = `${window.screen.width}x${window.screen.height}`;
     const language = navigator.language || navigator.languages?.[0] || 'ru-RU';
-    const platform = navigator.platform || 'Неизвестно';
+    const platform = navigator.platform || (lang === 'ru' ? 'Неизвестно' : 'Unknown');
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Неизвестно';
-    const colorDepth = window.screen.colorDepth || 'Неизвестно';
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || (lang === 'ru' ? 'Неизвестно' : 'Unknown');
+    const colorDepth = window.screen.colorDepth || (lang === 'ru' ? 'Неизвестно' : 'Unknown');
 
-    // ====== ПОДКЛЮЧЕННЫЕ УСТРОЙСТВА ======
+    // ====== ПОДКЛЮЧЕННЫЕ УСТРОЙСТВА (С ПЕРЕВОДОМ) ======
     let connectedDevices = [];
+
+    // Функция для получения переведённого названия типа устройства
+    function getDeviceTypeTranslation(type) {
+        const translations = {
+            'Микрофон': { ru: 'Микрофон', en: 'Microphone' },
+            'Камера': { ru: 'Камера', en: 'Camera' },
+            'Динамики': { ru: 'Динамики', en: 'Speakers' },
+            'Bluetooth': { ru: 'Bluetooth', en: 'Bluetooth' },
+            'USB': { ru: 'USB', en: 'USB' },
+            'Батарея': { ru: 'Батарея', en: 'Battery' },
+            'GPS': { ru: 'GPS', en: 'GPS' },
+            'Гироскоп': { ru: 'Гироскоп', en: 'Gyroscope' },
+            'Сенсор света': { ru: 'Сенсор света', en: 'Light sensor' },
+            'NFC': { ru: 'NFC', en: 'NFC' },
+            'VR/AR': { ru: 'VR/AR', en: 'VR/AR' },
+            'Геймпад': { ru: 'Геймпад', en: 'Gamepad' },
+            'Наушники': { ru: 'Наушники', en: 'Headphones' }
+        };
+        return translations[type]?.[lang] || type;
+    }
 
     // 1. Проверка микрофона
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
@@ -91,21 +114,29 @@ function getDeviceInfo() {
                 devices.forEach(device => {
                     if (device.kind === 'audioinput' && device.label) {
                         if (!connectedDevices.some(d => d.type === 'Микрофон')) {
-                            connectedDevices.push({ type: 'Микрофон', name: device.label || 'Встроенный микрофон' });
+                            connectedDevices.push({ 
+                                type: getDeviceTypeTranslation('Микрофон'), 
+                                name: device.label || (lang === 'ru' ? 'Встроенный микрофон' : 'Built-in microphone')
+                            });
                         }
                     }
                     if (device.kind === 'videoinput' && device.label) {
                         if (!connectedDevices.some(d => d.type === 'Камера')) {
-                            connectedDevices.push({ type: 'Камера', name: device.label || 'Веб-камера' });
+                            connectedDevices.push({ 
+                                type: getDeviceTypeTranslation('Камера'), 
+                                name: device.label || (lang === 'ru' ? 'Веб-камера' : 'Webcam')
+                            });
                         }
                     }
                     if (device.kind === 'audiooutput' && device.label) {
                         if (!connectedDevices.some(d => d.type === 'Динамики')) {
-                            connectedDevices.push({ type: 'Динамики', name: device.label || 'Встроенные динамики' });
+                            connectedDevices.push({ 
+                                type: getDeviceTypeTranslation('Динамики'), 
+                                name: device.label || (lang === 'ru' ? 'Встроенные динамики' : 'Built-in speakers')
+                            });
                         }
                     }
                 });
-                // Сохраняем в глобальную переменную
                 window._connectedDevices = connectedDevices;
             }).catch(() => {});
         } catch(e) {}
@@ -113,12 +144,18 @@ function getDeviceInfo() {
 
     // 2. Проверка Bluetooth
     if (navigator.bluetooth) {
-        connectedDevices.push({ type: 'Bluetooth', name: 'Доступен' });
+        connectedDevices.push({ 
+            type: getDeviceTypeTranslation('Bluetooth'), 
+            name: lang === 'ru' ? 'Доступен' : 'Available'
+        });
     }
 
     // 3. Проверка USB
     if (navigator.usb) {
-        connectedDevices.push({ type: 'USB', name: 'Доступен' });
+        connectedDevices.push({ 
+            type: getDeviceTypeTranslation('USB'), 
+            name: lang === 'ru' ? 'Доступен' : 'Available'
+        });
     }
 
     // 4. Проверка батареи
@@ -126,35 +163,53 @@ function getDeviceInfo() {
         try {
             navigator.getBattery().then(battery => {
                 const level = Math.round(battery.level * 100);
-                connectedDevices.push({ type: 'Батарея', name: `${level}%` });
+                connectedDevices.push({ 
+                    type: getDeviceTypeTranslation('Батарея'), 
+                    name: `${level}%`
+                });
                 window._batteryLevel = level;
             }).catch(() => {});
         } catch(e) {}
     }
 
-    // 5. Проверка GPS (через геолокацию)
+    // 5. Проверка GPS
     if (navigator.geolocation) {
-        connectedDevices.push({ type: 'GPS', name: 'Доступен' });
+        connectedDevices.push({ 
+            type: getDeviceTypeTranslation('GPS'), 
+            name: lang === 'ru' ? 'Доступен' : 'Available'
+        });
     }
 
-    // 6. Проверка акселерометра / гироскопа
+    // 6. Проверка гироскопа
     if (window.DeviceOrientationEvent) {
-        connectedDevices.push({ type: 'Гироскоп', name: 'Доступен' });
+        connectedDevices.push({ 
+            type: getDeviceTypeTranslation('Гироскоп'), 
+            name: lang === 'ru' ? 'Доступен' : 'Available'
+        });
     }
 
-    // 7. Проверка сенсора освещённости
+    // 7. Проверка сенсора света
     if (window.DeviceLightEvent) {
-        connectedDevices.push({ type: 'Сенсор света', name: 'Доступен' });
+        connectedDevices.push({ 
+            type: getDeviceTypeTranslation('Сенсор света'), 
+            name: lang === 'ru' ? 'Доступен' : 'Available'
+        });
     }
 
     // 8. Проверка NFC
     if ('NDEFReader' in window) {
-        connectedDevices.push({ type: 'NFC', name: 'Доступен' });
+        connectedDevices.push({ 
+            type: getDeviceTypeTranslation('NFC'), 
+            name: lang === 'ru' ? 'Доступен' : 'Available'
+        });
     }
 
     // 9. Проверка VR / AR
     if (navigator.xr) {
-        connectedDevices.push({ type: 'VR/AR', name: 'Доступен' });
+        connectedDevices.push({ 
+            type: getDeviceTypeTranslation('VR/AR'), 
+            name: lang === 'ru' ? 'Доступен' : 'Available'
+        });
     }
 
     // 10. Проверка Gamepad
@@ -163,7 +218,10 @@ function getDeviceInfo() {
         if (gamepads && gamepads.length > 0) {
             const connected = gamepads.filter(g => g !== null);
             if (connected.length > 0) {
-                connectedDevices.push({ type: 'Геймпад', name: `${connected.length} шт.` });
+                connectedDevices.push({ 
+                    type: getDeviceTypeTranslation('Геймпад'), 
+                    name: `${connected.length} ${lang === 'ru' ? 'шт.' : 'pcs.'}`
+                });
             }
         }
     }
@@ -183,17 +241,16 @@ function getDeviceInfo() {
     if (uniqueDevices.length > 0) {
         devicesString = uniqueDevices.map(d => `${d.type}: ${d.name}`).join(', ');
     } else {
-        devicesString = 'Не обнаружено';
+        devicesString = lang === 'ru' ? 'Не обнаружено' : 'Not detected';
     }
 
-    // --- ПРОВЕРКА АКТИВНЫХ ПЕРИФЕРИЙНЫХ УСТРОЙСТВ (через Permissions API) ---
+    // --- ПРОВЕРКА АКТИВНЫХ ПЕРИФЕРИЙНЫХ УСТРОЙСТВ ---
     let permissionsString = '';
     if (navigator.permissions) {
         const permissionsList = ['camera', 'microphone', 'geolocation', 'notifications', 'bluetooth'];
         permissionsList.forEach(perm => {
             navigator.permissions.query({ name: perm }).then(result => {
                 if (result.state === 'granted') {
-                    // Сохраняем в глобальную переменную
                     if (!window._activePermissions) window._activePermissions = [];
                     if (!window._activePermissions.includes(perm)) {
                         window._activePermissions.push(perm);
@@ -203,32 +260,31 @@ function getDeviceInfo() {
         });
     }
 
-    // Формируем строку с разрешениями
     let permissionsStringFinal = '';
     if (window._activePermissions && window._activePermissions.length > 0) {
-        permissionsStringFinal = 'Доступ разрешён: ' + window._activePermissions.map(p => {
-            const map = {
-                'camera': '📷 Камера',
-                'microphone': '🎤 Микрофон',
-                'geolocation': '📍 Геолокация',
-                'notifications': '🔔 Уведомления',
-                'bluetooth': '📡 Bluetooth'
-            };
-            return map[p] || p;
+        const permMap = {
+            'camera': { ru: '📷 Камера', en: '📷 Camera' },
+            'microphone': { ru: '🎤 Микрофон', en: '🎤 Microphone' },
+            'geolocation': { ru: '📍 Геолокация', en: '📍 Geolocation' },
+            'notifications': { ru: '🔔 Уведомления', en: '🔔 Notifications' },
+            'bluetooth': { ru: '📡 Bluetooth', en: '📡 Bluetooth' }
+        };
+        const accessLabel = lang === 'ru' ? 'Доступ разрешён' : 'Access granted';
+        permissionsStringFinal = accessLabel + ': ' + window._activePermissions.map(p => {
+            return permMap[p]?.[lang] || p;
         }).join(', ');
     }
 
     // --- ДОПОЛНИТЕЛЬНАЯ ИНФОРМАЦИЯ О ПОДКЛЮЧЕННЫХ УСТРОЙСТВАХ ---
     let extraDevices = [];
     
-    // Подключенные наушники / аудио
     if (navigator.mediaDevices) {
         try {
             navigator.mediaDevices.enumerateDevices().then(devices => {
                 devices.forEach(device => {
                     if (device.kind === 'audiooutput' && device.label && device.label.toLowerCase().includes('headphone')) {
                         if (!extraDevices.some(d => d === 'Наушники')) {
-                            extraDevices.push('Наушники');
+                            extraDevices.push(getDeviceTypeTranslation('Наушники'));
                         }
                     }
                 });
@@ -236,7 +292,7 @@ function getDeviceInfo() {
         } catch(e) {}
     }
 
-    // --- ФИНАЛЬНАЯ СТРОКА ---
+    // --- ФИНАЛЬНАЯ СТРОКА (С ПЕРЕВОДОМ) ---
     let fullDevicesString = devicesString;
     if (permissionsStringFinal) {
         fullDevicesString += ` | ${permissionsStringFinal}`;
@@ -244,6 +300,16 @@ function getDeviceInfo() {
     if (extraDevices.length > 0) {
         fullDevicesString += ` | ${extraDevices.join(', ')}`;
     }
+
+    // Перевод для финальной строки
+    const typeLabel = lang === 'ru' ? 'Тип' : 'Type';
+    const osLabel = lang === 'ru' ? 'ОС' : 'OS';
+    const browserLabel = lang === 'ru' ? 'Браузер' : 'Browser';
+    const screenLabel = lang === 'ru' ? 'Экран' : 'Screen';
+    const langLabel = lang === 'ru' ? 'Язык' : 'Language';
+    const timezoneLabel = lang === 'ru' ? 'Часовой пояс' : 'Timezone';
+    const connectedLabel = lang === 'ru' ? 'Подключено' : 'Connected';
+    const touchLabel = lang === 'ru' ? 'Сенсорный экран' : 'Touchscreen';
 
     return {
         os: os,
@@ -259,11 +325,10 @@ function getDeviceInfo() {
         connectedDevices: uniqueDevices,
         connectedDevicesString: devicesString,
         permissions: window._activePermissions || [],
-        fullString: `Тип: ${deviceType} | ОС: ${os}${osVersion ? ' ' + osVersion : ''} | Браузер: ${browser} | Экран: ${screenRes} | Язык: ${language}${isTouch ? ' | Сенсорный экран' : ''} | Часовой пояс: ${timezone} | Подключено: ${fullDevicesString}`
+        fullString: `${typeLabel}: ${deviceType} | ${osLabel}: ${os}${osVersion ? ' ' + osVersion : ''} | ${browserLabel}: ${browser} | ${screenLabel}: ${screenRes} | ${langLabel}: ${language}${isTouch ? ' | ' + touchLabel : ''} | ${timezoneLabel}: ${timezone} | ${connectedLabel}: ${fullDevicesString}`
     };
 }
 
-// Объявляем глобально
 window.getDeviceInfo = getDeviceInfo;
 
 console.log('✅ device.js загружен');
