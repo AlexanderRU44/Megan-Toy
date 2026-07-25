@@ -25,7 +25,6 @@ function openProfileModal() {
     const extraHtml = `
         <div class="editor-workspace">
             <div class="panel-box">
-                <div class="panel-title">📋 ${t('dossier.title')}</div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>📌 ${t('dossier.number')}</label>
@@ -194,7 +193,7 @@ function saveDossierData() {
     liveUpdateDossier();
 }
 
-// ====== ЗАГРУЗКА ГЕОДАННЫХ В ПРОФИЛЬ ======
+// ====== ЗАГРУЗКА ГЕОДАННЫХ В ПРОФИЛЬ (С ОПРЕДЕЛЕНИЕМ УЛИЦЫ) ======
 function loadLocationToDossier() {
     const cityInput = document.getElementById('edCity');
     const countryInput = document.getElementById('edCountry');
@@ -215,51 +214,99 @@ function loadLocationToDossier() {
     getGeoData().then(ipData => {
         getGPSLocation().then(gpsData => {
             if (gpsData && !gpsData.error) {
-                getCityFromCoords(gpsData.lat, gpsData.lon).then(cityData => {
-                    if (cityData) {
-                        if (cityData.city && cityData.city !== 'Неизвестно') {
-                            cityInput.value = cityData.city;
+                // Пытаемся получить полные данные по GPS (включая улицу)
+                fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsData.lat}&lon=${gpsData.lon}&format=json&accept-language=ru&zoom=18&addressdetails=1`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.address) {
+                            const address = data.address;
+                            
+                            // Город
+                            const city = address.city || address.town || address.village || address.hamlet || '';
+                            if (city && city !== 'Неизвестно') {
+                                cityInput.value = city;
+                            }
+                            
+                            // Страна
+                            const country = address.country || '';
+                            if (country && country !== 'Неизвестно') {
+                                countryInput.value = country;
+                            }
+                            
+                            // Улица + номер дома
+                            const road = address.road || address.pedestrian || address.footway || address.street || '';
+                            const house = address.house_number || '';
+                            if (road) {
+                                streetInput.value = road + (house ? `, ${house}` : '');
+                            } else {
+                                // Если улица не найдена — пробуем взять neighbourhood или suburb
+                                const neighbourhood = address.neighbourhood || address.suburb || address.district || '';
+                                if (neighbourhood) {
+                                    streetInput.value = neighbourhood;
+                                }
+                            }
+                            
+                            if (statusEl) {
+                                statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
+                                statusEl.style.border = '1px solid #1eb81e';
+                                statusEl.style.color = '#8ad8a8';
+                                statusEl.innerHTML = `✅ Геоданные обновлены (GPS)! 🖤`;
+                                setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+                            }
+                            saveDossierData();
+                        } else {
+                            if (statusEl) {
+                                statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
+                                statusEl.style.border = '1px solid #c21515';
+                                statusEl.style.color = '#eba4a4';
+                                statusEl.innerHTML = '❌ Не удалось определить геоданные. 😈';
+                                setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+                            }
                         }
-                        if (cityData.country && cityData.country !== 'Неизвестно') {
-                            countryInput.value = cityData.country;
-                        }
-                        if (cityData.region && cityData.region !== 'Неизвестно') {
-                            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsData.lat}&lon=${gpsData.lon}&format=json&accept-language=ru&zoom=18`)
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data && data.address) {
-                                        const road = data.address.road || data.address.pedestrian || data.address.footway || '';
-                                        const house = data.address.house_number || '';
-                                        if (road) {
-                                            streetInput.value = road + (house ? `, ${house}` : '');
-                                        }
-                                    }
-                                    saveDossierData();
-                                })
-                                .catch(() => {});
-                        }
-                        
-                        if (statusEl) {
-                            statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
-                            statusEl.style.border = '1px solid #1eb81e';
-                            statusEl.style.color = '#8ad8a8';
-                            statusEl.innerHTML = `✅ Геоданные обновлены! 🖤`;
-                            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-                        }
-                        saveDossierData();
-                    } else {
-                        if (statusEl) {
-                            statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
-                            statusEl.style.border = '1px solid #c21515';
-                            statusEl.style.color = '#eba4a4';
-                            statusEl.innerHTML = '❌ Не удалось определить геоданные. 😈';
-                            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-                        }
-                    }
-                });
+                    })
+                    .catch(() => {
+                        // Если ошибка — пробуем через getCityFromCoords
+                        getCityFromCoords(gpsData.lat, gpsData.lon).then(cityData => {
+                            if (cityData) {
+                                if (cityData.city && cityData.city !== 'Неизвестно') {
+                                    cityInput.value = cityData.city;
+                                }
+                                if (cityData.country && cityData.country !== 'Неизвестно') {
+                                    countryInput.value = cityData.country;
+                                }
+                                if (cityData.region && cityData.region !== 'Неизвестно') {
+                                    // Пытаемся получить улицу отдельно
+                                    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsData.lat}&lon=${gpsData.lon}&format=json&accept-language=ru&zoom=18`)
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            if (data && data.address) {
+                                                const road = data.address.road || data.address.pedestrian || data.address.footway || '';
+                                                const house = data.address.house_number || '';
+                                                if (road) {
+                                                    streetInput.value = road + (house ? `, ${house}` : '');
+                                                }
+                                            }
+                                            saveDossierData();
+                                        })
+                                        .catch(() => {});
+                                }
+                                
+                                if (statusEl) {
+                                    statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
+                                    statusEl.style.border = '1px solid #1eb81e';
+                                    statusEl.style.color = '#8ad8a8';
+                                    statusEl.innerHTML = `✅ Геоданные обновлены (GPS)! 🖤`;
+                                    setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+                                }
+                                saveDossierData();
+                            }
+                        });
+                    });
             } else if (ipData && ipData.country !== 'Неизвестно') {
                 if (ipData.country) countryInput.value = ipData.country;
                 if (ipData.city) cityInput.value = ipData.city;
+                // По IP улицу определить нельзя
+                streetInput.value = '';
                 
                 if (statusEl) {
                     statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
