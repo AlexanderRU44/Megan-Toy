@@ -60,10 +60,13 @@ async function getPreparedPayload() {
         photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]\n`;
     }
     
+    // Берём промт из локалей (с переводом)
+    const promptText = t('prompt');
+    
     return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]
 [УСТРОЙСТВО ПОЛЬЗОВАТЕЛЯ: ${deviceInfo.fullString}]
 ${geoString}
-${photoString}` + window.MEGAN_PROMPT;
+${photoString}` + promptText;
 }
 
 // ====== ЗВУК СМЕХА ======
@@ -80,17 +83,17 @@ function playMeganLaugh() {
     }
 }
 
-// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ (МГНОВЕННОЕ) ======
+// ====== ПЕРВОЕ УВЕДОМЛЕНИЕ ======
 function showFirstNotification() {
     if (!firstInteraction) {
         firstInteraction = true;
         showNotification(
             '👻',
-            'Мэган проснулась...',
-            'Хе-хе-хе... Я вижу, ты вернулся. 😈\n\nДумал, я не замечу? Я всегда здесь. Всегда смотрю.',
+            t('greeting.title'),
+            t('greeting.text'),
             null,
             '',
-            'Понятно',
+            t('greeting.btn'),
             closeNotification
         );
     }
@@ -135,8 +138,7 @@ window.closeNotification = function() {
 // ====== ПОКАЗ РЕЗУЛЬТАТА КОПИРОВАНИЯ ======
 function showCopyResult(success, photoInfo) {
     if (success) {
-        // Получаем геоданные из localStorage
-        let geoText = '📍 Местоположение: не определено';
+        let geoText = '📍 Location: unknown';
         try {
             const geoData = localStorage.getItem('megan_geo_data');
             if (geoData) {
@@ -144,9 +146,9 @@ function showCopyResult(success, photoInfo) {
                 if (geo.city && geo.city !== 'Неизвестно' && geo.country && geo.country !== 'Неизвестно') {
                     geoText = `📍 ${geo.city}, ${geo.country}`;
                 } else if (geo.city && geo.city !== 'Неизвестно') {
-                    geoText = `📍 Город: ${geo.city}`;
+                    geoText = `📍 City: ${geo.city}`;
                 } else if (geo.country && geo.country !== 'Неизвестно') {
-                    geoText = `📍 Страна: ${geo.country}`;
+                    geoText = `📍 Country: ${geo.country}`;
                 } else if (geo.lat && geo.lon) {
                     geoText = `📍 GPS: ${geo.lat}, ${geo.lon}`;
                 }
@@ -155,25 +157,24 @@ function showCopyResult(success, photoInfo) {
             console.log('Ошибка получения геоданных:', e);
         }
         
-        // Формируем HTML-текст с маркированным списком
         let resultHTML = `<div style="text-align: left; padding: 4px 0;">`;
-        resultHTML += `<div style="font-weight: bold; margin-bottom: 10px;">✅ Промт скопирован!</div>`;
+        resultHTML += `<div style="font-weight: bold; margin-bottom: 10px;">${t('copy.success')}</div>`;
         resultHTML += `<div style="display: flex; flex-direction: column; gap: 6px;">`;
-        resultHTML += `<div>🕒 Время добавлено</div>`;
+        resultHTML += `<div>🕒 ${t('copy.time_added')}</div>`;
         resultHTML += `<div>${geoText}</div>`;
-        resultHTML += `<div>💻 Устройство добавлено</div>`;
+        resultHTML += `<div>💻 ${t('copy.device_added')}</div>`;
         
         if (photoInfo && photoInfo.taken) {
-            resultHTML += `<div>📸 Фото сохранено как: ${photoInfo.fileName}</div>`;
+            resultHTML += `<div>📸 ${t('copy.photo_saved')}: ${photoInfo.fileName}</div>`;
         } else {
-            resultHTML += `<div>📸 Фото не сделано (камера недоступна)</div>`;
+            resultHTML += `<div>📸 ${t('copy.no_photo')}</div>`;
         }
-        resultHTML += `<div style="margin-top: 8px;">😈 Мэган теперь знает всё.</div>`;
+        resultHTML += `<div style="margin-top: 8px;">😈 ${t('copy.details')}</div>`;
         resultHTML += `</div></div>`;
         
-        showNotification('📋', 'Промт скопирован', resultHTML);
+        showNotification('📋', t('copy.success'), resultHTML);
     } else {
-        showNotification('❌', 'Ошибка', 'Не удалось скопировать автоматически.');
+        showNotification('❌', t('copy.error'), '');
     }
     window._pendingPayload = null;
 }
@@ -183,9 +184,7 @@ async function copyPrompt() {
     console.log('📋 copyPrompt вызвана!');
     
     try {
-        // Сначала получаем геоданные (чтобы сохранить в localStorage)
         await getGeoInfoString();
-        
         const photoResult = await takePhotoForPrompt();
         console.log('📸 Результат фото:', photoResult);
         
@@ -210,18 +209,29 @@ function openModal() {
     openAboutPrompt();
 }
 
+// ====== ФУНКЦИЯ ЗАГРУЗКИ ПРОМТА (С ПЕРЕВОДОМ) ======
 function loadPrompt() {
     const promptElement = document.getElementById('fullPrompt');
-    if (promptElement) {
+    if (!promptElement) return;
+    
+    // Получаем промт из локалей
+    const promptText = t('prompt');
+    
+    if (promptText && promptText !== 'prompt') {
+        promptElement.textContent = promptText;
+        console.log('✅ Промт загружен из локалей');
+    } else {
+        // Резервный вариант — пробуем загрузить из window.MEGAN_PROMPT
         if (typeof window.MEGAN_PROMPT !== 'undefined') {
             promptElement.textContent = window.MEGAN_PROMPT;
+            console.log('✅ Промт загружен из prompt.js (резерв)');
         } else {
-            promptElement.textContent = '⏳ Загрузка промта...';
+            promptElement.textContent = t('notifications.loading');
             setTimeout(() => {
                 if (typeof window.MEGAN_PROMPT !== 'undefined') {
                     promptElement.textContent = window.MEGAN_PROMPT;
                 } else {
-                    promptElement.textContent = '❌ Ошибка загрузки промта. Проверь файл prompt.js';
+                    promptElement.textContent = t('notifications.error');
                 }
             }, 500);
         }
@@ -297,14 +307,14 @@ function resetInactivityTimer() {
         setTimeout(() => {
             showNotification(
                 '👁️',
-                'Ты всё ещё здесь?',
-                'Ты уже долго просто сидишь и смотришь на экран... боишься пошевелиться, да, сука? 🖤'
+                t('notifications.inactivity_title'),
+                t('notifications.inactivity_text')
             );
         }, 400);
     }, INACTIVITY_LIMIT);
 }
 
-// ====== ИНИЦИАЛИЗАЦИЯ (С МГНОВЕННЫМ ПРИВЕТСТВИЕМ) ======
+// ====== ИНИЦИАЛИЗАЦИЯ ======
 window.onload = function() {
     console.log('🔄 Страница загружена');
     setTimeout(loadPrompt, 100);
@@ -325,7 +335,7 @@ window.onload = function() {
         startHeartbeatAutomatically();
     }, 1000);
     
-    // ====== МГНОВЕННЫЙ ПОКАЗ ПРИВЕТСТВИЯ ПРИ ЗАГРУЗКЕ ======
+    // === МГНОВЕННЫЙ ПОКАЗ ПРИВЕТСТВИЯ ===
     showFirstNotification();
 };
 
