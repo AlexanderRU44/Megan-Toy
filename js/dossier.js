@@ -179,7 +179,7 @@ function autoSaveDossier() {
     localStorage.setItem('megan_dossier_data', JSON.stringify(data));
 }
 
-// ====== ЗАГРУЗКА ГЕОДАННЫХ В ПРОФИЛЬ (С ОПРЕДЕЛЕНИЕМ УЛИЦЫ) ======
+// ====== ЗАГРУЗКА ГЕОДАННЫХ В ПРОФИЛЬ ======
 function loadLocationToDossier() {
     const cityInput = document.getElementById('edCity');
     const countryInput = document.getElementById('edCountry');
@@ -197,39 +197,27 @@ function loadLocationToDossier() {
         statusEl.innerHTML = '⏳ Получение геоданных...';
     }
     
-    // Пробуем получить GPS
     getGPSLocation().then(gpsData => {
         if (gpsData && !gpsData.error) {
-            // Получаем полные данные по GPS (включая улицу)
             fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsData.lat}&lon=${gpsData.lon}&format=json&accept-language=ru&zoom=18&addressdetails=1`)
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.address) {
                         const address = data.address;
                         
-                        // Город
                         const city = address.city || address.town || address.village || address.hamlet || '';
-                        if (city && city !== 'Неизвестно') {
-                            cityInput.value = city;
-                        }
+                        if (city && city !== 'Неизвестно') cityInput.value = city;
                         
-                        // Страна
                         const country = address.country || '';
-                        if (country && country !== 'Неизвестно') {
-                            countryInput.value = country;
-                        }
+                        if (country && country !== 'Неизвестно') countryInput.value = country;
                         
-                        // Улица + номер дома
                         const road = address.road || address.pedestrian || address.footway || address.street || '';
                         const house = address.house_number || '';
                         if (road) {
                             streetInput.value = road + (house ? `, ${house}` : '');
                         } else {
-                            // Если улица не найдена — пробуем neighbourhood или suburb
                             const neighbourhood = address.neighbourhood || address.suburb || address.district || '';
-                            if (neighbourhood) {
-                                streetInput.value = neighbourhood;
-                            }
+                            if (neighbourhood) streetInput.value = neighbourhood;
                         }
                         
                         if (statusEl) {
@@ -242,21 +230,14 @@ function loadLocationToDossier() {
                         autoSaveDossier();
                         liveUpdateDossier();
                     } else {
-                        // Если не удалось — пробуем через getGeoData
                         fallbackGeo();
                     }
                 })
-                .catch(() => {
-                    // Если ошибка — пробуем через getGeoData
-                    fallbackGeo();
-                });
+                .catch(() => fallbackGeo());
         } else {
-            // Если GPS нет — пробуем через IP
             fallbackGeo();
         }
-    }).catch(() => {
-        fallbackGeo();
-    });
+    }).catch(() => fallbackGeo());
     
     function fallbackGeo() {
         getGeoData().then(ipData => {
