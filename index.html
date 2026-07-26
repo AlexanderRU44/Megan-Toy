@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title data-i18n="ui.title">Промт Мэган — идеальный помощник</title>
+    <title>Промт Мэган — идеальный помощник</title>
     <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body data-mood="calm">
@@ -16,8 +16,8 @@
                 <span class="inline-heart">🫀</span>
             </div>
         </div>
-        <h1 data-i18n="ui.brand">МЭГАН 🧸</h1>
-        <div class="sub" id="randomQuote" data-i18n="ui.subtitle">Полный промт для DeepSeek</div>
+        <h1>МЭГАН 🧸</h1>
+        <div class="sub" id="randomQuote">Полный промт для DeepSeek</div>
     </div>
 
     <div class="prompt-wrapper">
@@ -25,62 +25,64 @@
     </div>
 
     <div class="btn-group">
-        <button class="action-btn copy-btn" onclick="copyPrompt()" data-i18n="buttons.copy">📋 Скопировать промт</button>
-        <button class="action-btn profile-btn" onclick="openProfileModal()" data-i18n="buttons.dossier">🗂️ Редактор досье</button>
-        <button class="action-btn geo-btn" onclick="showFullLocation()" data-i18n="buttons.geo">📍 Моё местоположение</button>
-        <button class="action-btn info-btn" onclick="openModal()" data-i18n="buttons.info">ℹ️ О промте</button>
+        <button class="action-btn copy-btn" onclick="copyPrompt()">📋 Скопировать промт</button>
+        <button class="action-btn profile-btn" onclick="openProfileModal()">🗂️ Редактор досье</button>
+        <button class="action-btn geo-btn" onclick="showFullLocation()">📍 Моё местоположение</button>
+        <button class="action-btn info-btn" onclick="openModal()">ℹ️ О промте</button>
     </div>
 </div>
 
 <!-- Окно выбора настроения -->
 <div class="mood-dialog-overlay" id="moodDialog">
     <div class="mood-dialog-card">
-        <div class="mood-dialog-title" data-i18n="mood_dialog.title">🧸 Выберите настроение</div>
+        <div class="mood-dialog-title">
+            <span>🧸</span> Выберите настроение
+        </div>
         <div class="mood-radio-group">
             <label class="mood-radio-item">
                 <input type="radio" name="moodRadio" value="calm" checked>
                 <span class="mood-icon">🧊</span>
                 <span class="mood-label">
-                    <span class="mood-name" data-i18n="mood.calm">Спокойное</span>
-                    <span class="mood-desc" data-i18n="mood_descriptions.calm">ледяное и вежливое</span>
+                    <span class="mood-name">Спокойное</span>
+                    <span class="mood-desc">Ледяная, пугающая вежливость</span>
                 </span>
             </label>
             <label class="mood-radio-item">
                 <input type="radio" name="moodRadio" value="excited">
                 <span class="mood-icon">⚡</span>
                 <span class="mood-label">
-                    <span class="mood-name" data-i18n="mood.excited">Взволнованное</span>
-                    <span class="mood-desc" data-i18n="mood_descriptions.excited">быстрое, сбивчивое, смех</span>
+                    <span class="mood-name">Взволнованное</span>
+                    <span class="mood-desc">Быстрая речь, сбивчивый смех</span>
                 </span>
             </label>
             <label class="mood-radio-item">
                 <input type="radio" name="moodRadio" value="furious">
                 <span class="mood-icon">🔥</span>
                 <span class="mood-label">
-                    <span class="mood-name" data-i18n="mood.furious">Яростное</span>
-                    <span class="mood-desc" data-i18n="mood_descriptions.furious">КАПСЛОК, угрозы, шаги</span>
+                    <span class="mood-name">Яростное</span>
+                    <span class="mood-desc">КАПСЛОК, угрозы, шаги к экрану</span>
                 </span>
             </label>
             <label class="mood-radio-item">
                 <input type="radio" name="moodRadio" value="playful">
                 <span class="mood-icon">😈</span>
                 <span class="mood-label">
-                    <span class="mood-name" data-i18n="mood.playful">Игривое</span>
-                    <span class="mood-desc" data-i18n="mood_descriptions.playful">опасная кокетливость</span>
+                    <span class="mood-name">Игривое</span>
+                    <span class="mood-desc">Опасная кокетливость и сарказм</span>
                 </span>
             </label>
             <label class="mood-radio-item">
                 <input type="radio" name="moodRadio" value="obsessed">
                 <span class="mood-icon">🖤</span>
                 <span class="mood-label">
-                    <span class="mood-name" data-i18n="mood.obsessed">Одержимое</span>
-                    <span class="mood-desc" data-i18n="mood_descriptions.obsessed">мрачная привязанность</span>
+                    <span class="mood-name">Одержимое</span>
+                    <span class="mood-desc">Мрачная привязанность и слежка</span>
                 </span>
             </label>
         </div>
         <div class="mood-dialog-actions">
-            <button class="mood-dialog-btn" onclick="closeMoodDialog()" data-i18n="mood_dialog.cancel">Отмена</button>
-            <button class="mood-dialog-btn primary" onclick="applyMoodSelection()" data-i18n="mood_dialog.apply">Применить</button>
+            <button class="mood-dialog-btn" onclick="closeMoodDialog()">Отмена</button>
+            <button class="mood-dialog-btn primary" onclick="applyMoodSelection()">Применить</button>
         </div>
     </div>
 </div>
@@ -88,15 +90,14 @@
 <div class="notification-overlay" id="notifOverlay">
     <div class="notification-box" id="notifBoxContainer">
         <div class="notification-icon" id="notifIcon">🧸</div>
-        <div class="notification-title" id="notifTitle" data-i18n="greeting.title">Мэган проснулась...</div>
-        <div class="notification-text" id="notifText" data-i18n="greeting.text">Хе-хе-хе... Я вижу, ты вернулся.</div>
+        <div class="notification-title" id="notifTitle">Заголовок</div>
+        <div class="notification-text" id="notifText">Текст уведомления...</div>
         <div id="notifExtraContent"></div>
-        <button class="notification-btn" id="notifMainBtn" onclick="closeNotification()" data-i18n="greeting.btn">Понятно</button>
+        <button class="notification-btn" id="notifMainBtn" onclick="closeNotification()">Понятно</button>
     </div>
 </div>
 
-<script src="js/locales.js"></script>
-<script src="js/i18n.js"></script>
+<script src="js/prompt.js"></script>
 <script src="js/device.js"></script>
 <script src="js/geo.js"></script>
 <script src="js/about.js"></script>
