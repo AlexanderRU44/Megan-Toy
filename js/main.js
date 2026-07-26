@@ -204,7 +204,7 @@ async function copyPrompt() {
     }
 }
 
-// ====== ОТКРЫТИЕ DEEPSEEK (ТОЛЬКО САЙТ) ======
+// ====== ОТКРЫТИЕ DEEPSEEK (ТОЛЬКО САЙТ, БЕЗ ПРИЛОЖЕНИЯ) ======
 async function openDeepSeekApp() {
     console.log('🤖 openDeepSeekApp вызвана!');
     
@@ -218,7 +218,7 @@ async function openDeepSeekApp() {
         
         const lang = getCurrentLanguage();
         
-        // Проверяем, на телефоне ли мы
+        // Проверяем, на телефоне ли мы (только для текста уведомления)
         const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
         
         let instruction = '';
@@ -255,7 +255,7 @@ async function openDeepSeekApp() {
             lang === 'ru' ? '😈 Понятно' : '😈 Got it',
             function() {
                 closeNotification();
-                // Открываем ТОЛЬКО сайт DeepSeek в новой вкладке
+                // ОТКРЫВАЕМ ТОЛЬКО САЙТ. НИКАКИХ INTENT.
                 window.open('https://chat.deepseek.com', '_blank');
             }
         );
