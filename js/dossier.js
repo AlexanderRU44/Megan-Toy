@@ -1,9 +1,9 @@
-// ====== РЕДАКТОР ДОСЬЕ ======
+// ====== РЕДАКТОР ПРОФИЛЯ ======
 
 function openProfileModal() {
     console.log('📂 openProfileModal вызвана');
     
-    // Получаем актуальные данные из функций (а не из глобальных переменных)
+    // Получаем актуальные данные из функций
     const currentMood = document.body.getAttribute('data-mood') || 'calm';
     const labels = getMoodLabels();
     const descriptions = getMoodDescriptions();
@@ -20,11 +20,11 @@ function openProfileModal() {
     
     const extraHtml = `
         <div class="editor-workspace">
-            <!-- 📋 ДОСЬЕ ЖЕРТВЫ -->
+            <!-- 📋 ПРОФИЛЬ ЖЕРТВЫ -->
             <div class="panel-box full-width">
-                <div class="panel-title">📋 ДОСЬЕ ЖЕРТВЫ</div>
+                <div class="panel-title">📋 ПРОФИЛЬ ЖЕРТВЫ</div>
                 <div class="form-group">
-                    <label>Номер досье</label>
+                    <label>Номер профиля</label>
                     <input type="text" id="edNum" value="" placeholder="0000">
                 </div>
             </div>
@@ -151,11 +151,11 @@ function openProfileModal() {
             <!-- 👁️ ПРЕВЬЮ И КОПИРОВАНИЕ -->
             <div class="panel-box full-width">
                 <div class="panel-title">👁️ ЖИВОЙ РЕЗУЛЬТАТ</div>
-                <div class="preview-output" id="edPreview">📭 Досье пустое. Заполни данные выше!</div>
+                <div class="preview-output" id="edPreview">📭 Профиль пустой. Заполни данные выше!</div>
                 <div id="copyStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
                 <div class="form-group" style="margin-top:6px;">
                     <label>📥 Импорт (вставь старый профиль)</label>
-                    <textarea id="edImport" placeholder="Вставь текст досье сюда для разбора..." style="min-height:60px;"></textarea>
+                    <textarea id="edImport" placeholder="Вставь текст профиля сюда для разбора..." style="min-height:60px;"></textarea>
                 </div>
                 <button class="action-btn open-btn" style="padding:8px; font-size:0.7rem; margin-top:4px; min-height:36px;" onclick="parseImportedProfile()">📥 Загрузить из текста</button>
                 <div id="importStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
@@ -163,13 +163,13 @@ function openProfileModal() {
         </div>
         <div class="btn-row-modal">
             <button class="notification-btn back-btn" onclick="closeNotification()">⬅️ Назад в главное меню</button>
-            <button class="notification-btn" onclick="copyEditedDossier()">📋 Копировать досье</button>
+            <button class="notification-btn" onclick="copyEditedDossier()">📋 Копировать профиль</button>
         </div>
     `;
 
     showNotification(
         '🗂️',
-        'Редактор досье',
+        'Редактор профиля',
         '',
         null,
         extraHtml,
@@ -179,7 +179,7 @@ function openProfileModal() {
     setTimeout(liveUpdateDossier, 50);
 }
 
-// ====== ГЕНЕРАЦИЯ ТЕКСТА ДОСЬЕ ======
+// ====== ГЕНЕРАЦИЯ ТЕКСТА ПРОФИЛЯ ======
 function generateDossierText(forCopy = false) {
     const num = document.getElementById('edNum') ? document.getElementById('edNum').value : '';
     const name = document.getElementById('edName') ? document.getElementById('edName').value : '';
@@ -207,7 +207,7 @@ function generateDossierText(forCopy = false) {
     const hasData = num || name || age || city || country || status || behavior || phobias || triggers || history || threat || notes;
     
     if (!hasData) {
-        return '📭 Досье пустое. Заполни данные выше!';
+        return '📭 Профиль пустой. Заполни данные выше!';
     }
 
     let dateString = '';
@@ -225,7 +225,7 @@ function generateDossierText(forCopy = false) {
     const notesLines = notes ? notes.split('\n').filter(Boolean).map(l => '· ' + l.replace(/^·\s*/, '')).join('\n') : '· Данные не указаны';
 
     let result = `═══════════════════════════════════════════════════════════
-📋 ДОСЬЕ ЖЕРТВЫ № ${num || '???'}
+📋 ПРОФИЛЬ ЖЕРТВЫ № ${num || '???'}
 ═══════════════════════════════════════════════════════════
 
 👤 ИМЯ: ${name || 'Не указано'}`;
@@ -284,7 +284,7 @@ function liveUpdateDossier() {
     }
 }
 
-// ====== КОПИРОВАНИЕ ДОСЬЕ ======
+// ====== КОПИРОВАНИЕ ПРОФИЛЯ ======
 function copyEditedDossier() {
     const text = generateDossierText(true);
     const statusEl = document.getElementById('copyStatus');
@@ -294,12 +294,12 @@ function copyEditedDossier() {
         statusEl.style.opacity = '1';
     }
     
-    if (text.includes('📭 Досье пустое')) {
+    if (text.includes('📭 Профиль пустой')) {
         if (statusEl) {
             statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
             statusEl.style.border = '1px solid #c21515';
             statusEl.style.color = '#eba4a4';
-            statusEl.innerHTML = '😈 Досье пустое! Заполни хотя бы одно поле перед копированием. 🖤';
+            statusEl.innerHTML = '😈 Профиль пустой! Заполни хотя бы одно поле перед копированием. 🖤';
         }
         return;
     }
@@ -310,7 +310,7 @@ function copyEditedDossier() {
             statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
             statusEl.style.border = '1px solid #1eb81e';
             statusEl.style.color = '#8ad8a8';
-            statusEl.innerHTML = '✅ Полное досье скопировано! Вставь его в чат. 😈';
+            statusEl.innerHTML = '✅ Полный профиль скопирован! Вставь его в чат. 😈';
         }
     }).catch(() => {
         if (statusEl) {
@@ -431,7 +431,7 @@ function parseImportedProfile() {
             statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
             statusEl.style.border = '1px solid #c21515';
             statusEl.style.color = '#eba4a4';
-            statusEl.innerHTML = '😈 Поле импорта пустое! Вставь текст досье.';
+            statusEl.innerHTML = '😈 Поле импорта пустое! Вставь текст профиля.';
         }
         return;
     }
@@ -442,7 +442,7 @@ function parseImportedProfile() {
         let loadedFieldsList = [];
         
         // Номер
-        const numMatch = text.match(/ДОСЬЕ ЖЕРТВЫ №\s*([0-9A-Za-z_-]+)/);
+        const numMatch = text.match(/ПРОФИЛЬ ЖЕРТВЫ №\s*([0-9A-Za-z_-]+)/);
         if (numMatch && document.getElementById('edNum')) {
             document.getElementById('edNum').value = numMatch[1].trim();
             loadedFields++;
