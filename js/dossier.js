@@ -1,17 +1,14 @@
 // ====== РЕДАКТОР ДОСЬЕ ======
 
 function openProfileModal() {
-    // Проверяем, что moodLabels и moodDescriptions определены
-    if (typeof moodLabels === 'undefined' || typeof moodDescriptions === 'undefined') {
-        console.error('❌ moodLabels или moodDescriptions не определены!');
-        showNotification('❌', 'Ошибка', 'Не удалось загрузить редактор досье. Проверьте подключение файлов.');
-        return;
-    }
+    console.log('📂 openProfileModal вызвана');
     
+    // Получаем актуальные данные из функций (а не из глобальных переменных)
     const currentMood = document.body.getAttribute('data-mood') || 'calm';
-    const moodDisplay = moodLabels[currentMood] + ' (' + moodDescriptions[currentMood] + ')';
+    const labels = getMoodLabels();
+    const descriptions = getMoodDescriptions();
+    const moodDisplay = labels[currentMood] + ' (' + descriptions[currentMood] + ')';
     
-    // Получаем текущее время
     const now = new Date();
     const currentTime = now.toLocaleDateString('ru-RU', { 
         day: '2-digit', 
@@ -137,7 +134,7 @@ function openProfileModal() {
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>🎭 НАСТРОЕНИЕ МЭГАН</label>
-                    <div class="mood-clickable" id="edMoodValue" onclick="if(typeof openMoodDialog === 'function') openMoodDialog(); else console.warn('openMoodDialog не определён')">
+                    <div class="mood-clickable" id="edMoodValue" onclick="openMoodDialog()">
                         ${moodDisplay}
                     </div>
                 </div>
@@ -546,7 +543,7 @@ function parseImportedProfile() {
         if (moodMatch && document.getElementById('edMoodValue')) {
             const moodVal = moodMatch[1].trim();
             document.getElementById('edMoodValue').textContent = moodVal;
-            for (const [key, label] of Object.entries(moodLabels)) {
+            for (const [key, label] of Object.entries(getMoodLabels())) {
                 if (moodVal.toLowerCase().includes(label.toLowerCase())) {
                     document.body.setAttribute('data-mood', key);
                     localStorage.setItem('megan_site_mood', key);
@@ -671,3 +668,12 @@ function parseImportedProfile() {
         console.error(e);
     }
 }
+
+// ====== ЭКСПОРТ ======
+window.openProfileModal = openProfileModal;
+window.liveUpdateDossier = liveUpdateDossier;
+window.copyEditedDossier = copyEditedDossier;
+window.loadCurrentLocation = loadCurrentLocation;
+window.parseImportedProfile = parseImportedProfile;
+
+console.log('✅ dossier.js загружен');
