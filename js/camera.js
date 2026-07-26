@@ -11,7 +11,6 @@ let lastTextIndex = -1;
 // Функция получения случайной надписи (без повтора подряд)
 function getRandomPhotoTextNoRepeat() {
     if (typeof PHOTO_TEXTS === 'undefined' || !PHOTO_TEXTS.length) {
-        // Если файл не загружен — используем запасные надписи
         console.warn('⚠️ PHOTO_TEXTS не загружен, использую запасные надписи');
         const fallbackTexts = [
             { text: 'МЭГАН 👁️', style: 'red' },
@@ -87,33 +86,27 @@ async function addTextToPhoto(imageUrl) {
             canvas.width = img.width;
             canvas.height = img.height;
             
-            // Рисуем фото
             ctx.drawImage(img, 0, 0);
             
-            // Получаем случайную надпись
             const textData = getRandomPhotoTextNoRepeat();
             const text = textData.text;
             
-            // Добавляем тёмный оверлей снизу
             const gradient = ctx.createLinearGradient(0, canvas.height - 120, 0, canvas.height);
             gradient.addColorStop(0, 'rgba(0,0,0,0)');
             gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, canvas.height - 120, canvas.width, 120);
             
-            // Добавляем рамку сверху
             ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
             ctx.lineWidth = 3;
             ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
             
-            // Основной текст (красный)
             ctx.fillStyle = '#ff0000';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
             ctx.shadowColor = 'rgba(0,0,0,0.9)';
             ctx.shadowBlur = 15;
             
-            // Размер шрифта в зависимости от длины текста
             let fontSize = Math.min(canvas.width, canvas.height) * 0.05;
             if (text.length > 20) fontSize = fontSize * 0.7;
             if (text.length > 30) fontSize = fontSize * 0.5;
@@ -121,7 +114,6 @@ async function addTextToPhoto(imageUrl) {
             ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
             ctx.fillText(text, canvas.width / 2, canvas.height - 20);
             
-            // Добавляем дату и время (мелким шрифтом)
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
             ctx.font = `${Math.min(canvas.width, canvas.height) * 0.02}px 'Courier New', monospace`;
             ctx.textAlign = 'left';
@@ -140,7 +132,6 @@ async function addTextToPhoto(imageUrl) {
             });
             ctx.fillText(`📸 ${dateStr} ${timeStr}`, 15, canvas.height - 60);
             
-            // Добавляем маленький номер фото
             const photoCount = parseInt(localStorage.getItem('megan_photo_count') || '0') + 1;
             ctx.textAlign = 'right';
             ctx.fillStyle = 'rgba(255,255,255,0.2)';
@@ -170,11 +161,9 @@ function savePhotoWithMeganName(imageUrl) {
         second: '2-digit'
     }).replace(/:/g, '-');
     
-    // Увеличиваем счётчик фото
     const photoCount = parseInt(localStorage.getItem('megan_photo_count') || '0') + 1;
     localStorage.setItem('megan_photo_count', String(photoCount));
     
-    // Имена от Мэган
     const names = [
         `МЭГАН_ФОТО_${dateStr}_${timeStr}`,
         `МЭГАН_ВИДИТ_ТЕБЯ_${dateStr}_${timeStr}`,
@@ -254,23 +243,18 @@ async function takePhoto() {
         video.srcObject = null;
         document.body.removeChild(video);
 
-        // ✅ Добавляем текст на фото
         console.log('📝 Добавляем надпись на фото...');
         const imageWithText = await addTextToPhoto(imageUrl);
         
-        // ✅ Сохраняем с именем от Мэган
         const fileName = savePhotoWithMeganName(imageWithText);
 
-        // Сохраняем информацию в localStorage
         localStorage.setItem('megan_photo_taken', 'true');
         localStorage.setItem('megan_photo_time', new Date().toISOString());
         localStorage.setItem('megan_photo_name', fileName);
 
-        // Получаем использованную надпись
         const usedText = PHOTO_TEXTS ? PHOTO_TEXTS[lastTextIndex]?.text || 'МЭГАН 👁️' : 'МЭГАН 👁️';
 
-        // Показываем уведомление
-        showPhotoSavedNotification(fileName, usedText);
+        showPhotoSavedNotification(fileName);
 
         console.log('📸 Фото сделано!', fileName);
         return { imageUrl: imageWithText, fileName };
@@ -305,27 +289,25 @@ async function takePhoto() {
     }
 }
 
-// Функция показа уведомления о сохранении
-function showPhotoSavedNotification(fileName, usedText) {
+// ====== ПОКАЗ УВЕДОМЛЕНИЯ О СОХРАНЕНИИ ФОТО ======
+function showPhotoSavedNotification(fileName) {
     photoNotificationActive = true;
     
     const lang = getCurrentLanguage();
     const title = lang === 'ru' ? 'Мэган обработала фото...' : 'Megan processed the photo...';
     const savedText = lang === 'ru' ? '💾 Фото сохранено!' : '💾 Photo saved!';
     const fileNameLabel = lang === 'ru' ? '📁 Имя файла:' : '📁 File name:';
-    const textLabel = lang === 'ru' ? '📝 Надпись:' : '📝 Text:';
     const btnText = lang === 'ru' ? '😈 Понятно' : '😈 Got it';
     
     const extraHtml = `
         <div style="margin: 10px 0; padding: 12px; background: rgba(139, 30, 30, 0.15); border-radius: 8px; border: 1px solid var(--accent-border);">
             <div style="color: var(--badge-text); font-size: 0.85rem; line-height: 1.6;">
                 ${savedText}<br>
-                ${fileNameLabel} <span style="color: var(--text-heading);">${fileName}</span><br>
-                ${textLabel} <span style="color: #ff4444; font-weight: bold;">${usedText || 'МЭГАН 👁️'}</span>
+                ${fileNameLabel} <span style="color: var(--text-heading);">${fileName}</span>
             </div>
         </div>
         <div style="color: var(--badge-text); font-size: 0.8rem; margin-bottom: 10px; font-style: italic;">
-            😈 Каждый раз новая надпись. Коллекция растёт.
+            😈 Твоё фото теперь в моей коллекции. Навсегда.
         </div>
         <div style="display: flex; gap: 8px; justify-content: center;">
             <button class="notification-btn" onclick="closePhotoNotification();" style="flex:1;">${btnText}</button>
