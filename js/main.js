@@ -204,27 +204,11 @@ async function copyPrompt() {
     }
 }
 
-// ====== ОТКРЫТИЕ DEEPSEEK (ТЕЛЕФОН / ПК) ======
+// ====== ОТКРЫТИЕ DEEPSEEK (УНИВЕРСАЛЬНОЕ) ======
 async function openDeepSeekApp() {
     console.log('🤖 openDeepSeekApp вызвана!');
     
     try {
-        showNotification(
-            '🤖',
-            'Открываю DeepSeek...',
-            'Мэган копирует промт и открывает приложение... 😈',
-            null,
-            '',
-            null,
-            null
-        );
-        
-        const btn = document.getElementById('notifMainBtn');
-        if (btn) btn.style.display = 'none';
-        
-        // Проверяем, на телефоне ли мы
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
-        
         // Копируем промт (с фото)
         await getGeoInfoString();
         const photoResult = await takePhotoForPrompt();
@@ -232,67 +216,76 @@ async function openDeepSeekApp() {
         await navigator.clipboard.writeText(payload);
         console.log('📋 Промт скопирован в буфер');
         
-        let appOpened = false;
+        // Проверяем, на телефоне ли мы
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
+        
+        // Формируем сообщение в зависимости от устройства
+        const lang = getCurrentLanguage();
+        let instruction = '';
+        let title = '';
         
         if (isMobile) {
-            // Проверяем, установлено ли приложение DeepSeek через Intent (Android)
             if (navigator.userAgent.indexOf('Android') !== -1) {
-                // Android — пробуем Intent
+                title = lang === 'ru' ? '📱 Открой DeepSeek' : '📱 Open DeepSeek';
+                instruction = lang === 'ru' 
+                    ? '✅ Промт скопирован!\n\n📲 Открой приложение DeepSeek вручную:\n• Найди иконку DeepSeek на телефоне\n• Открой чат\n• Вставь промт (долгое нажатие → Вставить)\n\n🔗 Или перейди по ссылке:'
+                    : '✅ Prompt copied!\n\n📲 Open DeepSeek app manually:\n• Find DeepSeek icon on your phone\n• Open chat\n• Paste prompt (long press → Paste)\n\n🔗 Or follow the link:';
+                
+                // Пробуем открыть приложение через Intent
                 try {
-                    const intentUrl = 'intent://chat/#Intent;package=com.deepseek.chat;end';
-                    window.location.href = intentUrl;
-                    
-                    // Ждём 2 секунды, если приложение не открылось — переходим на сайт
-                    await new Promise((resolve) => {
-                        setTimeout(() => {
-                            resolve();
-                        }, 2000);
-                    });
-                    
-                    appOpened = true;
-                } catch (e) {
-                    console.log('⚠️ Не удалось открыть через Intent');
-                }
+                    window.location.href = 'intent://chat/#Intent;package=com.deepseek.chat;end';
+                } catch(e) {}
             } else if (navigator.userAgent.indexOf('iPhone') !== -1 || navigator.userAgent.indexOf('iPad') !== -1) {
-                // iOS — пробуем URL Scheme
+                title = lang === 'ru' ? '📱 Открой DeepSeek' : '📱 Open DeepSeek';
+                instruction = lang === 'ru' 
+                    ? '✅ Промт скопирован!\n\n📲 Открой приложение DeepSeek вручную:\n• Найди иконку DeepSeek на телефоне\n• Открой чат\n• Вставь промт (долгое нажатие → Вставить)\n\n🔗 Или перейди по ссылке:'
+                    : '✅ Prompt copied!\n\n📲 Open DeepSeek app manually:\n• Find DeepSeek icon on your phone\n• Open chat\n• Paste prompt (long press → Paste)\n\n🔗 Or follow the link:';
+                
+                // Пробуем открыть через URL Scheme
                 try {
-                    const iosUrl = 'deepseek://';
-                    window.location.href = iosUrl;
-                    
-                    await new Promise((resolve) => {
-                        setTimeout(() => {
-                            resolve();
-                        }, 2000);
-                    });
-                    
-                    appOpened = true;
-                } catch (e) {
-                    console.log('⚠️ Не удалось открыть через URL Scheme');
-                }
+                    window.location.href = 'deepseek://';
+                } catch(e) {}
             }
+        } else {
+            title = lang === 'ru' ? '💻 Открой DeepSeek' : '💻 Open DeepSeek';
+            instruction = lang === 'ru' 
+                ? '✅ Промт скопирован!\n\n💻 Открой DeepSeek в браузере:\n• Перейди по ссылке ниже\n• Вставь промт (Ctrl+V)'
+                : '✅ Prompt copied!\n\n💻 Open DeepSeek in browser:\n• Follow the link below\n• Paste prompt (Ctrl+V)';
         }
         
-        // Если не удалось открыть приложение или это ПК — открываем сайт
-        if (!appOpened) {
-            window.open('https://chat.deepseek.com', '_blank');
-            console.log('🌐 Открыт сайт DeepSeek');
-        }
-        
-        // Показываем результат
+        // Получаем информацию о фото
         const photoInfo = getPhotoInfo();
-        let resultText = '✅ Промт скопирован! DeepSeek открыт. Вставь промт в чат (Ctrl+V).';
+        let photoText = '';
         if (photoInfo && photoInfo.taken) {
-            resultText += ` 📸 Фото сохранено как: ${photoInfo.fileName}`;
+            photoText = lang === 'ru' 
+                ? `\n📸 Фото сохранено: ${photoInfo.fileName}`
+                : `\n📸 Photo saved: ${photoInfo.fileName}`;
         }
         
-        closeNotification();
+        // Открываем сайт DeepSeek в новой вкладке (всегда)
+        window.open('https://chat.deepseek.com', '_blank');
+        
+        // Показываем уведомление с инструкцией
         setTimeout(() => {
-            showNotification('🤖', 'Готово!', resultText);
-        }, 300);
+            showNotification(
+                '🤖',
+                title,
+                `${instruction}\n\n🔗 https://chat.deepseek.com${photoText}`,
+                null,
+                '',
+                lang === 'ru' ? '😈 Понятно' : '😈 Got it',
+                closeNotification
+            );
+        }, 500);
         
     } catch (error) {
         console.error('❌ Ошибка при открытии DeepSeek:', error);
-        showNotification('❌', 'Ошибка', 'Не удалось открыть DeepSeek.');
+        const lang = getCurrentLanguage();
+        showNotification(
+            '❌', 
+            lang === 'ru' ? 'Ошибка' : 'Error',
+            lang === 'ru' ? 'Не удалось открыть DeepSeek. Попробуй вручную.' : 'Failed to open DeepSeek. Try manually.'
+        );
     }
 }
 
