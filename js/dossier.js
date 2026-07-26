@@ -1,6 +1,13 @@
 // ====== РЕДАКТОР ДОСЬЕ ======
 
 function openProfileModal() {
+    // Проверяем, что moodLabels и moodDescriptions определены
+    if (typeof moodLabels === 'undefined' || typeof moodDescriptions === 'undefined') {
+        console.error('❌ moodLabels или moodDescriptions не определены!');
+        showNotification('❌', 'Ошибка', 'Не удалось загрузить редактор досье. Проверьте подключение файлов.');
+        return;
+    }
+    
     const currentMood = document.body.getAttribute('data-mood') || 'calm';
     const moodDisplay = moodLabels[currentMood] + ' (' + moodDescriptions[currentMood] + ')';
     
@@ -130,7 +137,7 @@ function openProfileModal() {
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>🎭 НАСТРОЕНИЕ МЭГАН</label>
-                    <div class="mood-clickable" id="edMoodValue" onclick="openMoodDialog()">
+                    <div class="mood-clickable" id="edMoodValue" onclick="if(typeof openMoodDialog === 'function') openMoodDialog(); else console.warn('openMoodDialog не определён')">
                         ${moodDisplay}
                     </div>
                 </div>
