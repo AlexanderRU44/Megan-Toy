@@ -235,31 +235,39 @@ async function openDeepSeekApp() {
         let appOpened = false;
         
         if (isMobile) {
-            // Пытаемся открыть приложение DeepSeek
-            const schemes = [
-                'deepseek://',
-                'intent://chat/#Intent;package=com.deepseek.chat;end',
-                'https://chat.deepseek.com'
-            ];
-            
-            for (const scheme of schemes) {
+            // Проверяем, установлено ли приложение DeepSeek через Intent (Android)
+            if (navigator.userAgent.indexOf('Android') !== -1) {
+                // Android — пробуем Intent
                 try {
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.src = scheme;
-                    document.body.appendChild(iframe);
+                    const intentUrl = 'intent://chat/#Intent;package=com.deepseek.chat;end';
+                    window.location.href = intentUrl;
                     
+                    // Ждём 2 секунды, если приложение не открылось — переходим на сайт
                     await new Promise((resolve) => {
                         setTimeout(() => {
-                            document.body.removeChild(iframe);
                             resolve();
                         }, 2000);
                     });
                     
                     appOpened = true;
-                    break;
                 } catch (e) {
-                    console.log('⚠️ Не удалось открыть через схему:', scheme);
+                    console.log('⚠️ Не удалось открыть через Intent');
+                }
+            } else if (navigator.userAgent.indexOf('iPhone') !== -1 || navigator.userAgent.indexOf('iPad') !== -1) {
+                // iOS — пробуем URL Scheme
+                try {
+                    const iosUrl = 'deepseek://';
+                    window.location.href = iosUrl;
+                    
+                    await new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve();
+                        }, 2000);
+                    });
+                    
+                    appOpened = true;
+                } catch (e) {
+                    console.log('⚠️ Не удалось открыть через URL Scheme');
                 }
             }
         }
