@@ -56,7 +56,6 @@ async function getPreparedPayload() {
         photoString = `[ФОТО ПОЛЬЗОВАТЕЛЯ: Не сделано]\n`;
     }
     
-    // БЕРЁМ ПРОМТ ИЗ ЛОКАЛЕЙ (АВТОМАТИЧЕСКИ ПОДСТАВЛЯЕТСЯ НУЖНЫЙ ЯЗЫК)
     const promptText = t('prompt');
     
     return `[СИСТЕМНЫЕ ЧАСЫ УСТРОЙСТВА: ${time}]
@@ -205,6 +204,90 @@ async function copyPrompt() {
     }
 }
 
+// ====== ОТКРЫТИЕ DEEPSEEK (ТЕЛЕФОН / ПК) ======
+async function openDeepSeekApp() {
+    console.log('🤖 openDeepSeekApp вызвана!');
+    
+    try {
+        showNotification(
+            '🤖',
+            'Открываю DeepSeek...',
+            'Мэган копирует промт и открывает приложение... 😈',
+            null,
+            '',
+            null,
+            null
+        );
+        
+        const btn = document.getElementById('notifMainBtn');
+        if (btn) btn.style.display = 'none';
+        
+        // Проверяем, на телефоне ли мы
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
+        
+        // Копируем промт (с фото)
+        await getGeoInfoString();
+        const photoResult = await takePhotoForPrompt();
+        const payload = await getPreparedPayload();
+        await navigator.clipboard.writeText(payload);
+        console.log('📋 Промт скопирован в буфер');
+        
+        let appOpened = false;
+        
+        if (isMobile) {
+            // Пытаемся открыть приложение DeepSeek
+            const schemes = [
+                'deepseek://',
+                'intent://chat/#Intent;package=com.deepseek.chat;end',
+                'https://chat.deepseek.com'
+            ];
+            
+            for (const scheme of schemes) {
+                try {
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = scheme;
+                    document.body.appendChild(iframe);
+                    
+                    await new Promise((resolve) => {
+                        setTimeout(() => {
+                            document.body.removeChild(iframe);
+                            resolve();
+                        }, 2000);
+                    });
+                    
+                    appOpened = true;
+                    break;
+                } catch (e) {
+                    console.log('⚠️ Не удалось открыть через схему:', scheme);
+                }
+            }
+        }
+        
+        // Если не удалось открыть приложение или это ПК — открываем сайт
+        if (!appOpened) {
+            window.open('https://chat.deepseek.com', '_blank');
+            console.log('🌐 Открыт сайт DeepSeek');
+        }
+        
+        // Показываем результат
+        const photoInfo = getPhotoInfo();
+        let resultText = '✅ Промт скопирован! DeepSeek открыт. Вставь промт в чат (Ctrl+V).';
+        if (photoInfo && photoInfo.taken) {
+            resultText += ` 📸 Фото сохранено как: ${photoInfo.fileName}`;
+        }
+        
+        closeNotification();
+        setTimeout(() => {
+            showNotification('🤖', 'Готово!', resultText);
+        }, 300);
+        
+    } catch (error) {
+        console.error('❌ Ошибка при открытии DeepSeek:', error);
+        showNotification('❌', 'Ошибка', 'Не удалось открыть DeepSeek.');
+    }
+}
+
 function openModal() {
     openAboutPrompt();
 }
@@ -213,13 +296,11 @@ function openModal() {
 function loadPrompt() {
     const promptElement = document.getElementById('fullPrompt');
     if (promptElement) {
-        // БЕРЁМ ПРОМТ ИЗ ЛОКАЛЕЙ
         const promptText = t('prompt');
         if (promptText && promptText !== 'prompt') {
             promptElement.textContent = promptText;
             console.log('✅ Промт загружен из локалей');
         } else {
-            // РЕЗЕРВ: если промт не найден в локалях
             if (typeof window.MEGAN_PROMPT !== 'undefined') {
                 promptElement.textContent = window.MEGAN_PROMPT;
                 console.log('✅ Промт загружен из prompt.js (резерв)');
@@ -317,7 +398,6 @@ function resetInactivityTimer() {
 window.onload = function() {
     console.log('🔄 Страница загружена');
     
-    // Применяем переводы
     applyTranslations();
     
     setTimeout(loadPrompt, 100);
@@ -338,7 +418,6 @@ window.onload = function() {
         startHeartbeatAutomatically();
     }, 1000);
     
-    // Мгновенное приветствие
     showFirstNotification();
 };
 
