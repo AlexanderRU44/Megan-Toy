@@ -271,6 +271,13 @@ h1 {
     transition: background 0.4s ease, box-shadow 0.4s ease;
 }
 
+.deepseek-btn {
+    background: linear-gradient(135deg, #1a3a5c 0%, #0a1a2c 100%);
+    border: 1px solid rgba(100, 150, 255, 0.2);
+    color: #e2f0f7;
+    box-shadow: 0 4px 12px rgba(28, 70, 122, 0.3);
+}
+
 .profile-btn {
     background: linear-gradient(135deg, #381c38 0%, #221122 100%);
     border: 1px solid rgba(200, 100, 255, 0.2);
