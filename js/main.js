@@ -204,7 +204,7 @@ async function copyPrompt() {
     }
 }
 
-// ====== ОТКРЫТИЕ DEEPSEEK (ПОСЛЕ НАЖАТИЯ «ПОНЯТНО») ======
+// ====== ОТКРЫТИЕ DEEPSEEK (ТОЛЬКО САЙТ) ======
 async function openDeepSeekApp() {
     console.log('🤖 openDeepSeekApp вызвана!');
     
@@ -216,25 +216,19 @@ async function openDeepSeekApp() {
         await navigator.clipboard.writeText(payload);
         console.log('📋 Промт скопирован в буфер');
         
-        // Определяем устройство
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
         const lang = getCurrentLanguage();
+        
+        // Проверяем, на телефоне ли мы
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
         
         let instruction = '';
         let title = '';
         
         if (isMobile) {
-            if (navigator.userAgent.indexOf('Android') !== -1) {
-                title = lang === 'ru' ? '📱 Открой DeepSeek' : '📱 Open DeepSeek';
-                instruction = lang === 'ru' 
-                    ? '✅ Промт скопирован!\n\n📲 Нажми «Понятно», и я открою приложение DeepSeek.\n\nЕсли приложение не откроется — открой его вручную и вставь промт (долгое нажатие → Вставить).'
-                    : '✅ Prompt copied!\n\n📲 Tap «Got it», and I\'ll open the DeepSeek app.\n\nIf the app doesn\'t open — open it manually and paste the prompt (long press → Paste).';
-            } else if (navigator.userAgent.indexOf('iPhone') !== -1 || navigator.userAgent.indexOf('iPad') !== -1) {
-                title = lang === 'ru' ? '📱 Открой DeepSeek' : '📱 Open DeepSeek';
-                instruction = lang === 'ru' 
-                    ? '✅ Промт скопирован!\n\n📲 Нажми «Понятно», и я открою приложение DeepSeek.\n\nЕсли приложение не откроется — открой его вручную и вставь промт (долгое нажатие → Вставить).'
-                    : '✅ Prompt copied!\n\n📲 Tap «Got it», and I\'ll open the DeepSeek app.\n\nIf the app doesn\'t open — open it manually and paste the prompt (long press → Paste).';
-            }
+            title = lang === 'ru' ? '📱 Открой DeepSeek' : '📱 Open DeepSeek';
+            instruction = lang === 'ru' 
+                ? '✅ Промт скопирован!\n\n📲 Нажми «Понятно», и я открою DeepSeek в браузере.\n\nВставь промт (долгое нажатие → Вставить).'
+                : '✅ Prompt copied!\n\n📲 Tap «Got it», and I\'ll open DeepSeek in your browser.\n\nPaste the prompt (long press → Paste).';
         } else {
             title = lang === 'ru' ? '💻 Открой DeepSeek' : '💻 Open DeepSeek';
             instruction = lang === 'ru' 
@@ -260,40 +254,9 @@ async function openDeepSeekApp() {
             '',
             lang === 'ru' ? '😈 Понятно' : '😈 Got it',
             function() {
-                // После нажатия «Понятно» — открываем DeepSeek
                 closeNotification();
-                
-                // Пробуем открыть приложение (для телефона)
-                const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
-                
-                if (isMobileDevice) {
-                    if (navigator.userAgent.indexOf('Android') !== -1) {
-                        // Android — пробуем Intent
-                        try {
-                            window.location.href = 'intent://chat/#Intent;package=com.deepseek.chat;end';
-                        } catch(e) {
-                            // Если не работает — открываем сайт
-                            window.open('https://chat.deepseek.com', '_blank');
-                        }
-                    } else if (navigator.userAgent.indexOf('iPhone') !== -1 || navigator.userAgent.indexOf('iPad') !== -1) {
-                        // iOS — пробуем URL Scheme
-                        try {
-                            window.location.href = 'deepseek://';
-                            // Если не открылось через 2 секунды — открываем сайт
-                            setTimeout(() => {
-                                window.open('https://chat.deepseek.com', '_blank');
-                            }, 2000);
-                        } catch(e) {
-                            window.open('https://chat.deepseek.com', '_blank');
-                        }
-                    } else {
-                        // Другие мобильные — просто сайт
-                        window.open('https://chat.deepseek.com', '_blank');
-                    }
-                } else {
-                    // ПК — открываем сайт
-                    window.open('https://chat.deepseek.com', '_blank');
-                }
+                // Открываем ТОЛЬКО сайт DeepSeek в новой вкладке
+                window.open('https://chat.deepseek.com', '_blank');
             }
         );
         
