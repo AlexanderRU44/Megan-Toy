@@ -27,7 +27,7 @@ function openMoodDialog() {
     
     // Обновляем заголовок
     const title = document.querySelector('.mood-dialog-title');
-    if (title) title.innerHTML = `${t('mood_dialog.title')}`;
+    if (title) title.innerHTML = `<span>🧸</span> ${t('mood_dialog.title')}`;
     
     // Обновляем кнопки
     const cancelBtn = document.querySelector('.mood-dialog-actions .mood-dialog-btn:not(.primary)');
@@ -46,8 +46,20 @@ function openMoodDialog() {
             const mood = radio.value;
             const nameEl = item.querySelector('.mood-name');
             const descEl = item.querySelector('.mood-desc');
+            const iconEl = item.querySelector('.mood-icon');
+            
             if (nameEl) nameEl.textContent = labels[mood] || mood;
             if (descEl) descEl.textContent = descriptions[mood] || '';
+            
+            // Обновляем иконки
+            const icons = {
+                'calm': '🧊',
+                'excited': '⚡',
+                'furious': '🔥',
+                'playful': '😈',
+                'obsessed': '🖤'
+            };
+            if (iconEl) iconEl.textContent = icons[mood] || '🧸';
         }
     });
     
@@ -83,6 +95,17 @@ function applyMoodSelection() {
     document.body.style.overflow = '';
 }
 
+// ====== ЭКСПОРТ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ ======
+// Создаём глобальные переменные для dossier.js
+window.moodLabels = getMoodLabels();
+window.moodDescriptions = getMoodDescriptions();
+
+// Обновляем при смене языка
+document.addEventListener('languageChanged', function() {
+    window.moodLabels = getMoodLabels();
+    window.moodDescriptions = getMoodDescriptions();
+});
+
 // Восстановление при загрузке
 window.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('megan_site_mood');
@@ -97,3 +120,5 @@ window.addEventListener('DOMContentLoaded', () => {
 window.openMoodDialog = openMoodDialog;
 window.closeMoodDialog = closeMoodDialog;
 window.applyMoodSelection = applyMoodSelection;
+
+console.log('✅ mood.js загружен');
