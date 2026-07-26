@@ -271,13 +271,6 @@ h1 {
     transition: background 0.4s ease, box-shadow 0.4s ease;
 }
 
-.open-btn {
-    background: linear-gradient(135deg, #1c3552 0%, #112238 100%);
-    border: 1px solid rgba(100, 150, 255, 0.2);
-    color: #e2f0f7;
-    box-shadow: 0 4px 12px rgba(28, 70, 122, 0.3);
-}
-
 .profile-btn {
     background: linear-gradient(135deg, #381c38 0%, #221122 100%);
     border: 1px solid rgba(200, 100, 255, 0.2);
@@ -290,7 +283,14 @@ h1 {
     border: 1px solid rgba(100, 255, 200, 0.2);
     color: #e2f7f0;
     box-shadow: 0 4px 12px rgba(28, 122, 100, 0.3);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
 }
+
+.geo-btn:active { transform: scale(0.95); }
 
 .info-btn {
     background: linear-gradient(135deg, #382c1c 0%, #241c12 100%);
@@ -301,6 +301,7 @@ h1 {
 
 .action-btn:active { transform: scale(0.98); }
 
+/* ====== УВЕДОМЛЕНИЯ ====== */
 .notification-overlay {
     display: none;
     position: fixed;
@@ -394,6 +395,7 @@ h1 {
     flex-shrink: 0;
 }
 
+/* ====== РЕДАКТОР ДОСЬЕ ====== */
 .editor-workspace {
     display: flex;
     flex-direction: column;
@@ -420,6 +422,10 @@ h1 {
     flex-direction: column;
     gap: 8px;
     transition: border-color 0.4s ease;
+}
+
+.panel-box.full-width {
+    grid-column: 1 / -1 !important;
 }
 
 .panel-title {
@@ -512,6 +518,7 @@ h1 {
     transform: scale(0.98);
 }
 
+/* ====== ОКНО НАСТРОЕНИЯ ====== */
 .mood-dialog-overlay {
     display: none;
     position: fixed;
@@ -657,12 +664,27 @@ h1 {
 
 .mood-dialog-btn.primary:active { transform: scale(0.97); }
 
+/* ====== АДАПТИВ ====== */
 @media (min-width: 600px) {
     body { padding: 20px; }
     .container { padding: 35px 30px; }
     h1 { font-size: 2.3rem; }
     .btn-group { grid-template-columns: repeat(2, 1fr); }
     .prompt-block { max-height: 450px; font-size: 0.88rem; padding: 20px; }
-    .editor-workspace { display: grid; grid-template-columns: 1fr 1fr; max-height: 65vh; }
+    .editor-workspace { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        max-height: 65vh; 
+    }
     .notification-box { padding: 24px 20px; }
+}
+
+/* ====== БЭК-КНОПКА ====== */
+.back-btn {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.back-btn:hover {
+    background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%) !important;
 }
