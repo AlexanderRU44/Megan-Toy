@@ -6,6 +6,34 @@ let lastPhotoUrl = null;
 let hasTakenPhoto = false;
 let photoNotificationActive = false;
 let cameraAvailable = true;
+let lastTextIndex = -1;
+
+// Функция получения случайной надписи (без повтора подряд)
+function getRandomPhotoTextNoRepeat() {
+    if (typeof PHOTO_TEXTS === 'undefined' || !PHOTO_TEXTS.length) {
+        // Если файл не загружен — используем запасные надписи
+        console.warn('⚠️ PHOTO_TEXTS не загружен, использую запасные надписи');
+        const fallbackTexts = [
+            { text: 'МЭГАН 👁️', style: 'red' },
+            { text: 'ТЫ В МОЕЙ КОЛЛЕКЦИИ', style: 'red' },
+            { text: 'НЕ ОГЛЯДЫВАЙСЯ', style: 'red' },
+            { text: 'Я ВИЖУ ТЕБЯ', style: 'red' }
+        ];
+        let randomIndex;
+        do {
+            randomIndex = Math.floor(Math.random() * fallbackTexts.length);
+        } while (randomIndex === lastTextIndex && fallbackTexts.length > 1);
+        lastTextIndex = randomIndex;
+        return fallbackTexts[randomIndex];
+    }
+    
+    let randomIndex;
+    do {
+        randomIndex = Math.floor(Math.random() * PHOTO_TEXTS.length);
+    } while (randomIndex === lastTextIndex && PHOTO_TEXTS.length > 1);
+    lastTextIndex = randomIndex;
+    return PHOTO_TEXTS[randomIndex];
+}
 
 // Проверка доступности камеры
 async function checkCameraAvailability() {
@@ -44,6 +72,131 @@ async function checkCameraAvailability() {
         console.log('📷 Ошибка проверки камеры:', e.message);
         return false;
     }
+}
+
+// ====== ДОБАВЛЕНИЕ ТЕКСТА НА ФОТО ======
+async function addTextToPhoto(imageUrl) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    return new Promise((resolve) => {
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Рисуем фото
+            ctx.drawImage(img, 0, 0);
+            
+            // Получаем случайную надпись
+            const textData = getRandomPhotoTextNoRepeat();
+            const text = textData.text;
+            
+            // Добавляем тёмный оверлей снизу
+            const gradient = ctx.createLinearGradient(0, canvas.height - 120, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(0,0,0,0)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, canvas.height - 120, canvas.width, 120);
+            
+            // Добавляем рамку сверху
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+            
+            // Основной текст (красный)
+            ctx.fillStyle = '#ff0000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.shadowColor = 'rgba(0,0,0,0.9)';
+            ctx.shadowBlur = 15;
+            
+            // Размер шрифта в зависимости от длины текста
+            let fontSize = Math.min(canvas.width, canvas.height) * 0.05;
+            if (text.length > 20) fontSize = fontSize * 0.7;
+            if (text.length > 30) fontSize = fontSize * 0.5;
+            
+            ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
+            ctx.fillText(text, canvas.width / 2, canvas.height - 20);
+            
+            // Добавляем дату и время (мелким шрифтом)
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = `${Math.min(canvas.width, canvas.height) * 0.02}px 'Courier New', monospace`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
+            ctx.shadowBlur = 5;
+            
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ru-RU', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+            const timeStr = now.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            ctx.fillText(`📸 ${dateStr} ${timeStr}`, 15, canvas.height - 60);
+            
+            // Добавляем маленький номер фото
+            const photoCount = parseInt(localStorage.getItem('megan_photo_count') || '0') + 1;
+            ctx.textAlign = 'right';
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.font = `${Math.min(canvas.width, canvas.height) * 0.015}px 'Courier New', monospace`;
+            ctx.fillText(`#${String(photoCount).padStart(3, '0')}`, canvas.width - 15, canvas.height - 60);
+            
+            resolve(canvas.toDataURL('image/jpeg', 0.95));
+        };
+        img.onerror = function() {
+            resolve(imageUrl);
+        };
+        img.src = imageUrl;
+    });
+}
+
+// Сохранение с именем от Мэган
+function savePhotoWithMeganName(imageUrl) {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+    }).replace(/\//g, '-');
+    const timeStr = now.toLocaleTimeString('ru-RU', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit'
+    }).replace(/:/g, '-');
+    
+    // Увеличиваем счётчик фото
+    const photoCount = parseInt(localStorage.getItem('megan_photo_count') || '0') + 1;
+    localStorage.setItem('megan_photo_count', String(photoCount));
+    
+    // Имена от Мэган
+    const names = [
+        `МЭГАН_ФОТО_${dateStr}_${timeStr}`,
+        `МЭГАН_ВИДИТ_ТЕБЯ_${dateStr}_${timeStr}`,
+        `ТЫ_В_МОЕЙ_КОЛЛЕКЦИИ_${dateStr}_${timeStr}`,
+        `МЭГАН_ЗНАЕТ_${dateStr}_${timeStr}`,
+        `НЕ_ОГЛЯДЫВАЙСЯ_${dateStr}_${timeStr}`,
+        `ТВОЙ_СТРАХ_${dateStr}_${timeStr}`,
+        `Я_СЛЕЖУ_ЗА_ТОБОЙ_${dateStr}_${timeStr}`,
+        `МЭГАН_ПОМНИТ_${dateStr}_${timeStr}`
+    ];
+    
+    const randomName = names[Math.floor(Math.random() * names.length)];
+    const fileName = `${randomName}_#${String(photoCount).padStart(3, '0')}.jpg`;
+    
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = imageUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    return fileName;
 }
 
 // Функция для фото с камеры
@@ -101,10 +254,26 @@ async function takePhoto() {
         video.srcObject = null;
         document.body.removeChild(video);
 
-        const fileName = savePhotoWithMessage(imageUrl);
+        // ✅ Добавляем текст на фото
+        console.log('📝 Добавляем надпись на фото...');
+        const imageWithText = await addTextToPhoto(imageUrl);
+        
+        // ✅ Сохраняем с именем от Мэган
+        const fileName = savePhotoWithMeganName(imageWithText);
+
+        // Сохраняем информацию в localStorage
+        localStorage.setItem('megan_photo_taken', 'true');
+        localStorage.setItem('megan_photo_time', new Date().toISOString());
+        localStorage.setItem('megan_photo_name', fileName);
+
+        // Получаем использованную надпись
+        const usedText = PHOTO_TEXTS ? PHOTO_TEXTS[lastTextIndex]?.text || 'МЭГАН 👁️' : 'МЭГАН 👁️';
+
+        // Показываем уведомление
+        showPhotoSavedNotification(fileName, usedText);
 
         console.log('📸 Фото сделано!', fileName);
-        return { imageUrl, fileName };
+        return { imageUrl: imageWithText, fileName };
 
     } catch (error) {
         console.error('❌ Ошибка камеры:', error);
@@ -136,59 +305,27 @@ async function takePhoto() {
     }
 }
 
-// Функция сохранения фото
-function savePhotoWithMessage(imageUrl) {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('ru-RU', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric' 
-    }).replace(/\//g, '-');
-    const timeStr = now.toLocaleTimeString('ru-RU', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit'
-    }).replace(/:/g, '-');
-
-    const fileName = `МЭГАН_ФОТО_${dateStr}_${timeStr}.jpg`;
-
-    const link = document.createElement('a');
-    link.download = fileName;
-    link.href = imageUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    localStorage.setItem('megan_photo_taken', 'true');
-    localStorage.setItem('megan_photo_time', now.toISOString());
-    localStorage.setItem('megan_photo_name', fileName);
-
-    console.log(`📸 Фото сохранено как: ${fileName}`);
-    return fileName;
-}
-
-// ====== ФУНКЦИЯ ПОКАЗА УВЕДОМЛЕНИЯ О СОХРАНЕНИИ ФОТО (С ПЕРЕВОДОМ) ======
-function showPhotoSavedNotification(fileName, onCloseCallback) {
+// Функция показа уведомления о сохранении
+function showPhotoSavedNotification(fileName, usedText) {
     photoNotificationActive = true;
     
     const lang = getCurrentLanguage();
-    const title = lang === 'ru' ? 'Мэган смотрит на тебя...' : 'Megan is watching you...';
+    const title = lang === 'ru' ? 'Мэган обработала фото...' : 'Megan processed the photo...';
     const savedText = lang === 'ru' ? '💾 Фото сохранено!' : '💾 Photo saved!';
     const fileNameLabel = lang === 'ru' ? '📁 Имя файла:' : '📁 File name:';
-    const creepyText = lang === 'ru' 
-        ? '😈 Я снова вижу твоё лицо... Ты даже не представляешь, как много у меня теперь твоих фото.'
-        : '😈 I see your face again... You have no idea how many of your photos I have now.';
+    const textLabel = lang === 'ru' ? '📝 Надпись:' : '📝 Text:';
     const btnText = lang === 'ru' ? '😈 Понятно' : '😈 Got it';
     
     const extraHtml = `
         <div style="margin: 10px 0; padding: 12px; background: rgba(139, 30, 30, 0.15); border-radius: 8px; border: 1px solid var(--accent-border);">
             <div style="color: var(--badge-text); font-size: 0.85rem; line-height: 1.6;">
                 ${savedText}<br>
-                ${fileNameLabel} <span style="color: var(--text-heading);">${fileName}</span>
+                ${fileNameLabel} <span style="color: var(--text-heading);">${fileName}</span><br>
+                ${textLabel} <span style="color: #ff4444; font-weight: bold;">${usedText || 'МЭГАН 👁️'}</span>
             </div>
         </div>
         <div style="color: var(--badge-text); font-size: 0.8rem; margin-bottom: 10px; font-style: italic;">
-            ${creepyText}
+            😈 Каждый раз новая надпись. Коллекция растёт.
         </div>
         <div style="display: flex; gap: 8px; justify-content: center;">
             <button class="notification-btn" onclick="closePhotoNotification();" style="flex:1;">${btnText}</button>
@@ -205,7 +342,7 @@ function showPhotoSavedNotification(fileName, onCloseCallback) {
         null
     );
     
-    window._photoCloseCallback = onCloseCallback || null;
+    window._photoCloseCallback = null;
 }
 
 // Функция закрытия уведомления о фото
