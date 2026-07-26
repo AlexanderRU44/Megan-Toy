@@ -204,7 +204,7 @@ async function copyPrompt() {
     }
 }
 
-// ====== ОТКРЫТИЕ DEEPSEEK (ТОЛЬКО САЙТ, БЕЗ ПРИЛОЖЕНИЯ) ======
+// ====== ОТКРЫТИЕ САЙТА DEEPSEEK В БРАУЗЕРЕ ======
 async function openDeepSeekApp() {
     console.log('🤖 openDeepSeekApp вызвана!');
     
@@ -218,24 +218,6 @@ async function openDeepSeekApp() {
         
         const lang = getCurrentLanguage();
         
-        // Проверяем, на телефоне ли мы (только для текста уведомления)
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
-        
-        let instruction = '';
-        let title = '';
-        
-        if (isMobile) {
-            title = lang === 'ru' ? '📱 Открой DeepSeek' : '📱 Open DeepSeek';
-            instruction = lang === 'ru' 
-                ? '✅ Промт скопирован!\n\n📲 Нажми «Понятно», и я открою DeepSeek в браузере.\n\nВставь промт (долгое нажатие → Вставить).'
-                : '✅ Prompt copied!\n\n📲 Tap «Got it», and I\'ll open DeepSeek in your browser.\n\nPaste the prompt (long press → Paste).';
-        } else {
-            title = lang === 'ru' ? '💻 Открой DeepSeek' : '💻 Open DeepSeek';
-            instruction = lang === 'ru' 
-                ? '✅ Промт скопирован!\n\n💻 Нажми «Понятно», и я открою DeepSeek в браузере.\n\nВставь промт (Ctrl+V) в чат.'
-                : '✅ Prompt copied!\n\n💻 Tap «Got it», and I\'ll open DeepSeek in your browser.\n\nPaste the prompt (Ctrl+V) into the chat.';
-        }
-        
         // Получаем информацию о фото
         const photoInfo = getPhotoInfo();
         let photoText = '';
@@ -248,15 +230,27 @@ async function openDeepSeekApp() {
         // Показываем уведомление с кнопкой
         showNotification(
             '🤖',
-            title,
-            `${instruction}${photoText}`,
+            lang === 'ru' ? '🌐 Открыть DeepSeek' : '🌐 Open DeepSeek',
+            lang === 'ru'
+                ? `✅ Промт скопирован!\n\n🌐 Нажми «Открыть», и я открою сайт DeepSeek в браузере.\n\nВставь промт в чат (Ctrl+V).${photoText}`
+                : `✅ Prompt copied!\n\n🌐 Tap «Open», and I\'ll open the DeepSeek website in your browser.\n\nPaste the prompt into the chat (Ctrl+V).${photoText}`,
             null,
             '',
-            lang === 'ru' ? '😈 Понятно' : '😈 Got it',
+            lang === 'ru' ? '🌐 Открыть' : '🌐 Open',
             function() {
                 closeNotification();
-                // ОТКРЫВАЕМ ТОЛЬКО САЙТ. НИКАКИХ INTENT.
+                // Открываем сайт DeepSeek в новой вкладке
                 window.open('https://chat.deepseek.com', '_blank');
+                // Показываем дополнительное уведомление
+                setTimeout(() => {
+                    showNotification(
+                        '🤖',
+                        lang === 'ru' ? '✅ Готово!' : '✅ Done!',
+                        lang === 'ru'
+                            ? 'DeepSeek открыт в браузере.\n\nВставь промт в чат (Ctrl+V) и начни общение с Мэган. 😈'
+                            : 'DeepSeek is open in your browser.\n\nPaste the prompt into the chat (Ctrl+V) and start talking to Megan. 😈'
+                    );
+                }, 500);
             }
         );
         
