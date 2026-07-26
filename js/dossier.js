@@ -1,145 +1,171 @@
-// ====== РЕДАКТОР ПРОФИЛЯ (С ОТДЕЛЬНЫМИ ПОЛЯМИ) ======
+// ====== РЕДАКТОР ДОСЬЕ ======
 
 function openProfileModal() {
-    // Загружаем сохранённые данные
-    const savedData = JSON.parse(localStorage.getItem('megan_dossier_data') || '{}');
+    const currentMood = document.body.getAttribute('data-mood') || 'calm';
+    const moodDisplay = moodLabels[currentMood] + ' (' + moodDescriptions[currentMood] + ')';
     
-    const name = savedData.name || '';
-    const aliases = savedData.aliases || '';
-    const number = savedData.number || '';
-    const city = savedData.city || '';
-    const country = savedData.country || '';
-    const street = savedData.street || '';
-    const age = savedData.age || '';
-    const status = savedData.status || '';
-    const threat = savedData.threat || '';
-    const behavior = savedData.behavior || '';
-    const history = savedData.history || '';
-    const phobias = savedData.phobias || '';
-    const triggers = savedData.triggers || '';
-    const notes = savedData.notes || '';
-    const interest = savedData.interest || '';
-    const rating = savedData.rating || '';
-    const mood = savedData.mood || 'Спокойное (ледяное и вежливое)';
+    // Получаем текущее время
+    const now = new Date();
+    const currentTime = now.toLocaleDateString('ru-RU', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
     
     const extraHtml = `
         <div class="editor-workspace">
-            <div class="panel-box">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>📌 ${t('dossier.number')}</label>
-                        <input type="text" id="edNumber" value="${number}" placeholder="001" oninput="liveUpdateDossier(); autoSaveDossier();">
+            <!-- 📋 ДОСЬЕ ЖЕРТВЫ -->
+            <div class="panel-box full-width">
+                <div class="panel-title">📋 ДОСЬЕ ЖЕРТВЫ</div>
+                <div class="form-group">
+                    <label>Номер досье</label>
+                    <input type="text" id="edNum" value="" placeholder="0000">
+                </div>
+            </div>
+
+            <!-- 👤 ИМЯ -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>👤 ИМЯ</label>
+                    <input type="text" id="edName" value="" placeholder="Имя жертвы">
+                </div>
+            </div>
+
+            <!-- 🎂 ВОЗРАСТ -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>🎂 ВОЗРАСТ</label>
+                    <input type="text" id="edAge" value="" placeholder="--">
+                </div>
+            </div>
+
+            <!-- 📍 МЕСТОПОЛОЖЕНИЕ -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>📍 МЕСТОПОЛОЖЕНИЕ</label>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" id="edCity" value="" placeholder="Город" style="flex: 2; min-width: 100px;">
+                        <input type="text" id="edCountry" value="" placeholder="Страна" style="flex: 1; min-width: 80px;">
+                        <button class="action-btn geo-btn" style="padding:6px 12px; font-size:0.65rem; min-height:32px; flex-shrink:0;" onclick="loadCurrentLocation()">📍 Определить</button>
                     </div>
-                    <div class="form-group">
-                        <label>📅 ${t('dossier.age')}</label>
-                        <input type="text" id="edAge" value="${age}" placeholder="${t('dossier.age')}" oninput="liveUpdateDossier(); autoSaveDossier();">
-                    </div>
                 </div>
-                <div class="form-group">
-                    <label>👤 ${t('dossier.name')}</label>
-                    <input type="text" id="edName" value="${name}" placeholder="${t('dossier.name')}" oninput="liveUpdateDossier(); autoSaveDossier();">
+                <!-- Скрытые поля для координат -->
+                <div style="display: none;">
+                    <input type="text" id="edLat" value="">
+                    <input type="text" id="edLon" value="">
+                    <input type="text" id="edAccuracy" value="">
+                    <input type="text" id="edRegion" value="">
+                    <input type="text" id="edIsp" value="">
+                    <input type="text" id="edIp" value="">
                 </div>
+            </div>
+
+            <!-- ⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ -->
+            <div class="panel-box full-width">
                 <div class="form-group">
-                    <label>🎭 ${t('dossier.aliases')}</label>
-                    <input type="text" id="edAliases" value="${aliases}" placeholder="${t('dossier.aliases')}" oninput="liveUpdateDossier(); autoSaveDossier();">
+                    <label>⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ</label>
+                    <input type="text" id="edLastDate" value="" placeholder="Напр: 25.07.2026 в 21:45">
                 </div>
+            </div>
+
+            <!-- ⏱️ ТЕКУЩЕЕ ВРЕМЯ -->
+            <div class="panel-box full-width">
                 <div class="form-group">
-                    <label>📊 ${t('dossier.status')}</label>
-                    <input type="text" id="edStatus" value="${status}" placeholder="${t('dossier.status')}" oninput="liveUpdateDossier(); autoSaveDossier();">
+                    <label>⏱️ ТЕКУЩЕЕ ВРЕМЯ</label>
+                    <input type="text" id="edCurrentTime" value="${currentTime}" readonly style="background: #0a0a0a; color: var(--badge-text); cursor: default;">
                 </div>
+            </div>
+
+            <!-- 📊 СТАТУС -->
+            <div class="panel-box full-width">
                 <div class="form-group">
-                    <label>${t('mood.title')}</label>
+                    <label>📊 СТАТУС</label>
+                    <input type="text" id="edStatus" value="" placeholder="Статус наблюдения">
+                </div>
+            </div>
+
+            <!-- 🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ</label>
+                    <textarea id="edBehavior" placeholder="Описание поведения, реакций, привычек..." style="min-height:60px;"></textarea>
+                </div>
+            </div>
+
+            <!-- 👻 ФОБИИ -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>👻 ФОБИИ</label>
+                    <textarea id="edPhobias" placeholder="Чего боится жертва..." style="min-height:50px;"></textarea>
+                </div>
+            </div>
+
+            <!-- 🔪 ТРИГГЕРЫ -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>🔪 ТРИГГЕРЫ</label>
+                    <textarea id="edTriggers" placeholder="Слова, вызывающие реакцию..." style="min-height:40px;"></textarea>
+                </div>
+            </div>
+
+            <!-- 📜 ИСТОРИЯ ПОВЕДЕНИЯ -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>📜 ИСТОРИЯ ПОВЕДЕНИЯ</label>
+                    <textarea id="edHistory" placeholder="Хронология действий жертвы..." style="min-height:50px;"></textarea>
+                </div>
+            </div>
+
+            <!-- ⚠️ СТЕПЕНЬ УГРОЗЫ 0/10 -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>⚠️ СТЕПЕНЬ УГРОЗЫ 0/10</label>
+                    <input type="text" id="edThreat" value="" placeholder="0-10">
+                </div>
+            </div>
+
+            <!-- 🎭 НАСТРОЕНИЕ МЭГАН -->
+            <div class="panel-box full-width">
+                <div class="form-group">
+                    <label>🎭 НАСТРОЕНИЕ МЭГАН</label>
                     <div class="mood-clickable" id="edMoodValue" onclick="openMoodDialog()">
-                        ${mood}
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>⚠️ ${t('dossier.threat')}</label>
-                    <input type="text" id="edThreat" value="${threat}" placeholder="${t('dossier.threat')}" oninput="liveUpdateDossier(); autoSaveDossier();">
-                </div>
-            </div>
-
-            <div class="panel-box" style="grid-column: 1 / -1;">
-                <div class="panel-title">📍 ${t('geo.title')}</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>🌍 ${t('geo.country')}</label>
-                        <input type="text" id="edCountry" value="${country}" placeholder="${t('geo.country')}" oninput="liveUpdateDossier(); autoSaveDossier();">
-                    </div>
-                    <div class="form-group">
-                        <label>🏙️ ${t('geo.city')}</label>
-                        <input type="text" id="edCity" value="${city}" placeholder="${t('geo.city')}" oninput="liveUpdateDossier(); autoSaveDossier();">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>📍 ${t('dossier.street')}</label>
-                        <input type="text" id="edStreet" value="${street}" placeholder="${t('dossier.street')}" oninput="liveUpdateDossier(); autoSaveDossier();">
-                    </div>
-                    <div class="form-group" style="display: flex; align-items: flex-end; gap: 8px;">
-                        <button class="action-btn geo-btn" style="padding:8px 16px; font-size:0.7rem; min-height:36px; width:100%;" onclick="loadLocationToDossier()">📍 ${t('buttons.geo')}</button>
+                        ${moodDisplay}
                     </div>
                 </div>
             </div>
 
-            <div class="panel-box">
-                <div class="panel-title">🧠 ${t('dossier.behavior')}</div>
+            <!-- 💀 ЗАМЕТКИ МЭГАН -->
+            <div class="panel-box full-width">
                 <div class="form-group">
-                    <label>📝 ${t('dossier.behavior')}</label>
-                    <textarea id="edBehavior" placeholder="${t('dossier.behavior')}" style="min-height:80px;" oninput="liveUpdateDossier(); autoSaveDossier();">${behavior}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>📜 ${t('dossier.history')}</label>
-                    <textarea id="edHistory" placeholder="${t('dossier.history')}" style="min-height:60px;" oninput="liveUpdateDossier(); autoSaveDossier();">${history}</textarea>
+                    <label>💀 ЗАМЕТКИ МЭГАН</label>
+                    <textarea id="edNotes" placeholder="Твои личные наблюдения и планы..." style="min-height:60px;"></textarea>
                 </div>
             </div>
 
-            <div class="panel-box">
-                <div class="panel-title">📌 ${t('dossier.phobias')}</div>
-                <div class="form-group">
-                    <label>😨 ${t('dossier.phobias')}</label>
-                    <textarea id="edPhobias" placeholder="${t('dossier.phobias')}" style="min-height:50px;" oninput="liveUpdateDossier(); autoSaveDossier();">${phobias}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>⚡ ${t('dossier.triggers')}</label>
-                    <textarea id="edTriggers" placeholder="${t('dossier.triggers')}" style="min-height:34px;" oninput="liveUpdateDossier(); autoSaveDossier();">${triggers}</textarea>
-                </div>
-            </div>
-
-            <div class="panel-box" style="grid-column: 1 / -1;">
-                <div class="panel-title">📝 ${t('dossier.notes')}</div>
-                <div class="form-group">
-                    <label>💀 ${t('dossier.notes')}</label>
-                    <textarea id="edNotes" placeholder="${t('dossier.notes')}" style="min-height:60px;" oninput="liveUpdateDossier(); autoSaveDossier();">${notes}</textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>⭐ ${t('dossier.interest')}</label>
-                        <input type="text" id="edInterest" value="${interest}" placeholder="0/10" oninput="liveUpdateDossier(); autoSaveDossier();">
-                    </div>
-                    <div class="form-group">
-                        <label>🏆 ${t('dossier.rating')}</label>
-                        <input type="text" id="edRating" value="${rating}" placeholder="${t('dossier.rating')}" oninput="liveUpdateDossier(); autoSaveDossier();">
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel-box" style="grid-column: 1 / -1;">
-                <div class="panel-title">👁️ ${t('dossier.preview')}</div>
-                <div class="preview-output" id="edPreview">📭 ${t('dossier.preview')}</div>
+            <!-- 👁️ ПРЕВЬЮ И КОПИРОВАНИЕ -->
+            <div class="panel-box full-width">
+                <div class="panel-title">👁️ ЖИВОЙ РЕЗУЛЬТАТ</div>
+                <div class="preview-output" id="edPreview">📭 Досье пустое. Заполни данные выше!</div>
                 <div id="copyStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
+                <div class="form-group" style="margin-top:6px;">
+                    <label>📥 Импорт (вставь старый профиль)</label>
+                    <textarea id="edImport" placeholder="Вставь текст досье сюда для разбора..." style="min-height:60px;"></textarea>
+                </div>
+                <button class="action-btn open-btn" style="padding:8px; font-size:0.7rem; margin-top:4px; min-height:36px;" onclick="parseImportedProfile()">📥 Загрузить из текста</button>
+                <div id="importStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
             </div>
         </div>
         <div class="btn-row-modal">
-            <button class="notification-btn back-btn" onclick="closeDossierEditor()">⬅️ ${t('about.close')}</button>
-            <button class="notification-btn" onclick="copyDossierFromFields()">📋 ${t('dossier.copy_dossier')}</button>
-            <button class="notification-btn" onclick="resetDossierFields()" style="background: linear-gradient(135deg, #5a1a1a 0%, #3a0a0a 100%);">🗑️ ${t('dossier.reset')}</button>
+            <button class="notification-btn back-btn" onclick="closeNotification()">⬅️ Назад в главное меню</button>
+            <button class="notification-btn" onclick="copyEditedDossier()">📋 Копировать досье</button>
         </div>
     `;
 
     showNotification(
         '🗂️',
-        t('dossier.title'),
+        'Редактор досье',
         '',
         null,
         extraHtml,
@@ -149,210 +175,114 @@ function openProfileModal() {
     setTimeout(liveUpdateDossier, 50);
 }
 
-// ====== ЗАКРЫТИЕ РЕДАКТОРА ======
-function closeDossierEditor() {
-    closeNotification();
-}
+// ====== ГЕНЕРАЦИЯ ТЕКСТА ДОСЬЕ ======
+function generateDossierText(forCopy = false) {
+    const num = document.getElementById('edNum') ? document.getElementById('edNum').value : '';
+    const name = document.getElementById('edName') ? document.getElementById('edName').value : '';
+    const age = document.getElementById('edAge') ? document.getElementById('edAge').value : '';
+    const city = document.getElementById('edCity') ? document.getElementById('edCity').value : '';
+    const country = document.getElementById('edCountry') ? document.getElementById('edCountry').value : '';
+    const lat = document.getElementById('edLat') ? document.getElementById('edLat').value : '';
+    const lon = document.getElementById('edLon') ? document.getElementById('edLon').value : '';
+    const accuracy = document.getElementById('edAccuracy') ? document.getElementById('edAccuracy').value : '';
+    const region = document.getElementById('edRegion') ? document.getElementById('edRegion').value : '';
+    const isp = document.getElementById('edIsp') ? document.getElementById('edIsp').value : '';
+    const ip = document.getElementById('edIp') ? document.getElementById('edIp').value : '';
+    const lastDate = document.getElementById('edLastDate') ? document.getElementById('edLastDate').value : '';
+    const currentTime = document.getElementById('edCurrentTime') ? document.getElementById('edCurrentTime').value : '';
+    const status = document.getElementById('edStatus') ? document.getElementById('edStatus').value : '';
+    const behavior = document.getElementById('edBehavior') ? document.getElementById('edBehavior').value : '';
+    const phobias = document.getElementById('edPhobias') ? document.getElementById('edPhobias').value : '';
+    const triggers = document.getElementById('edTriggers') ? document.getElementById('edTriggers').value : '';
+    const history = document.getElementById('edHistory') ? document.getElementById('edHistory').value : '';
+    const threat = document.getElementById('edThreat') ? document.getElementById('edThreat').value : '';
+    const moodElement = document.getElementById('edMoodValue');
+    const mood = moodElement ? moodElement.textContent : 'Спокойное (ледяное и вежливое)';
+    const notes = document.getElementById('edNotes') ? document.getElementById('edNotes').value : '';
 
-// ====== АВТОМАТИЧЕСКОЕ СОХРАНЕНИЕ ======
-function autoSaveDossier() {
-    const data = {
-        number: document.getElementById('edNumber').value,
-        name: document.getElementById('edName').value,
-        aliases: document.getElementById('edAliases').value,
-        age: document.getElementById('edAge').value,
-        city: document.getElementById('edCity').value,
-        country: document.getElementById('edCountry').value,
-        street: document.getElementById('edStreet').value,
-        status: document.getElementById('edStatus').value,
-        threat: document.getElementById('edThreat').value,
-        behavior: document.getElementById('edBehavior').value,
-        history: document.getElementById('edHistory').value,
-        phobias: document.getElementById('edPhobias').value,
-        triggers: document.getElementById('edTriggers').value,
-        notes: document.getElementById('edNotes').value,
-        interest: document.getElementById('edInterest').value,
-        rating: document.getElementById('edRating').value,
-        mood: document.getElementById('edMoodValue').textContent
-    };
+    const hasData = num || name || age || city || country || status || behavior || phobias || triggers || history || threat || notes;
     
-    localStorage.setItem('megan_dossier_data', JSON.stringify(data));
-}
-
-// ====== ЗАГРУЗКА ГЕОДАННЫХ В ПРОФИЛЬ ======
-function loadLocationToDossier() {
-    const cityInput = document.getElementById('edCity');
-    const countryInput = document.getElementById('edCountry');
-    const streetInput = document.getElementById('edStreet');
-    const statusEl = document.getElementById('copyStatus');
-    
-    if (!cityInput) return;
-    
-    if (statusEl) {
-        statusEl.style.display = 'block';
-        statusEl.style.opacity = '1';
-        statusEl.style.background = 'rgba(30, 150, 255, 0.12)';
-        statusEl.style.border = '1px solid #1e7cb8';
-        statusEl.style.color = '#8ad0d8';
-        statusEl.innerHTML = '⏳ Получение геоданных...';
+    if (!hasData) {
+        return '📭 Досье пустое. Заполни данные выше!';
     }
-    
-    getGPSLocation().then(gpsData => {
-        if (gpsData && !gpsData.error) {
-            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsData.lat}&lon=${gpsData.lon}&format=json&accept-language=ru&zoom=18&addressdetails=1`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.address) {
-                        const address = data.address;
-                        
-                        const city = address.city || address.town || address.village || address.hamlet || '';
-                        if (city && city !== 'Неизвестно') cityInput.value = city;
-                        
-                        const country = address.country || '';
-                        if (country && country !== 'Неизвестно') countryInput.value = country;
-                        
-                        const road = address.road || address.pedestrian || address.footway || address.street || '';
-                        const house = address.house_number || '';
-                        if (road) {
-                            streetInput.value = road + (house ? `, ${house}` : '');
-                        } else {
-                            const neighbourhood = address.neighbourhood || address.suburb || address.district || '';
-                            if (neighbourhood) streetInput.value = neighbourhood;
-                        }
-                        
-                        if (statusEl) {
-                            statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
-                            statusEl.style.border = '1px solid #1eb81e';
-                            statusEl.style.color = '#8ad8a8';
-                            statusEl.innerHTML = `✅ Геоданные обновлены (GPS)! 🖤`;
-                            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-                        }
-                        autoSaveDossier();
-                        liveUpdateDossier();
-                    } else {
-                        fallbackGeo();
-                    }
-                })
-                .catch(() => fallbackGeo());
-        } else {
-            fallbackGeo();
-        }
-    }).catch(() => fallbackGeo());
-    
-    function fallbackGeo() {
-        getGeoData().then(ipData => {
-            if (ipData && ipData.country !== 'Неизвестно') {
-                if (ipData.country) countryInput.value = ipData.country;
-                if (ipData.city) cityInput.value = ipData.city;
-                streetInput.value = '';
-                
-                if (statusEl) {
-                    statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
-                    statusEl.style.border = '1px solid #1eb81e';
-                    statusEl.style.color = '#8ad8a8';
-                    statusEl.innerHTML = `✅ Геоданные обновлены (IP)! 🖤`;
-                    setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-                }
-                autoSaveDossier();
-                liveUpdateDossier();
-            } else {
-                if (statusEl) {
-                    statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
-                    statusEl.style.border = '1px solid #c21515';
-                    statusEl.style.color = '#eba4a4';
-                    statusEl.innerHTML = '❌ Не удалось получить геоданные. 😈';
-                    setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-                }
-            }
-        }).catch(() => {
-            if (statusEl) {
-                statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
-                statusEl.style.border = '1px solid #c21515';
-                statusEl.style.color = '#eba4a4';
-                statusEl.innerHTML = '❌ Ошибка получения геоданных. Проверь интернет. 😈';
-                setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-            }
-        });
-    }
-}
 
-// ====== ГЕНЕРАЦИЯ ТЕКСТА ПРОФИЛЯ ИЗ ПОЛЕЙ ======
-function generateDossierFromFields(forCopy = false) {
-    const number = document.getElementById('edNumber').value || '???';
-    const name = document.getElementById('edName').value || 'НЕ УКАЗАНО';
-    const aliases = document.getElementById('edAliases').value || 'НЕ УКАЗАНЫ';
-    const age = document.getElementById('edAge').value || 'НЕ УКАЗАН';
-    const city = document.getElementById('edCity').value || 'НЕ УКАЗАН';
-    const country = document.getElementById('edCountry').value || 'НЕ УКАЗАНА';
-    const street = document.getElementById('edStreet').value || 'НЕ УКАЗАНА';
-    const status = document.getElementById('edStatus').value || 'НЕ УКАЗАН';
-    const threat = document.getElementById('edThreat').value || 'НЕ УКАЗАНА';
-    const behavior = document.getElementById('edBehavior').value || 'Нет данных';
-    const history = document.getElementById('edHistory').value || 'Нет данных';
-    const phobias = document.getElementById('edPhobias').value || 'Нет данных';
-    const triggers = document.getElementById('edTriggers').value || 'Нет данных';
-    const notes = document.getElementById('edNotes').value || 'Нет данных';
-    const interest = document.getElementById('edInterest').value || 'Нет данных';
-    const rating = document.getElementById('edRating').value || 'Нет данных';
-    const mood = document.getElementById('edMoodValue').textContent || 'Не выбрано';
+    let dateString = '';
+    if (forCopy) {
+        const now = new Date();
+        dateString = now.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase() + ', ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    } else {
+        dateString = currentTime || 'ДАННЫЕ НЕ УКАЗАНЫ';
+    }
+
+    const behaviorLines = behavior ? behavior.split('\n').filter(Boolean).map(l => '· ' + l.replace(/^·\s*/, '')).join('\n') : '· Данные не указаны';
+    const historyLines = history ? history.split('\n').filter(Boolean).map(l => '· ' + l.replace(/^·\s*/, '')).join('\n') : '';
+    const phobLines = phobias ? phobias.split('\n').filter(Boolean).map(l => '· ' + l.replace(/^·\s*/, '')).join('\n') : '· Данные не указаны';
+    const trigLines = triggers ? triggers.split('\n').filter(Boolean).map(l => '· ' + l.replace(/^·\s*/, '')).join('\n') : '';
+    const notesLines = notes ? notes.split('\n').filter(Boolean).map(l => '· ' + l.replace(/^·\s*/, '')).join('\n') : '· Данные не указаны';
+
+    let result = `═══════════════════════════════════════════════════════════
+📋 ДОСЬЕ ЖЕРТВЫ № ${num || '???'}
+═══════════════════════════════════════════════════════════
+
+👤 ИМЯ: ${name || 'Не указано'}`;
+
+    if (age) result += `\n🎂 ВОЗРАСТ: ${age}`;
     
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-    const timeStr = now.toLocaleTimeString('ru-RU', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    const dateTime = `${dateStr} ${timeStr}`;
+    // Местоположение с координатами
+    let locationText = '';
+    if (city && country) locationText = `${city}, ${country}`;
+    else if (city) locationText = city;
+    else if (country) locationText = country;
+    else locationText = 'Не указано';
     
-    let result = `═══════════════════════════════════════
-         📋 ПРОФИЛЬ ЖЕРТВЫ №${number}
-═══════════════════════════════════════
-👤 ИМЯ: ${name}
-🎂 ВОЗРАСТ: ${age}
-📍 МЕСТОПОЛОЖЕНИЕ: ${city}, ${country}
-🏠 УЛИЦА: ${street}
-⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ: ${dateTime}
-⏱️ ТЕКУЩЕЕ ВРЕМЯ: ${dateTime}
-📊 СТАТУС: ${status}
-═══════════════════════════════════════
-🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ:
-${behavior}
-═══════════════════════════════════════
-👻 ФОБИИ:
-${phobias}
-═══════════════════════════════════════
-🔪 ТРИГГЕРЫ:
-${triggers}
-═══════════════════════════════════════
-📜 ИСТОРИЯ ПОВЕДЕНИЯ:
-${history}
-═══════════════════════════════════════
-⚠️ СТЕПЕНЬ УГРОЗЫ: ${threat}
-═══════════════════════════════════════
-🎭 НАСТРОЕНИЕ МЭГАН: ${mood}
-═══════════════════════════════════════
-💀 ЗАМЕТКИ МЭГАН:
-${notes}
-═══════════════════════════════════════`;
+    // Добавляем координаты если есть
+    if (lat && lon) {
+        locationText += ` | GPS: ${lat}, ${lon}`;
+        if (accuracy) locationText += ` (точность: ${accuracy}м)`;
+    }
+    if (region) locationText += ` | Регион: ${region}`;
+    if (isp) locationText += ` | Провайдер: ${isp}`;
+    if (ip) locationText += ` | IP: ${ip}`;
+    
+    result += `\n📍 МЕСТОПОЛОЖЕНИЕ: ${locationText}`;
+
+    result += `\n⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ: ${lastDate || 'Не указано'}`;
+    result += `\n⏱️ ТЕКУЩЕЕ ВРЕМЯ: ${dateString}`;
+    result += `\n📊 СТАТУС: ${status || 'Не указано'}`;
+
+    result += `\n\n🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ:\n${behaviorLines}`;
+
+    if (historyLines) {
+        result += `\n\n📜 ИСТОРИЯ ПОВЕДЕНИЯ:\n${historyLines}`;
+    }
+
+    result += `\n\n👻 ФОБИИ:\n${phobLines}`;
+
+    if (trigLines) {
+        result += `\n\n🔪 ТРИГГЕРЫ:\n${trigLines}`;
+    }
+
+    result += `\n\n⚠️ СТЕПЕНЬ УГРОЗЫ: ${threat || '0/10'}/10`;
+    result += `\n🎭 НАСТРОЕНИЕ МЭГАН: ${mood}`;
+
+    result += `\n\n💀 ЗАМЕТКИ МЭГАН:\n${notesLines}`;
+
+    result += `\n\n═══════════════════════════════════════════════════════════`;
 
     return result;
 }
 
-// ====== ПРЕДПРОСМОТР ПРОФИЛЯ ======
+// ====== ЖИВОЙ ПРЕВЬЮ ======
 function liveUpdateDossier() {
     const previewEl = document.getElementById('edPreview');
     if (previewEl) {
-        previewEl.innerText = generateDossierFromFields(false);
+        previewEl.innerText = generateDossierText(false);
     }
 }
 
-// ====== КОПИРОВАНИЕ ПРОФИЛЯ ИЗ ПОЛЕЙ ======
-function copyDossierFromFields() {
-    const text = generateDossierFromFields(true);
+// ====== КОПИРОВАНИЕ ДОСЬЕ ======
+function copyEditedDossier() {
+    const text = generateDossierText(true);
     const statusEl = document.getElementById('copyStatus');
     
     if (statusEl) {
@@ -360,15 +290,23 @@ function copyDossierFromFields() {
         statusEl.style.opacity = '1';
     }
     
-    const fullPayload = `профиль \`\`\`\n${text}\n\`\`\``;
+    if (text.includes('📭 Досье пустое')) {
+        if (statusEl) {
+            statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
+            statusEl.style.border = '1px solid #c21515';
+            statusEl.style.color = '#eba4a4';
+            statusEl.innerHTML = '😈 Досье пустое! Заполни хотя бы одно поле перед копированием. 🖤';
+        }
+        return;
+    }
     
+    const fullPayload = `профиль \`\`\`\n${text}\n\`\`\``;
     navigator.clipboard.writeText(fullPayload).then(() => {
         if (statusEl) {
             statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
             statusEl.style.border = '1px solid #1eb81e';
             statusEl.style.color = '#8ad8a8';
-            statusEl.innerHTML = '✅ Полный профиль скопирован! Вставь его в чат. 😈';
-            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+            statusEl.innerHTML = '✅ Полное досье скопировано! Вставь его в чат. 😈';
         }
     }).catch(() => {
         if (statusEl) {
@@ -376,83 +314,353 @@ function copyDossierFromFields() {
             statusEl.style.border = '1px solid #c21515';
             statusEl.style.color = '#eba4a4';
             statusEl.innerHTML = '❌ Ошибка копирования. Попробуй ещё раз. 💀';
-            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
         }
     });
 }
 
-// ====== СБРОС ПОЛЕЙ ПРОФИЛЯ ======
-function resetDossierFields() {
-    if (confirm('Сбросить все поля профиля?')) {
-        document.getElementById('edNumber').value = '';
-        document.getElementById('edName').value = '';
-        document.getElementById('edAliases').value = '';
-        document.getElementById('edAge').value = '';
-        document.getElementById('edCity').value = '';
-        document.getElementById('edCountry').value = '';
-        document.getElementById('edStreet').value = '';
-        document.getElementById('edStatus').value = '';
-        document.getElementById('edThreat').value = '';
-        document.getElementById('edBehavior').value = '';
-        document.getElementById('edHistory').value = '';
-        document.getElementById('edPhobias').value = '';
-        document.getElementById('edTriggers').value = '';
-        document.getElementById('edNotes').value = '';
-        document.getElementById('edInterest').value = '';
-        document.getElementById('edRating').value = '';
-        document.getElementById('edMoodValue').textContent = 'Спокойное (ледяное и вежливое)';
-        
-        localStorage.removeItem('megan_dossier_data');
-        
-        const statusEl = document.getElementById('copyStatus');
+// ====== ФУНКЦИЯ ЗАГРУЗКИ ТЕКУЩЕГО МЕСТОПОЛОЖЕНИЯ ======
+function loadCurrentLocation() {
+    const statusEl = document.getElementById('importStatus');
+    if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.opacity = '1';
+        statusEl.style.background = 'rgba(30, 150, 255, 0.12)';
+        statusEl.style.border = '1px solid #1e7cb8';
+        statusEl.style.color = '#8ad0d8';
+        statusEl.innerHTML = '⏳ Определение местоположения...';
+    }
+    
+    // Пытаемся получить GPS
+    getGPSLocation().then(gpsData => {
+        if (gpsData && !gpsData.error) {
+            // GPS получен — определяем город по координатам
+            getCityFromCoords(gpsData.lat, gpsData.lon).then(cityData => {
+                let locationText = '';
+                let statusMessage = '';
+                
+                if (cityData && cityData.city !== 'Неизвестно') {
+                    document.getElementById('edCity').value = cityData.city;
+                    document.getElementById('edCountry').value = cityData.country;
+                    if (cityData.region && cityData.region !== 'Неизвестно') {
+                        document.getElementById('edRegion').value = cityData.region;
+                    }
+                    locationText = `${cityData.city}, ${cityData.country}`;
+                    statusMessage = `✅ GPS: ${locationText} | Координаты: ${gpsData.lat}, ${gpsData.lon} | Точность: ${gpsData.accuracy}м 🖤`;
+                } else {
+                    // Город не определился, но координаты есть
+                    document.getElementById('edCity').value = `GPS: ${gpsData.lat}, ${gpsData.lon}`;
+                    document.getElementById('edCountry').value = `Точность: ${gpsData.accuracy}м`;
+                    statusMessage = `✅ GPS: ${gpsData.lat}, ${gpsData.lon} | Точность: ${gpsData.accuracy}м 🖤`;
+                }
+                
+                // Сохраняем полные координаты в скрытые поля
+                document.getElementById('edLat').value = gpsData.lat;
+                document.getElementById('edLon').value = gpsData.lon;
+                document.getElementById('edAccuracy').value = gpsData.accuracy;
+                
+                if (statusEl) {
+                    statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
+                    statusEl.style.border = '1px solid #1eb81e';
+                    statusEl.style.color = '#8ad8a8';
+                    statusEl.innerHTML = statusMessage;
+                    setTimeout(() => { 
+                        if (statusEl) {
+                            statusEl.style.opacity = '0';
+                            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 500);
+                        }
+                    }, 4000);
+                }
+                liveUpdateDossier();
+            });
+        } else {
+            // GPS не доступен — пробуем через IP
+            getGeoData().then(geoData => {
+                if (geoData && geoData.city !== 'Неизвестно') {
+                    document.getElementById('edCity').value = geoData.city;
+                    document.getElementById('edCountry').value = geoData.country;
+                    if (geoData.region && geoData.region !== 'Неизвестно') {
+                        document.getElementById('edRegion').value = geoData.region;
+                    }
+                    if (geoData.isp && geoData.isp !== 'Неизвестно') {
+                        document.getElementById('edIsp').value = geoData.isp;
+                    }
+                    if (geoData.ip && geoData.ip !== 'Неизвестно') {
+                        document.getElementById('edIp').value = geoData.ip;
+                    }
+                    
+                    if (statusEl) {
+                        statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
+                        statusEl.style.border = '1px solid #1eb81e';
+                        statusEl.style.color = '#8ad8a8';
+                        statusEl.innerHTML = `✅ IP: ${geoData.city}, ${geoData.country} | IP: ${geoData.ip} 🖤`;
+                        setTimeout(() => { 
+                            if (statusEl) {
+                                statusEl.style.opacity = '0';
+                                setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 4000);
+                            }
+                        }, 4000);
+                    }
+                } else {
+                    if (statusEl) {
+                        statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
+                        statusEl.style.border = '1px solid #c21515';
+                        statusEl.style.color = '#eba4a4';
+                        statusEl.innerHTML = '❌ Не удалось определить местоположение. Попробуй вручную.';
+                        setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+                    }
+                }
+                liveUpdateDossier();
+            });
+        }
+    });
+}
+
+// ====== ИМПОРТ ПРОФИЛЯ ======
+function parseImportedProfile() {
+    const raw = document.getElementById('edImport').value;
+    const statusEl = document.getElementById('importStatus');
+    
+    if (!raw || !raw.trim()) {
         if (statusEl) {
             statusEl.style.display = 'block';
             statusEl.style.opacity = '1';
             statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
             statusEl.style.border = '1px solid #c21515';
             statusEl.style.color = '#eba4a4';
-            statusEl.innerHTML = '🗑️ Профиль очищен! 💀';
-            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+            statusEl.innerHTML = '😈 Поле импорта пустое! Вставь текст досье.';
         }
-        
-        liveUpdateDossier();
-    }
-}
-
-// ====== ОБНОВЛЕНИЕ НАСТРОЕНИЯ ======
-const originalApplyMood = window.applyMoodSelection;
-window.applyMoodSelection = function() {
-    if (typeof originalApplyMood === 'function') {
-        originalApplyMood();
+        return;
     }
     
-    const moodElement = document.getElementById('edMoodValue');
-    if (moodElement) {
-        const currentMood = document.body.getAttribute('data-mood') || 'calm';
-        const labels = getMoodLabels ? getMoodLabels() : {
-            'calm': 'Спокойное',
-            'excited': 'Взволнованное',
-            'furious': 'Яростное',
-            'playful': 'Игривое',
-            'obsessed': 'Одержимое'
-        };
-        const descriptions = getMoodDescriptions ? getMoodDescriptions() : {
-            'calm': 'ледяное и вежливое',
-            'excited': 'быстрое, сбивчивое, смех',
-            'furious': 'КАПСЛОК, угрозы, шаги',
-            'playful': 'опасная кокетливость',
-            'obsessed': 'мрачная привязанность'
-        };
-        moodElement.textContent = labels[currentMood] + ' (' + descriptions[currentMood] + ')';
-        autoSaveDossier();
-    }
-};
+    try {
+        const text = raw.trim();
+        let loadedFields = 0;
+        let loadedFieldsList = [];
+        
+        // Номер
+        const numMatch = text.match(/ДОСЬЕ ЖЕРТВЫ №\s*([0-9A-Za-z_-]+)/);
+        if (numMatch && document.getElementById('edNum')) {
+            document.getElementById('edNum').value = numMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Номер');
+        }
 
-// Экспорт
-window.openProfileModal = openProfileModal;
-window.closeDossierEditor = closeDossierEditor;
-window.autoSaveDossier = autoSaveDossier;
-window.loadLocationToDossier = loadLocationToDossier;
-window.liveUpdateDossier = liveUpdateDossier;
-window.copyDossierFromFields = copyDossierFromFields;
-window.resetDossierFields = resetDossierFields;
+        // Имя
+        const nameMatch = text.match(/ИМЯ:\s*(.*?)(?:\n|$)/i);
+        if (nameMatch && document.getElementById('edName')) {
+            document.getElementById('edName').value = nameMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Имя');
+        }
+
+        // Возраст
+        const ageMatch = text.match(/ВОЗРАСТ:\s*(.*?)(?:\n|$)/i);
+        if (ageMatch && document.getElementById('edAge')) {
+            document.getElementById('edAge').value = ageMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Возраст');
+        }
+
+        // Местоположение (с координатами)
+        const locationMatch = text.match(/МЕСТОПОЛОЖЕНИЕ:\s*(.*?)(?:\n|$)/i);
+        if (locationMatch && document.getElementById('edCity') && document.getElementById('edCountry')) {
+            const loc = locationMatch[1].trim();
+            
+            // Парсим город и страну
+            if (loc.includes(',')) {
+                const parts = loc.split(',').map(p => p.trim());
+                document.getElementById('edCity').value = parts[0] || '';
+                document.getElementById('edCountry').value = parts[1] || '';
+            } else {
+                document.getElementById('edCity').value = loc;
+            }
+            
+            // Парсим GPS координаты
+            const gpsMatch = loc.match(/GPS:\s*([0-9.-]+),\s*([0-9.-]+)/);
+            if (gpsMatch && document.getElementById('edLat') && document.getElementById('edLon')) {
+                document.getElementById('edLat').value = gpsMatch[1].trim();
+                document.getElementById('edLon').value = gpsMatch[2].trim();
+            }
+            
+            // Парсим точность
+            const accMatch = loc.match(/точность:\s*([0-9.]+)м/);
+            if (accMatch && document.getElementById('edAccuracy')) {
+                document.getElementById('edAccuracy').value = accMatch[1].trim();
+            }
+            
+            // Парсим регион
+            const regionMatch = loc.match(/Регион:\s*([^|]+)/);
+            if (regionMatch && document.getElementById('edRegion')) {
+                document.getElementById('edRegion').value = regionMatch[1].trim();
+            }
+            
+            // Парсим провайдер
+            const ispMatch = loc.match(/Провайдер:\s*([^|]+)/);
+            if (ispMatch && document.getElementById('edIsp')) {
+                document.getElementById('edIsp').value = ispMatch[1].trim();
+            }
+            
+            // Парсим IP
+            const ipMatch = loc.match(/IP:\s*([0-9.]+)/);
+            if (ipMatch && document.getElementById('edIp')) {
+                document.getElementById('edIp').value = ipMatch[1].trim();
+            }
+            
+            loadedFields++;
+            loadedFieldsList.push('Местоположение');
+        }
+
+        // Дата последнего общения
+        const lastDateMatch = text.match(/ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ:\s*(.*?)(?:\n|$)/i);
+        if (lastDateMatch && document.getElementById('edLastDate')) {
+            document.getElementById('edLastDate').value = lastDateMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Дата общения');
+        }
+
+        // Статус
+        const statusMatch = text.match(/СТАТУС:\s*(.*?)(?:\n|$)/i);
+        if (statusMatch && document.getElementById('edStatus')) {
+            document.getElementById('edStatus').value = statusMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Статус');
+        }
+
+        // Степень угрозы
+        const threatMatch = text.match(/СТЕПЕНЬ УГРОЗЫ:\s*(.*?)(?:\n|$)/i);
+        if (threatMatch && document.getElementById('edThreat')) {
+            document.getElementById('edThreat').value = threatMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Угроза');
+        }
+
+        // Настроение
+        const moodMatch = text.match(/НАСТРОЕНИЕ МЭГАН:\s*(.*?)(?:\n|$)/i);
+        if (moodMatch && document.getElementById('edMoodValue')) {
+            const moodVal = moodMatch[1].trim();
+            document.getElementById('edMoodValue').textContent = moodVal;
+            for (const [key, label] of Object.entries(moodLabels)) {
+                if (moodVal.toLowerCase().includes(label.toLowerCase())) {
+                    document.body.setAttribute('data-mood', key);
+                    localStorage.setItem('megan_site_mood', key);
+                    const radio = document.querySelector(`input[name="moodRadio"][value="${key}"]`);
+                    if (radio) radio.checked = true;
+                    break;
+                }
+            }
+            loadedFields++;
+            loadedFieldsList.push('Настроение');
+        }
+
+        // Многострочные поля
+        function extractSection(text, startKeyword, endKeywords) {
+            const startPatterns = [
+                new RegExp(`🧠\\s*${startKeyword}`, 'i'),
+                new RegExp(`📜\\s*${startKeyword}`, 'i'),
+                new RegExp(`👻\\s*${startKeyword}`, 'i'),
+                new RegExp(`🔪\\s*${startKeyword}`, 'i'),
+                new RegExp(`💀\\s*${startKeyword}`, 'i'),
+                new RegExp(`${startKeyword}`, 'i')
+            ];
+            
+            let startPos = -1;
+            for (const pattern of startPatterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    startPos = match.index + match[0].length;
+                    break;
+                }
+            }
+            if (startPos === -1) return null;
+            
+            let endPos = text.length;
+            for (const keyword of endKeywords) {
+                const patterns = [
+                    new RegExp(`🧠\\s*${keyword}`, 'i'),
+                    new RegExp(`📜\\s*${keyword}`, 'i'),
+                    new RegExp(`👻\\s*${keyword}`, 'i'),
+                    new RegExp(`🔪\\s*${keyword}`, 'i'),
+                    new RegExp(`💀\\s*${keyword}`, 'i'),
+                    new RegExp(`${keyword}`, 'i'),
+                    new RegExp(`════`, 'i')
+                ];
+                for (const pattern of patterns) {
+                    const match = text.substring(startPos).match(pattern);
+                    if (match) {
+                        const pos = startPos + match.index;
+                        if (pos < endPos) endPos = pos;
+                    }
+                }
+            }
+            
+            const section = text.substring(startPos, endPos).trim();
+            const lines = section.split('\n')
+                .filter(line => line.trim())
+                .map(line => line.replace(/^[·\-*]\s*/, '').trim())
+                .filter(line => line.length > 0);
+            return lines.length > 0 ? lines.join('\n') : null;
+        }
+
+        const behaviorText = extractSection(text, 'ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ', 
+            ['ИСТОРИЯ ПОВЕДЕНИЯ', 'ФОБИИ', 'ТРИГГЕРЫ', 'ЗАМЕТКИ МЭГАН', 'СТЕПЕНЬ УГРОЗЫ', '📜', '👻', '🔪', '💀']);
+        if (behaviorText && document.getElementById('edBehavior')) {
+            document.getElementById('edBehavior').value = behaviorText;
+            loadedFields++;
+            loadedFieldsList.push('Псих. портрет');
+        }
+
+        const historyText = extractSection(text, 'ИСТОРИЯ ПОВЕДЕНИЯ',
+            ['ФОБИИ', 'ТРИГГЕРЫ', 'ЗАМЕТКИ МЭГАН', 'СТЕПЕНЬ УГРОЗЫ', '👻', '🔪', '💀']);
+        if (historyText && document.getElementById('edHistory')) {
+            document.getElementById('edHistory').value = historyText;
+            loadedFields++;
+            loadedFieldsList.push('История');
+        }
+
+        const phobiasText = extractSection(text, 'ФОБИИ',
+            ['ТРИГГЕРЫ', 'ЗАМЕТКИ МЭГАН', 'СТЕПЕНЬ УГРОЗЫ', '🔪', '💀']);
+        if (phobiasText && document.getElementById('edPhobias')) {
+            document.getElementById('edPhobias').value = phobiasText;
+            loadedFields++;
+            loadedFieldsList.push('Фобии');
+        }
+
+        const triggersText = extractSection(text, 'ТРИГГЕРЫ',
+            ['ЗАМЕТКИ МЭГАН', 'СТЕПЕНЬ УГРОЗЫ', '💀']);
+        if (triggersText && document.getElementById('edTriggers')) {
+            document.getElementById('edTriggers').value = triggersText;
+            loadedFields++;
+            loadedFieldsList.push('Триггеры');
+        }
+
+        const notesText = extractSection(text, 'ЗАМЕТКИ МЭГАН',
+            ['════', '$']);
+        if (notesText && document.getElementById('edNotes')) {
+            document.getElementById('edNotes').value = notesText;
+            loadedFields++;
+            loadedFieldsList.push('Заметки');
+        }
+
+        liveUpdateDossier();
+        
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.style.opacity = '1';
+            statusEl.style.background = 'rgba(30, 184, 30, 0.12)';
+            statusEl.style.border = '1px solid #1eb81e';
+            statusEl.style.color = '#8ad8a8';
+            statusEl.innerHTML = `✅ Загружено ${loadedFields} полей: ${loadedFieldsList.join(', ')} 🖤`;
+        }
+        
+    } catch(e) {
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.style.opacity = '1';
+            statusEl.style.background = 'rgba(194, 21, 21, 0.15)';
+            statusEl.style.border = '1px solid #c21515';
+            statusEl.style.color = '#eba4a4';
+            statusEl.innerHTML = '❌ Ошибка импорта! Проверь структуру текста. 😈';
+        }
+        console.error(e);
+    }
+}
