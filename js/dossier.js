@@ -3,7 +3,6 @@
 function openProfileModal() {
     console.log('📂 openProfileModal вызвана');
     
-    // Получаем актуальные данные из функций
     const currentMood = document.body.getAttribute('data-mood') || 'calm';
     const labels = getMoodLabels();
     const descriptions = getMoodDescriptions();
@@ -20,7 +19,6 @@ function openProfileModal() {
     
     const extraHtml = `
         <div class="editor-workspace">
-            <!-- 📋 ПРОФИЛЬ ЖЕРТВЫ -->
             <div class="panel-box full-width">
                 <div class="panel-title">📋 ПРОФИЛЬ ЖЕРТВЫ</div>
                 <div class="form-group">
@@ -29,7 +27,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 👤 ИМЯ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>👤 ИМЯ</label>
@@ -37,7 +34,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 🎂 ВОЗРАСТ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>🎂 ВОЗРАСТ</label>
@@ -45,17 +41,16 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 📍 МЕСТОПОЛОЖЕНИЕ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>📍 МЕСТОПОЛОЖЕНИЕ</label>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <input type="text" id="edCity" value="" placeholder="Город" style="flex: 2; min-width: 100px;">
+                        <input type="text" id="edStreet" value="" placeholder="Улица, дом" style="flex: 2; min-width: 120px;">
+                        <input type="text" id="edCity" value="" placeholder="Город" style="flex: 1; min-width: 80px;">
                         <input type="text" id="edCountry" value="" placeholder="Страна" style="flex: 1; min-width: 80px;">
                         <button class="action-btn geo-btn" style="padding:6px 12px; font-size:0.65rem; min-height:32px; flex-shrink:0;" onclick="loadCurrentLocation()">📍 Определить</button>
                     </div>
                 </div>
-                <!-- Скрытые поля для координат -->
                 <div style="display: none;">
                     <input type="text" id="edLat" value="">
                     <input type="text" id="edLon" value="">
@@ -63,10 +58,10 @@ function openProfileModal() {
                     <input type="text" id="edRegion" value="">
                     <input type="text" id="edIsp" value="">
                     <input type="text" id="edIp" value="">
+                    <input type="text" id="edPostal" value="">
                 </div>
             </div>
 
-            <!-- ⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>⏱️ ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ</label>
@@ -74,7 +69,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- ⏱️ ТЕКУЩЕЕ ВРЕМЯ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>⏱️ ТЕКУЩЕЕ ВРЕМЯ</label>
@@ -82,7 +76,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 📊 СТАТУС -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>📊 СТАТУС</label>
@@ -90,7 +83,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>🧠 ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ</label>
@@ -98,7 +90,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 👻 ФОБИИ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>👻 ФОБИИ</label>
@@ -106,7 +97,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 🔪 ТРИГГЕРЫ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>🔪 ТРИГГЕРЫ</label>
@@ -114,7 +104,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 📜 ИСТОРИЯ ПОВЕДЕНИЯ -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>📜 ИСТОРИЯ ПОВЕДЕНИЯ</label>
@@ -122,7 +111,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- ⚠️ СТЕПЕНЬ УГРОЗЫ 0/10 -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>⚠️ СТЕПЕНЬ УГРОЗЫ 0/10</label>
@@ -130,7 +118,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 🎭 НАСТРОЕНИЕ МЭГАН -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>🎭 НАСТРОЕНИЕ МЭГАН</label>
@@ -140,7 +127,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 💀 ЗАМЕТКИ МЭГАН -->
             <div class="panel-box full-width">
                 <div class="form-group">
                     <label>💀 ЗАМЕТКИ МЭГАН</label>
@@ -148,7 +134,6 @@ function openProfileModal() {
                 </div>
             </div>
 
-            <!-- 👁️ ПРЕВЬЮ И КОПИРОВАНИЕ -->
             <div class="panel-box full-width">
                 <div class="panel-title">👁️ ЖИВОЙ РЕЗУЛЬТАТ</div>
                 <div class="preview-output" id="edPreview">📭 Профиль пустой. Заполни данные выше!</div>
@@ -184,6 +169,7 @@ function generateDossierText(forCopy = false) {
     const num = document.getElementById('edNum') ? document.getElementById('edNum').value : '';
     const name = document.getElementById('edName') ? document.getElementById('edName').value : '';
     const age = document.getElementById('edAge') ? document.getElementById('edAge').value : '';
+    const street = document.getElementById('edStreet') ? document.getElementById('edStreet').value : '';
     const city = document.getElementById('edCity') ? document.getElementById('edCity').value : '';
     const country = document.getElementById('edCountry') ? document.getElementById('edCountry').value : '';
     const lat = document.getElementById('edLat') ? document.getElementById('edLat').value : '';
@@ -192,6 +178,7 @@ function generateDossierText(forCopy = false) {
     const region = document.getElementById('edRegion') ? document.getElementById('edRegion').value : '';
     const isp = document.getElementById('edIsp') ? document.getElementById('edIsp').value : '';
     const ip = document.getElementById('edIp') ? document.getElementById('edIp').value : '';
+    const postal = document.getElementById('edPostal') ? document.getElementById('edPostal').value : '';
     const lastDate = document.getElementById('edLastDate') ? document.getElementById('edLastDate').value : '';
     const currentTime = document.getElementById('edCurrentTime') ? document.getElementById('edCurrentTime').value : '';
     const status = document.getElementById('edStatus') ? document.getElementById('edStatus').value : '';
@@ -204,7 +191,7 @@ function generateDossierText(forCopy = false) {
     const mood = moodElement ? moodElement.textContent : 'Спокойное (ледяное и вежливое)';
     const notes = document.getElementById('edNotes') ? document.getElementById('edNotes').value : '';
 
-    const hasData = num || name || age || city || country || status || behavior || phobias || triggers || history || threat || notes;
+    const hasData = num || name || age || street || city || country || status || behavior || phobias || triggers || history || threat || notes;
     
     if (!hasData) {
         return '📭 Профиль пустой. Заполни данные выше!';
@@ -232,14 +219,19 @@ function generateDossierText(forCopy = false) {
 
     if (age) result += `\n🎂 ВОЗРАСТ: ${age}`;
     
-    // Местоположение с координатами
     let locationText = '';
-    if (city && country) locationText = `${city}, ${country}`;
-    else if (city) locationText = city;
-    else if (country) locationText = country;
-    else locationText = 'Не указано';
+    if (street) locationText += `${street}`;
+    if (city && country) {
+        locationText += `${street ? ', ' : ''}${city}, ${country}`;
+    } else if (city) {
+        locationText += `${street ? ', ' : ''}${city}`;
+    } else if (country) {
+        locationText += `${street ? ', ' : ''}${country}`;
+    } else if (!street && !city && !country) {
+        locationText = 'Не указано';
+    }
     
-    // Добавляем координаты если есть
+    if (postal) locationText += ` | Почтовый индекс: ${postal}`;
     if (lat && lon) {
         locationText += ` | GPS: ${lat}, ${lon}`;
         if (accuracy) locationText += ` (точность: ${accuracy}м)`;
@@ -334,11 +326,12 @@ function loadCurrentLocation() {
         statusEl.innerHTML = '⏳ Определение местоположения...';
     }
     
-    // Пытаемся получить GPS
     getGPSLocation().then(gpsData => {
         if (gpsData && !gpsData.error) {
-            // GPS получен — определяем город по координатам
-            getCityFromCoords(gpsData.lat, gpsData.lon).then(cityData => {
+            Promise.all([
+                getCityFromCoords(gpsData.lat, gpsData.lon),
+                getStreetFromCoords(gpsData.lat, gpsData.lon)
+            ]).then(([cityData, streetData]) => {
                 let locationText = '';
                 let statusMessage = '';
                 
@@ -349,15 +342,23 @@ function loadCurrentLocation() {
                         document.getElementById('edRegion').value = cityData.region;
                     }
                     locationText = `${cityData.city}, ${cityData.country}`;
-                    statusMessage = `✅ GPS: ${locationText} | Координаты: ${gpsData.lat}, ${gpsData.lon} | Точность: ${gpsData.accuracy}м 🖤`;
-                } else {
-                    // Город не определился, но координаты есть
-                    document.getElementById('edCity').value = `GPS: ${gpsData.lat}, ${gpsData.lon}`;
-                    document.getElementById('edCountry').value = `Точность: ${gpsData.accuracy}м`;
-                    statusMessage = `✅ GPS: ${gpsData.lat}, ${gpsData.lon} | Точность: ${gpsData.accuracy}м 🖤`;
                 }
                 
-                // Сохраняем полные координаты в скрытые поля
+                if (streetData && streetData.street !== 'Неизвестно') {
+                    let streetFull = streetData.street;
+                    if (streetData.house) {
+                        streetFull += `, ${streetData.house}`;
+                    }
+                    document.getElementById('edStreet').value = streetFull;
+                    if (streetData.postcode) {
+                        document.getElementById('edPostal').value = streetData.postcode;
+                    }
+                    locationText = `${streetFull}, ${locationText}`;
+                    statusMessage = `✅ GPS: ${locationText} | Координаты: ${gpsData.lat}, ${gpsData.lon} | Точность: ${gpsData.accuracy}м 🖤`;
+                } else {
+                    statusMessage = `✅ GPS: ${locationText || `Координаты: ${gpsData.lat}, ${gpsData.lon}`} | Точность: ${gpsData.accuracy}м 🖤`;
+                }
+                
                 document.getElementById('edLat').value = gpsData.lat;
                 document.getElementById('edLon').value = gpsData.lon;
                 document.getElementById('edAccuracy').value = gpsData.accuracy;
@@ -372,12 +373,11 @@ function loadCurrentLocation() {
                             statusEl.style.opacity = '0';
                             setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 500);
                         }
-                    }, 4000);
+                    }, 5000);
                 }
                 liveUpdateDossier();
             });
         } else {
-            // GPS не доступен — пробуем через IP
             getGeoData().then(geoData => {
                 if (geoData && geoData.city !== 'Неизвестно') {
                     document.getElementById('edCity').value = geoData.city;
@@ -390,6 +390,9 @@ function loadCurrentLocation() {
                     }
                     if (geoData.ip && geoData.ip !== 'Неизвестно') {
                         document.getElementById('edIp').value = geoData.ip;
+                    }
+                    if (geoData.postal && geoData.postal !== 'Неизвестно') {
+                        document.getElementById('edPostal').value = geoData.postal;
                     }
                     
                     if (statusEl) {
@@ -441,7 +444,6 @@ function parseImportedProfile() {
         let loadedFields = 0;
         let loadedFieldsList = [];
         
-        // Номер
         const numMatch = text.match(/ПРОФИЛЬ ЖЕРТВЫ №\s*([0-9A-Za-z_-]+)/);
         if (numMatch && document.getElementById('edNum')) {
             document.getElementById('edNum').value = numMatch[1].trim();
@@ -449,7 +451,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Номер');
         }
 
-        // Имя
         const nameMatch = text.match(/ИМЯ:\s*(.*?)(?:\n|$)/i);
         if (nameMatch && document.getElementById('edName')) {
             document.getElementById('edName').value = nameMatch[1].trim();
@@ -457,7 +458,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Имя');
         }
 
-        // Возраст
         const ageMatch = text.match(/ВОЗРАСТ:\s*(.*?)(?:\n|$)/i);
         if (ageMatch && document.getElementById('edAge')) {
             document.getElementById('edAge').value = ageMatch[1].trim();
@@ -465,12 +465,18 @@ function parseImportedProfile() {
             loadedFieldsList.push('Возраст');
         }
 
-        // Местоположение (с координатами)
+        // Улица
+        const streetMatch = text.match(/Улица:\s*(.*?)(?:\n|$)/i);
+        if (streetMatch && document.getElementById('edStreet')) {
+            document.getElementById('edStreet').value = streetMatch[1].trim();
+            loadedFields++;
+            loadedFieldsList.push('Улица');
+        }
+
         const locationMatch = text.match(/МЕСТОПОЛОЖЕНИЕ:\s*(.*?)(?:\n|$)/i);
         if (locationMatch && document.getElementById('edCity') && document.getElementById('edCountry')) {
             const loc = locationMatch[1].trim();
             
-            // Парсим город и страну
             if (loc.includes(',')) {
                 const parts = loc.split(',').map(p => p.trim());
                 document.getElementById('edCity').value = parts[0] || '';
@@ -479,42 +485,41 @@ function parseImportedProfile() {
                 document.getElementById('edCity').value = loc;
             }
             
-            // Парсим GPS координаты
             const gpsMatch = loc.match(/GPS:\s*([0-9.-]+),\s*([0-9.-]+)/);
             if (gpsMatch && document.getElementById('edLat') && document.getElementById('edLon')) {
                 document.getElementById('edLat').value = gpsMatch[1].trim();
                 document.getElementById('edLon').value = gpsMatch[2].trim();
             }
             
-            // Парсим точность
             const accMatch = loc.match(/точность:\s*([0-9.]+)м/);
             if (accMatch && document.getElementById('edAccuracy')) {
                 document.getElementById('edAccuracy').value = accMatch[1].trim();
             }
             
-            // Парсим регион
             const regionMatch = loc.match(/Регион:\s*([^|]+)/);
             if (regionMatch && document.getElementById('edRegion')) {
                 document.getElementById('edRegion').value = regionMatch[1].trim();
             }
             
-            // Парсим провайдер
             const ispMatch = loc.match(/Провайдер:\s*([^|]+)/);
             if (ispMatch && document.getElementById('edIsp')) {
                 document.getElementById('edIsp').value = ispMatch[1].trim();
             }
             
-            // Парсим IP
             const ipMatch = loc.match(/IP:\s*([0-9.]+)/);
             if (ipMatch && document.getElementById('edIp')) {
                 document.getElementById('edIp').value = ipMatch[1].trim();
+            }
+            
+            const postalMatch = loc.match(/Почтовый индекс:\s*([0-9]+)/);
+            if (postalMatch && document.getElementById('edPostal')) {
+                document.getElementById('edPostal').value = postalMatch[1].trim();
             }
             
             loadedFields++;
             loadedFieldsList.push('Местоположение');
         }
 
-        // Дата последнего общения
         const lastDateMatch = text.match(/ДАТА ПОСЛЕДНЕГО ОБЩЕНИЯ:\s*(.*?)(?:\n|$)/i);
         if (lastDateMatch && document.getElementById('edLastDate')) {
             document.getElementById('edLastDate').value = lastDateMatch[1].trim();
@@ -522,7 +527,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Дата общения');
         }
 
-        // Статус
         const statusMatch = text.match(/СТАТУС:\s*(.*?)(?:\n|$)/i);
         if (statusMatch && document.getElementById('edStatus')) {
             document.getElementById('edStatus').value = statusMatch[1].trim();
@@ -530,7 +534,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Статус');
         }
 
-        // Степень угрозы
         const threatMatch = text.match(/СТЕПЕНЬ УГРОЗЫ:\s*(.*?)(?:\n|$)/i);
         if (threatMatch && document.getElementById('edThreat')) {
             document.getElementById('edThreat').value = threatMatch[1].trim();
@@ -538,7 +541,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Угроза');
         }
 
-        // Настроение
         const moodMatch = text.match(/НАСТРОЕНИЕ МЭГАН:\s*(.*?)(?:\n|$)/i);
         if (moodMatch && document.getElementById('edMoodValue')) {
             const moodVal = moodMatch[1].trim();
@@ -556,7 +558,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Настроение');
         }
 
-        // Многострочные поля
         function extractSection(text, startKeyword, endKeywords) {
             const startPatterns = [
                 new RegExp(`🧠\\s*${startKeyword}`, 'i'),
@@ -669,7 +670,6 @@ function parseImportedProfile() {
     }
 }
 
-// ====== ЭКСПОРТ ======
 window.openProfileModal = openProfileModal;
 window.liveUpdateDossier = liveUpdateDossier;
 window.copyEditedDossier = copyEditedDossier;
