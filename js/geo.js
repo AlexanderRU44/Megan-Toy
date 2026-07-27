@@ -19,7 +19,8 @@ function getGeoData() {
                         isp: data.org || 'Неизвестно',
                         timezone: data.timezone || 'Неизвестно',
                         ip: data.ip || 'Неизвестно',
-                        location: data.loc || 'Неизвестно'
+                        location: data.loc || 'Неизвестно',
+                        postal: data.postal || 'Неизвестно'
                     };
                     localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
                     resolve(geoObj);
@@ -120,7 +121,34 @@ async function getCityFromCoords(lat, lon) {
     }
 }
 
-// ====== ГЛАВНАЯ ФУНКЦИЯ ПОКАЗА МЕСТОПОЛОЖЕНИЯ (С ПЕРЕВОДОМ) ======
+// ====== ПОЛУЧЕНИЕ УЛИЦЫ ПО КООРДИНАТАМ ======
+async function getStreetFromCoords(lat, lon) {
+    try {
+        const lang = getCurrentLanguage();
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1&accept-language=${lang === 'ru' ? 'ru' : 'en'}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data && data.address) {
+            const address = data.address;
+            return {
+                street: address.road || address.street || address.pedestrian || 'Неизвестно',
+                house: address.house_number || '',
+                city: address.city || address.town || address.village || 'Неизвестно',
+                region: address.state || address.region || 'Неизвестно',
+                country: address.country || 'Неизвестно',
+                postcode: address.postcode || '',
+                full: data.display_name || 'Неизвестно'
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error('Ошибка получения улицы:', error);
+        return null;
+    }
+}
+
+// ====== ГЛАВНАЯ ФУНКЦИЯ ПОКАЗА МЕСТОПОЛОЖЕНИЯ ======
 function showFullLocation() {
     console.log('📍 Нажата кнопка местоположения');
     
@@ -140,8 +168,9 @@ function showFullLocation() {
     let ipData = null;
     let gpsData = null;
     let cityData = null;
+    let streetData = null;
     let done = 0;
-    const total = 3;
+    const total = 4;
     
     function finish() {
         done++;
@@ -168,16 +197,29 @@ function showFullLocation() {
             geoObj.lon = gpsData.lon;
             geoObj.accuracy = gpsData.accuracy;
             
+            if (streetData) {
+                let streetFull = streetData.street;
+                if (streetData.house) {
+                    streetFull += `, ${streetData.house}`;
+                }
+                message += `\n📍 Улица: ${streetFull}\n`;
+                if (streetData.postcode) {
+                    message += `📮 Почтовый индекс: ${streetData.postcode}\n`;
+                }
+                geoObj.street = streetFull;
+                geoObj.postcode = streetData.postcode;
+            }
+            
             if (cityData) {
-                message += `\n${t('geo.city')}: ${cityData.city}\n`;
-                message += `${t('geo.region')}: ${cityData.region}\n`;
-                message += `${t('geo.country')}: ${cityData.country}\n`;
+                message += `\n🏙️ ${t('geo.city')}: ${cityData.city}\n`;
+                message += `🗺️ ${t('geo.region')}: ${cityData.region}\n`;
+                message += `🌍 ${t('geo.country')}: ${cityData.country}\n`;
                 geoObj.city = cityData.city;
                 geoObj.region = cityData.region;
                 geoObj.country = cityData.country;
             }
             
-            message += `\n${t('geo.map')}: https://www.google.com/maps?q=${gpsData.lat},${gpsData.lon}\n\n`;
+            message += `\n🗺️ ${t('geo.map')}: https://www.google.com/maps?q=${gpsData.lat},${gpsData.lon}\n\n`;
             message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
         } else if (gpsData && gpsData.error) {
             message += `${t('geo.gps_unavailable')}: ${gpsData.message}\n\n`;
@@ -237,8 +279,12 @@ function showFullLocation() {
     getGPSLocation().then(data => {
         gpsData = data;
         if (gpsData && !gpsData.error) {
-            getCityFromCoords(gpsData.lat, gpsData.lon).then(city => {
+            Promise.all([
+                getCityFromCoords(gpsData.lat, gpsData.lon),
+                getStreetFromCoords(gpsData.lat, gpsData.lon)
+            ]).then(([city, street]) => {
                 cityData = city;
+                streetData = street;
                 finish();
             });
         } else {
@@ -265,20 +311,42 @@ function getGeoInfoString() {
     return new Promise((resolve) => {
         getGPSLocation().then(gps => {
             if (gps && !gps.error) {
-                getCityFromCoords(gps.lat, gps.lon).then(cityData => {
+                Promise.all([
+                    getCityFromCoords(gps.lat, gps.lon),
+                    getStreetFromCoords(gps.lat, gps.lon)
+                ]).then(([cityData, streetData]) => {
                     let result = '';
                     let geoObj = { city: 'Неизвестно', country: 'Неизвестно', lat: gps.lat, lon: gps.lon };
                     
-                    if (cityData && cityData.city !== 'Неизвестно') {
-                        geoObj.city = cityData.city;
-                        geoObj.country = cityData.country;
-                        geoObj.region = cityData.region;
-                        result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: Город: ${cityData.city}, Регион: ${cityData.region}, Страна: ${cityData.country} | GPS: ${gps.lat}, ${gps.lon} | Точность: ${gps.accuracy}м]`;
-                        console.log('✅ Для промта используется GPS с городом:', cityData.city);
-                    } else {
-                        result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: GPS: ${gps.lat}, ${gps.lon} | Точность: ${gps.accuracy}м]`;
-                        console.log('✅ Для промта используется GPS (без города)');
+                    let parts = [];
+                    
+                    if (streetData && streetData.street !== 'Неизвестно') {
+                        let streetFull = streetData.street;
+                        if (streetData.house) {
+                            streetFull += `, ${streetData.house}`;
+                        }
+                        parts.push(`Улица: ${streetFull}`);
+                        geoObj.street = streetFull;
+                        if (streetData.postcode) {
+                            parts.push(`Почтовый индекс: ${streetData.postcode}`);
+                            geoObj.postcode = streetData.postcode;
+                        }
                     }
+                    
+                    if (cityData && cityData.city !== 'Неизвестно') {
+                        parts.push(`Город: ${cityData.city}`);
+                        parts.push(`Регион: ${cityData.region}`);
+                        parts.push(`Страна: ${cityData.country}`);
+                        geoObj.city = cityData.city;
+                        geoObj.region = cityData.region;
+                        geoObj.country = cityData.country;
+                    }
+                    
+                    parts.push(`GPS: ${gps.lat}, ${gps.lon}`);
+                    parts.push(`Точность: ${gps.accuracy}м`);
+                    
+                    result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`;
+                    console.log('✅ Для промта используется GPS с деталями');
                     
                     localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
                     resolve(result);
@@ -311,6 +379,10 @@ function getGeoInfoString() {
                         parts.push(`Провайдер: ${geo.isp}`);
                         geoObj.isp = geo.isp;
                     }
+                    if (geo.postal && geo.postal !== 'Неизвестно') {
+                        parts.push(`Почтовый индекс: ${geo.postal}`);
+                        geoObj.postal = geo.postal;
+                    }
                     
                     localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
                     resolve(`[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`);
@@ -323,7 +395,7 @@ function getGeoInfoString() {
     });
 }
 
-// ====== СИНХРОННАЯ ФУНКЦИЯ ПОЛУЧЕНИЯ ГЕО (из localStorage) ======
+// ====== СИНХРОННАЯ ФУНКЦИЯ ПОЛУЧЕНИЯ ГЕО ======
 function getGeoInfoSync() {
     try {
         const geoData = localStorage.getItem('megan_geo_data');
@@ -340,6 +412,6 @@ window.getGeoInfoString = getGeoInfoString;
 window.getGeoInfoSync = getGeoInfoSync;
 window.getGeoData = getGeoData;
 window.getGPSLocation = getGPSLocation;
+window.getStreetFromCoords = getStreetFromCoords;
 
 console.log('✅ geo.js загружен');
-console.log('✅ showFullLocation доступна:', typeof showFullLocation === 'function');
