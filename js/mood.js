@@ -22,7 +22,8 @@ function getMoodDescriptions() {
 
 function openMoodDialog() {
     const currentMood = document.body.getAttribute('data-mood') || 'calm';
-    const radios = document.querySelectorAll('input[name="moodRadio"]');
+    // Ищем радиокнопки с правильным именем (moodRadioModal)
+    const radios = document.querySelectorAll('input[name="moodRadioModal"]');
     radios.forEach(r => { r.checked = (r.value === currentMood); });
     
     // Обновляем заголовок
@@ -75,12 +76,14 @@ function closeMoodDialog() {
 }
 
 function applyMoodSelection() {
-    const selected = document.querySelector('input[name="moodRadio"]:checked');
+    // Ищем выбранную радиокнопку с правильным именем (moodRadioModal)
+    const selected = document.querySelector('input[name="moodRadioModal"]:checked');
     if (selected) {
         const mood = selected.value;
         document.body.setAttribute('data-mood', mood);
         localStorage.setItem('megan_site_mood', mood);
         
+        // Обновляем отображение в редакторе профиля
         const moodElement = document.getElementById('edMoodValue');
         if (moodElement) {
             const labels = getMoodLabels();
@@ -107,11 +110,12 @@ document.addEventListener('languageChanged', function() {
 });
 
 // Восстановление при загрузке
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('megan_site_mood');
     if (saved) {
         document.body.setAttribute('data-mood', saved);
-        const radio = document.querySelector(`input[name="moodRadio"][value="${saved}"]`);
+        // Исправлено: ищем радиокнопку с правильным именем
+        const radio = document.querySelector(`input[name="moodRadioModal"][value="${saved}"]`);
         if (radio) radio.checked = true;
     }
 });
