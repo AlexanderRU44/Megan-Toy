@@ -161,37 +161,65 @@ function openProfileModal() {
         null,
         null
     );
-    setTimeout(liveUpdateDossier, 50);
+    
+    // Ждём, пока DOM обновится, и только потом навешиваем обработчики
+    setTimeout(() => {
+        // Навешиваем события на все поля
+        const fields = ['edNum', 'edName', 'edAge', 'edStreet', 'edCity', 'edCountry', 
+                       'edLastDate', 'edStatus', 'edBehavior', 'edPhobias', 'edTriggers', 
+                       'edHistory', 'edThreat', 'edNotes', 'edLat', 'edLon', 'edAccuracy', 
+                       'edRegion', 'edIsp', 'edIp', 'edPostal'];
+        
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', liveUpdateDossier);
+                el.addEventListener('change', liveUpdateDossier);
+            }
+        });
+        
+        // Первый вызов для отображения начального состояния
+        liveUpdateDossier();
+    }, 100);
 }
 
 // ====== ГЕНЕРАЦИЯ ТЕКСТА ПРОФИЛЯ ======
 function generateDossierText(forCopy = false) {
-    const num = document.getElementById('edNum') ? document.getElementById('edNum').value : '';
-    const name = document.getElementById('edName') ? document.getElementById('edName').value : '';
-    const age = document.getElementById('edAge') ? document.getElementById('edAge').value : '';
-    const street = document.getElementById('edStreet') ? document.getElementById('edStreet').value : '';
-    const city = document.getElementById('edCity') ? document.getElementById('edCity').value : '';
-    const country = document.getElementById('edCountry') ? document.getElementById('edCountry').value : '';
-    const lat = document.getElementById('edLat') ? document.getElementById('edLat').value : '';
-    const lon = document.getElementById('edLon') ? document.getElementById('edLon').value : '';
-    const accuracy = document.getElementById('edAccuracy') ? document.getElementById('edAccuracy').value : '';
-    const region = document.getElementById('edRegion') ? document.getElementById('edRegion').value : '';
-    const isp = document.getElementById('edIsp') ? document.getElementById('edIsp').value : '';
-    const ip = document.getElementById('edIp') ? document.getElementById('edIp').value : '';
-    const postal = document.getElementById('edPostal') ? document.getElementById('edPostal').value : '';
-    const lastDate = document.getElementById('edLastDate') ? document.getElementById('edLastDate').value : '';
-    const currentTime = document.getElementById('edCurrentTime') ? document.getElementById('edCurrentTime').value : '';
-    const status = document.getElementById('edStatus') ? document.getElementById('edStatus').value : '';
-    const behavior = document.getElementById('edBehavior') ? document.getElementById('edBehavior').value : '';
-    const phobias = document.getElementById('edPhobias') ? document.getElementById('edPhobias').value : '';
-    const triggers = document.getElementById('edTriggers') ? document.getElementById('edTriggers').value : '';
-    const history = document.getElementById('edHistory') ? document.getElementById('edHistory').value : '';
-    const threat = document.getElementById('edThreat') ? document.getElementById('edThreat').value : '';
+    // Получаем значения полей с проверкой на null
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value : '';
+    };
+    
+    const num = getVal('edNum');
+    const name = getVal('edName');
+    const age = getVal('edAge');
+    const street = getVal('edStreet');
+    const city = getVal('edCity');
+    const country = getVal('edCountry');
+    const lat = getVal('edLat');
+    const lon = getVal('edLon');
+    const accuracy = getVal('edAccuracy');
+    const region = getVal('edRegion');
+    const isp = getVal('edIsp');
+    const ip = getVal('edIp');
+    const postal = getVal('edPostal');
+    const lastDate = getVal('edLastDate');
+    const currentTime = getVal('edCurrentTime');
+    const status = getVal('edStatus');
+    const behavior = getVal('edBehavior');
+    const phobias = getVal('edPhobias');
+    const triggers = getVal('edTriggers');
+    const history = getVal('edHistory');
+    const threat = getVal('edThreat');
     const moodElement = document.getElementById('edMoodValue');
     const mood = moodElement ? moodElement.textContent : 'Спокойное (ледяное и вежливое)';
-    const notes = document.getElementById('edNotes') ? document.getElementById('edNotes').value : '';
+    const notes = getVal('edNotes');
 
-    const hasData = num || name || age || street || city || country || status || behavior || phobias || triggers || history || threat || notes;
+    // Проверяем, есть ли хоть какие-то данные
+    const hasData = num || name || age || street || city || country || 
+                    status || behavior || phobias || triggers || history || 
+                    threat || notes || lat || lon || region || isp || ip || postal;
     
     if (!hasData) {
         return '📭 Профиль пустой. Заполни данные выше!';
@@ -273,6 +301,9 @@ function liveUpdateDossier() {
     const previewEl = document.getElementById('edPreview');
     if (previewEl) {
         previewEl.innerText = generateDossierText(false);
+        console.log('🔄 Превью обновлено');
+    } else {
+        console.warn('⚠️ edPreview не найден');
     }
 }
 
@@ -465,7 +496,6 @@ function parseImportedProfile() {
             loadedFieldsList.push('Возраст');
         }
 
-        // Улица
         const streetMatch = text.match(/Улица:\s*(.*?)(?:\n|$)/i);
         if (streetMatch && document.getElementById('edStreet')) {
             document.getElementById('edStreet').value = streetMatch[1].trim();
@@ -549,7 +579,7 @@ function parseImportedProfile() {
                 if (moodVal.toLowerCase().includes(label.toLowerCase())) {
                     document.body.setAttribute('data-mood', key);
                     localStorage.setItem('megan_site_mood', key);
-                    const radio = document.querySelector(`input[name="moodRadio"][value="${key}"]`);
+                    const radio = document.querySelector(`input[name="moodRadioModal"][value="${key}"]`);
                     if (radio) radio.checked = true;
                     break;
                 }
