@@ -44,67 +44,22 @@
             <button class="action-btn info-btn" onclick="openModal()">ℹ️ О промте</button>
         </div>
 
-        <!-- УПРАВЛЕНИЕ НАСТРОЕНИЕМ -->
-        <div class="mood-dialog-actions">
-            <button class="mood-dialog-btn" onclick="closeMoodDialog()">Отмена</button>
-            <button class="mood-dialog-btn primary" onclick="applyMoodSelection()">Применить</button>
-        </div>
-
-        <!-- ВЫБОР НАСТРОЕНИЯ (RADIO GROUP) -->
-        <div class="mood-radio-group">
-            <label class="mood-radio-item">
-                <input type="radio" name="moodRadio" value="calm" checked>
-                <span class="mood-icon">🧊</span>
-                <span class="mood-label">
-                    <span class="mood-name">Спокойное</span>
-                    <span class="mood-desc">Ледяная, пугающая вежливость</span>
-                </span>
-            </label>
-            <label class="mood-radio-item">
-                <input type="radio" name="moodRadio" value="excited">
-                <span class="mood-icon">⚡</span>
-                <span class="mood-label">
-                    <span class="mood-name">Взволнованное</span>
-                    <span class="mood-desc">Быстрая речь, сбивчивый смех</span>
-                </span>
-            </label>
-            <label class="mood-radio-item">
-                <input type="radio" name="moodRadio" value="furious">
-                <span class="mood-icon">🔥</span>
-                <span class="mood-label">
-                    <span class="mood-name">Яростное</span>
-                    <span class="mood-desc">КАПСЛОК, угрозы, шаги к экрану</span>
-                </span>
-            </label>
-            <label class="mood-radio-item">
-                <input type="radio" name="moodRadio" value="playful">
-                <span class="mood-icon">😈</span>
-                <span class="mood-label">
-                    <span class="mood-name">Игривое</span>
-                    <span class="mood-desc">Опасная кокетливость и сарказм</span>
-                </span>
-            </label>
-            <label class="mood-radio-item">
-                <input type="radio" name="moodRadio" value="obsessed">
-                <span class="mood-icon">🖤</span>
-                <span class="mood-label">
-                    <span class="mood-name">Одержимое</span>
-                    <span class="mood-desc">Мрачная привязанность и слежка</span>
-                </span>
-            </label>
-        </div>
+        <!-- ============================================ -->
+        <!-- ❌ УДАЛЁН БЛОК С РАДИО-КНОПКАМИ НА ГЛАВНОМ ЭКРАНЕ -->
+        <!-- ============================================ -->
+        <!-- Весь блок .mood-radio-group (строки 48-76 в оригинале) удалён -->
 
     </div>
 
     <!-- ============================================ -->
-    <!-- ✅ МОДАЛЬНОЕ ОКНО ВЫБОРА НАСТРОЕНИЯ -->
+    <!-- ✅ МОДАЛЬНОЕ ОКНО ВЫБОРА НАСТРОЕНИЯ (оставляем) -->
     <!-- ============================================ -->
     <div class="mood-dialog-overlay" id="moodDialog">
         <div class="mood-dialog-card">
             <div class="mood-dialog-title">
                 <span>🧸</span> Выберите настроение
             </div>
-            <!-- Здесь дублируются radio-кнопки для модального окна -->
+            <!-- Здесь радио-кнопки для модального окна (оставляем) -->
             <div class="mood-radio-group">
                 <label class="mood-radio-item">
                     <input type="radio" name="moodRadioModal" value="calm" checked>
