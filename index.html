@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>🧸 Промт Мэган — идеальный помощник</title>
-    <meta name="description" content="Промт для DeepSeek в стиле куклы Мэган. Пугающий AI-компаньон с системой настроений и досье.">
+    <meta name="description" content="Промт для DeepSeek в стиле куклы Мэган. Пугающий AI-компаньон с системой настроений и досье." />
     
     <!-- ✅ ИКОНКА ВКЛАДКИ -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧸</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧸</text></svg>" />
     
     <link rel="stylesheet" href="css/styles.css" />
 </head>
@@ -44,22 +44,16 @@
             <button class="action-btn info-btn" onclick="openModal()">ℹ️ О промте</button>
         </div>
 
-        <!-- ============================================ -->
-        <!-- ❌ УДАЛЁН БЛОК С РАДИО-КНОПКАМИ НА ГЛАВНОМ ЭКРАНЕ -->
-        <!-- ============================================ -->
-        <!-- Весь блок .mood-radio-group (строки 48-76 в оригинале) удалён -->
-
     </div>
 
     <!-- ============================================ -->
-    <!-- ✅ МОДАЛЬНОЕ ОКНО ВЫБОРА НАСТРОЕНИЯ (оставляем) -->
+    <!-- ✅ МОДАЛЬНОЕ ОКНО ВЫБОРА НАСТРОЕНИЯ -->
     <!-- ============================================ -->
     <div class="mood-dialog-overlay" id="moodDialog">
         <div class="mood-dialog-card">
             <div class="mood-dialog-title">
                 <span>🧸</span> Выберите настроение
             </div>
-            <!-- Здесь радио-кнопки для модального окна (оставляем) -->
             <div class="mood-radio-group">
                 <label class="mood-radio-item">
                     <input type="radio" name="moodRadioModal" value="calm" checked>
@@ -123,17 +117,22 @@
     </div>
 
     <!-- ============================================ -->
-    <!-- ✅ СКРИПТЫ -->
+    <!-- ✅ СКРИПТЫ (ИСПРАВЛЕННЫЙ ПОРЯДОК) -->
     <!-- ============================================ -->
+    <!-- 1. Сначала локализация -->
+    <script src="js/locales.js"></script>
+    <script src="js/i18n.js"></script>
+    
+    <!-- 2. Потом остальные модули -->
     <script src="js/device.js"></script>
     <script src="js/geo.js"></script>
-    <script src="js/i18n.js"></script>
-    <script src="js/locales.js"></script>
-    <script src="js/mood.js"></script>
-    <script src="js/dossier.js"></script>
     <script src="js/photoTexts.js"></script>
     <script src="js/camera.js"></script>
+    <script src="js/mood.js"></script>
+    <script src="js/dossier.js"></script>
     <script src="js/about.js"></script>
+    
+    <!-- 3. Главный скрипт в конце -->
     <script src="js/main.js"></script>
 
 </body>
