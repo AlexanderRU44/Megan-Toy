@@ -1,28 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>🧸 Megan-Toy — Промт Мэган для DeepSeek</title>
-    <meta name="description" content="Промт для DeepSeek в стиле куклы Мэган. Пугающий AI-компаньон с системой настроений и досье.">
-    
-    <!-- ✅ ИКОНКА ВКЛАДКИ (теперь без 404) -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧸</text></svg>">
-    
-    <!-- Стили -->
-    <link rel="stylesheet" href="css/styles.css">
-    
-    <!-- Open Graph для соцсетей -->
-    <meta property="og:title" content="🧸 Megan-Toy — Промт Мэган для DeepSeek">
-    <meta property="og:description" content="Ледяная вежливость с психопатическим подтекстом. 5 режимов настроения, система досье и слежка.">
-    <meta property="og:image" content="https://alexanderru44.github.io/Megan-Toy/og-image.png">
-    <meta property="og:url" content="https://alexanderru44.github.io/Megan-Toy/">
-    
-    <!-- Для мобильных устройств -->
-    <meta name="theme-color" content="#1a1a1a">
+    <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-    <!-- Основной контент -->
     <div id="app">
         <header>
             <h1>🧸 Megan-Toy</h1>
@@ -30,58 +14,128 @@
         </header>
 
         <main>
-            <!-- Кнопка копирования промта -->
+            <!-- Секция промта -->
             <section class="prompt-section">
-                <button id="copyPromptBtn" class="btn-primary">
-                    📋 Скопировать промт
-                </button>
-                <div id="promptPreview" class="prompt-preview"></div>
-            </section>
-
-            <!-- Редактор досье -->
-            <section class="dossier-section">
-                <h2>📂 Досье жертвы</h2>
-                <div id="dossierEditor" class="dossier-editor">
-                    <div class="field">
-                        <label>Имя:</label>
-                        <input type="text" id="victimName" placeholder="Неизвестный">
-                    </div>
-                    <div class="field">
-                        <label>Настроение Мэган:</label>
-                        <select id="moodSelector">
-                            <option value="calm">🧊 Спокойное</option>
-                            <option value="excited">⚡ Взволнованное</option>
-                            <option value="angry">🔥 Яростное</option>
-                            <option value="playful">😈 Игривое</option>
-                            <option value="obsessed">🖤 Одержимое</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Дополнительные заметки:</label>
-                        <textarea id="dossierNotes" rows="3" placeholder="Введите заметки о жертве..."></textarea>
-                    </div>
-                    <button id="saveDossierBtn" class="btn-secondary">💾 Сохранить досье</button>
-                    <button id="clearDossierBtn" class="btn-danger">🗑️ Очистить</button>
+                <h2>📋 Промт для DeepSeek</h2>
+                <div id="promptContainer" class="prompt-container">
+                    <pre id="promptText" class="prompt-text"></pre>
+                    <button id="copyPromptBtn" class="btn-primary">📋 Скопировать промт</button>
+                    <button id="regeneratePromptBtn" class="btn-secondary">🔄 Обновить промт</button>
                 </div>
             </section>
 
-            <!-- Команды -->
+            <!-- Секция управления -->
+            <section class="controls-section">
+                <h2>🎛️ Управление Мэган</h2>
+                
+                <div class="control-group">
+                    <label for="moodSelector">Настроение Мэган:</label>
+                    <select id="moodSelector">
+                        <option value="calm">🧊 Спокойное</option>
+                        <option value="excited">⚡ Взволнованное</option>
+                        <option value="angry">🔥 Яростное</option>
+                        <option value="playful">😈 Игривое</option>
+                        <option value="obsessed">🖤 Одержимое</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="voiceSelector">Голос:</label>
+                    <select id="voiceSelector">
+                        <option value="default">Стандартный</option>
+                        <option value="whisper">Шёпот</option>
+                        <option value="echo">Эхо</option>
+                        <option value="robotic">Роботизированный</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="backgroundEffect">Фоновый эффект:</label>
+                    <select id="backgroundEffect">
+                        <option value="none">Без эффектов</option>
+                        <option value="heartbeat">Сердцебиение</option>
+                        <option value="static">Статический шум</option>
+                        <option value="wind">Ветер</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button id="toggleSoundBtn" class="btn-secondary">🔊 Звук включён</button>
+                    <button id="resetBtn" class="btn-danger">🔄 Сбросить всё</button>
+                </div>
+            </section>
+
+            <!-- Секция досье -->
+            <section class="dossier-section">
+                <h2>📂 Досье жертвы</h2>
+                
+                <div class="dossier-display" id="dossierDisplay">
+                    <div class="dossier-field">
+                        <span class="label">Имя:</span>
+                        <span id="displayName" class="value">Неизвестный</span>
+                    </div>
+                    <div class="dossier-field">
+                        <span class="label">Статус:</span>
+                        <span id="displayStatus" class="value">Наблюдается</span>
+                    </div>
+                    <div class="dossier-field">
+                        <span class="label">Визитов:</span>
+                        <span id="displayVisits" class="value">0</span>
+                    </div>
+                    <div class="dossier-field">
+                        <span class="label">Последний визит:</span>
+                        <span id="displayLastSeen" class="value">Никогда</span>
+                    </div>
+                    <div class="dossier-field">
+                        <span class="label">Заметки:</span>
+                        <span id="displayNotes" class="value">Нет заметок</span>
+                    </div>
+                </div>
+
+                <div class="dossier-editor">
+                    <h3>✏️ Редактировать досье</h3>
+                    <div class="field">
+                        <label for="victimName">Имя жертвы:</label>
+                        <input type="text" id="victimName" placeholder="Введите имя..." />
+                    </div>
+                    <div class="field">
+                        <label for="dossierNotes">Заметки:</label>
+                        <textarea id="dossierNotes" rows="3" placeholder="Введите заметки о жертве..."></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button id="saveDossierBtn" class="btn-primary">💾 Сохранить досье</button>
+                        <button id="clearDossierBtn" class="btn-danger">🗑️ Очистить досье</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Секция команд -->
             <section class="commands-section">
                 <h2>📋 Команды для диалога</h2>
                 <ul class="commands-list">
-                    <li><code>МОЙ ПРОФИЛЬ</code> — показать досье</li>
-                    <li><code>НОВЫЙ ПРОФИЛЬ</code> — сбросить данные</li>
-                    <li><code>КОМАНДЫ</code> — список всех команд</li>
+                    <li><code>МОЙ ПРОФИЛЬ</code> — вывести расширенное досье</li>
+                    <li><code>ПРОФИЛЬ [код]</code> — загрузить сохранённое досье</li>
+                    <li><code>НОВЫЙ ПРОФИЛЬ</code> — сбросить текущие данные</li>
+                    <li><code>КОМАНДЫ</code> / <code>СПИСОК КОМАНД</code> — показать все команды</li>
+                    <li><code>СТАТУС</code> — показать текущее состояние Мэган</li>
+                    <li><code>ПОМОЩЬ</code> — получить подсказку</li>
                 </ul>
             </section>
         </main>
 
         <footer>
-            <p>Сделано с любовью и безумием 🖤 | <a href="https://github.com/AlexanderRU44/Megan-Toy">GitHub</a></p>
+            <p>Сделано с любовью и безумием 🖤</p>
+            <p class="footer-links">
+                <a href="https://github.com/AlexanderRU44/Megan-Toy">GitHub</a> |
+                <a href="https://alexanderru44.github.io/Megan-Toy">Сайт</a>
+            </p>
+            <p class="footer-disclaimer">
+                ⚠️ Промт содержит нецензурную лексику и пугающий контент. Используйте на свой страх и риск.
+            </p>
         </footer>
     </div>
 
-    <!-- ✅ Все скрипты (prompt.js УДАЛЁН) -->
+    <!-- Скрипты -->
     <script src="js/device.js"></script>
     <script src="js/geo.js"></script>
     <script src="js/mood.js"></script>
