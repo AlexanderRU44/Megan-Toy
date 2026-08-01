@@ -137,6 +137,10 @@ function openProfileModal() {
             <div class="panel-box full-width">
                 <div class="panel-title">👁️ ЖИВОЙ РЕЗУЛЬТАТ</div>
                 <div class="preview-output" id="edPreview">📭 Профиль пустой. Заполни данные выше!</div>
+                <!-- НОВАЯ КНОПКА ОБНОВЛЕНИЯ -->
+                <button class="action-btn" style="margin-top: 10px; padding: 8px; font-size: 0.75rem; min-height: 36px; background: linear-gradient(135deg, #1a3a5c 0%, #0a1a2c 100%); border: 1px solid rgba(100, 150, 255, 0.2); color: #e2f0f7;" onclick="liveUpdateDossier()">
+                    🔄 Обновить превью
+                </button>
                 <div id="copyStatus" style="margin-top:8px; padding:8px; border-radius:6px; display:none; font-size:0.75rem;"></div>
                 <div class="form-group" style="margin-top:6px;">
                     <label>📥 Импорт (вставь старый профиль)</label>
@@ -164,7 +168,7 @@ function openProfileModal() {
     
     // Ждём, пока DOM обновится, и только потом навешиваем обработчики
     setTimeout(() => {
-        // Навешиваем события на все поля
+        // Навешиваем события на все поля для автообновления
         const fields = ['edNum', 'edName', 'edAge', 'edStreet', 'edCity', 'edCountry', 
                        'edLastDate', 'edStatus', 'edBehavior', 'edPhobias', 'edTriggers', 
                        'edHistory', 'edThreat', 'edNotes', 'edLat', 'edLon', 'edAccuracy', 
@@ -302,6 +306,13 @@ function liveUpdateDossier() {
     if (previewEl) {
         previewEl.innerText = generateDossierText(false);
         console.log('🔄 Превью обновлено');
+        
+        // Визуальный эффект обновления
+        previewEl.style.transition = 'background 0.3s ease';
+        previewEl.style.background = 'rgba(30, 184, 30, 0.05)';
+        setTimeout(() => {
+            previewEl.style.background = '#0a0a0a';
+        }, 300);
     } else {
         console.warn('⚠️ edPreview не найден');
     }
