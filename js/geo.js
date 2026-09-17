@@ -228,75 +228,224 @@ function getWeatherEmoji(code) {
     return '🌡️';
 }
 
-// ====== БЛИЖАЙШИЕ МЕСТА (Overpass API) ======
+// ====== БЛИЖАЙШИЕ МЕСТА (Overpass API с fallback + Nominatim как резерв) ======
 async function getNearbyPlaces(lat, lon, radiusMeters = 500) {
+    // Проверяем кэш (живёт 10 минут)
+    const cacheKey = `megan_places_${lat.toFixed(4)}_${lon.toFixed(4)}_${radiusMeters}`;
     try {
-        // Overpass QL запрос: школы, больницы, парки, аптеки
-        const query = `
-            [out:json][timeout:15];
-            (
-                node["amenity"="school"](around:${radiusMeters},${lat},${lon});
-                way["amenity"="school"](around:${radiusMeters},${lat},${lon});
-                node["amenity"="hospital"](around:${radiusMeters},${lat},${lon});
-                way["amenity"="hospital"](around:${radiusMeters},${lat},${lon});
-                node["leisure"="park"](around:${radiusMeters},${lat},${lon});
-                way["leisure"="park"](around:${radiusMeters},${lat},${lon});
-                node["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
-                way["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
-            );
-            out center;
-        `;
-        
-        const response = await fetch('https://overpass-api.de/api/interpreter', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `data=${encodeURIComponent(query)}`
-        });
-        
-        if (!response.ok) throw new Error(`Overpass API error: ${response.status}`);
-        
-        const data = await response.json();
-        const lang = getCurrentLanguage();
-        
-        const typeLabels = {
-            school: lang === 'ru' ? '🏫 Школа' : '🏫 School',
-            hospital: lang === 'ru' ? '🏥 Больница' : '🏥 Hospital',
-            park: lang === 'ru' ? '🌳 Парк' : '🌳 Park',
-            pharmacy: lang === 'ru' ? '💊 Аптека' : '💊 Pharmacy',
-            unknown: lang === 'ru' ? '📍 Место' : '📍 Place'
-        };
-        
-        const places = [];
-        if (data.elements && data.elements.length > 0) {
-            data.elements.forEach(el => {
-                const tags = el.tags || {};
-                const name = tags.name || tags['name:ru'] || null;
-                
-                if (!name) return;
-                
-                let type = typeLabels.unknown;
-                if (tags.amenity === 'school') type = typeLabels.school;
-                else if (tags.amenity === 'hospital') type = typeLabels.hospital;
-                else if (tags.leisure === 'park') type = typeLabels.park;
-                else if (tags.amenity === 'pharmacy') type = typeLabels.pharmacy;
-                
-                places.push({
-                    type: type,
-                    name: name,
-                    lat: el.lat || (el.center && el.center.lat),
-                    lon: el.lon || (el.center && el.center.lon),
-                    address: tags['addr:street'] ? `${tags['addr:street']}${tags['addr:housenumber'] ? ', ' + tags['addr:housenumber'] : ''}` : null
-                });
-            });
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+                console.log('📍 Ближайшие места взяты из кэша');
+                return parsed.places;
+            }
         }
-        
-        // Ограничиваем до 7 мест
-        return places.slice(0, 7);
-        
-    } catch (error) {
-        console.error('Ошибка получения ближайших мест:', error);
+    } catch(e) {}
+    
+    // Основной метод — Overpass API
+    let places = await getNearbyPlacesOverpass(lat, lon, radiusMeters);
+    
+    // Если Overpass не дал результатов — пробуем Nominatim
+    if (!places || places.length === 0) {
+        console.log('📍 Overpass не дал результатов, пробуем Nominatim...');
+        places = await getNearbyPlacesNominatim(lat, lon, radiusMeters);
+    }
+    
+    // Сохраняем в кэш
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            places: places
+        }));
+    } catch(e) {}
+    
+    return places;
+}
+
+// ====== ОСНОВНОЙ МЕТОД: Overpass API с 4 зеркалами ======
+async function getNearbyPlacesOverpass(lat, lon, radiusMeters = 500) {
+    // Overpass QL запрос (уменьшенный radius и timeout)
+    const query = `
+        [out:json][timeout:10];
+        (
+            node["amenity"="school"](around:${radiusMeters},${lat},${lon});
+            way["amenity"="school"](around:${radiusMeters},${lat},${lon});
+            node["amenity"="hospital"](around:${radiusMeters},${lat},${lon});
+            way["amenity"="hospital"](around:${radiusMeters},${lat},${lon});
+            node["leisure"="park"](around:${radiusMeters},${lat},${lon});
+            way["leisure"="park"](around:${radiusMeters},${lat},${lon});
+            node["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
+            way["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
+        );
+        out center;
+    `;
+    
+    // Список зеркал Overpass API (пробуем по очереди)
+    const endpoints = [
+        'https://overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass.private.coffee/api/interpreter',
+        'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+    ];
+    
+    let data = null;
+    let lastError = null;
+    
+    for (const endpoint of endpoints) {
+        try {
+            console.log(`📍 Пробуем сервер: ${endpoint}`);
+            
+            // Используем AbortController для таймаута 12 секунд
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 12000);
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `data=${encodeURIComponent(query)}`,
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                console.warn(`⚠️ Сервер ${endpoint} вернул ${response.status}`);
+                lastError = new Error(`HTTP ${response.status}`);
+                continue; // пробуем следующий сервер
+            }
+            
+            data = await response.json();
+            console.log(`✅ Успешный ответ от: ${endpoint}`);
+            break; // успех — выходим из цикла
+            
+        } catch (error) {
+            console.warn(`⚠️ Ошибка сервера ${endpoint}:`, error.message);
+            lastError = error;
+            // продолжаем — пробуем следующий сервер
+        }
+    }
+    
+    // Если все серверы упали — возвращаем пустой массив
+    if (!data) {
+        console.error('❌ Все серверы Overpass недоступны:', lastError);
         return [];
     }
+    
+    const lang = getCurrentLanguage();
+    
+    const typeLabels = {
+        school: lang === 'ru' ? '🏫 Школа' : '🏫 School',
+        hospital: lang === 'ru' ? '🏥 Больница' : '🏥 Hospital',
+        park: lang === 'ru' ? '🌳 Парк' : '🌳 Park',
+        pharmacy: lang === 'ru' ? '💊 Аптека' : '💊 Pharmacy',
+        unknown: lang === 'ru' ? '📍 Место' : '📍 Place'
+    };
+    
+    const places = [];
+    if (data.elements && data.elements.length > 0) {
+        data.elements.forEach(el => {
+            const tags = el.tags || {};
+            const name = tags.name || tags['name:ru'] || null;
+            
+            if (!name) return;
+            
+            let type = typeLabels.unknown;
+            if (tags.amenity === 'school') type = typeLabels.school;
+            else if (tags.amenity === 'hospital') type = typeLabels.hospital;
+            else if (tags.leisure === 'park') type = typeLabels.park;
+            else if (tags.amenity === 'pharmacy') type = typeLabels.pharmacy;
+            
+            places.push({
+                type: type,
+                name: name,
+                lat: el.lat || (el.center && el.center.lat),
+                lon: el.lon || (el.center && el.center.lon),
+                address: tags['addr:street'] ? `${tags['addr:street']}${tags['addr:housenumber'] ? ', ' + tags['addr:housenumber'] : ''}` : null
+            });
+        });
+    }
+    
+    // Ограничиваем до 7 мест
+    return places.slice(0, 7);
+}
+
+// ====== РЕЗЕРВНЫЙ МЕТОД: Nominatim (если Overpass упал) ======
+async function getNearbyPlacesNominatim(lat, lon, radiusMeters = 500) {
+    const lang = getCurrentLanguage();
+    
+    // Категории для поиска (Nominatim не поддерживает "все школы в радиусе",
+    // поэтому ищем по ключевым словам с ограничением области)
+    const queries = [
+        { q: 'school', type: lang === 'ru' ? '🏫 Школа' : '🏫 School' },
+        { q: 'hospital', type: lang === 'ru' ? '🏥 Больница' : '🏥 Hospital' },
+        { q: 'park', type: lang === 'ru' ? '🌳 Парк' : '🌳 Park' },
+        { q: 'pharmacy', type: lang === 'ru' ? '💊 Аптека' : '💊 Pharmacy' }
+    ];
+    
+    const places = [];
+    
+    // Bounding box вокруг координат (в градусах)
+    const d = radiusMeters / 111000; // ~111 км на градус
+    const viewbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
+    
+    for (const item of queries) {
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?` +
+                `q=${item.q}&` +
+                `format=json&` +
+                `limit=2&` +
+                `viewbox=${viewbox}&` +
+                `bounded=1&` +
+                `accept-language=${lang === 'ru' ? 'ru' : 'en'}`;
+            
+            const response = await fetch(url, {
+                headers: {
+                    // Nominatim требует User-Agent
+                    'User-Agent': 'Megan-Toy/2.0 (https://github.com/AlexanderRU44/Megan-Toy)'
+                }
+            });
+            
+            if (!response.ok) {
+                console.warn(`⚠️ Nominatim вернул ${response.status} для ${item.q}`);
+                continue;
+            }
+            
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+                data.forEach(el => {
+                    const parts = el.display_name.split(',');
+                    const name = parts[0].trim();
+                    const address = parts.slice(1, 3).join(',').trim();
+                    
+                    // Проверяем, что место не дублируется
+                    const isDuplicate = places.some(p => 
+                        Math.abs(p.lat - parseFloat(el.lat)) < 0.0001 &&
+                        Math.abs(p.lon - parseFloat(el.lon)) < 0.0001
+                    );
+                    
+                    if (!isDuplicate && name) {
+                        places.push({
+                            type: item.type,
+                            name: name,
+                            lat: parseFloat(el.lat),
+                            lon: parseFloat(el.lon),
+                            address: address || null
+                        });
+                    }
+                });
+            }
+            
+            // Пауза между запросами (Nominatim требует 1 запрос/сек)
+            await new Promise(r => setTimeout(r, 1100));
+            
+        } catch(e) {
+            console.warn(`Nominatim ошибка для ${item.q}:`, e);
+        }
+    }
+    
+    return places.slice(0, 7);
 }
 
 // Форматирование мест для промта
@@ -503,7 +652,7 @@ function showFullLocation() {
             done = total;
             showResult();
         }
-    }, 12000);
+    }, 20000);
 }
 
 // ====== ФУНКЦИЯ ДЛЯ ПРОМТА (с погодой и местами) ======
@@ -661,6 +810,8 @@ window.getWeather = getWeather;
 window.getWeatherDescription = getWeatherDescription;
 window.getWeatherEmoji = getWeatherEmoji;
 window.getNearbyPlaces = getNearbyPlaces;
+window.getNearbyPlacesOverpass = getNearbyPlacesOverpass;
+window.getNearbyPlacesNominatim = getNearbyPlacesNominatim;
 window.formatNearbyPlaces = formatNearbyPlaces;
 
-console.log('✅ geo.js загружен (с погодой и ближайшими местами)');
+console.log('✅ geo.js загружен (с погодой и ближайшими местами, fallback Overpass→Nominatim)');
