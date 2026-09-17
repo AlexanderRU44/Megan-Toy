@@ -1,6 +1,6 @@
-// ====== ГЕОЛОКАЦИЯ (С ПОДДЕРЖКОЙ I18N) ======
+// ====== ГЕОЛОКАЦИЯ, ПОГОДА И БЛИЖАЙШИЕ МЕСТА (С ПОДДЕРЖКОЙ I18N) ======
 
-// Функция для получения геоданных через IP
+// ====== ГЕОДАННЫЕ ЧЕРЕЗ IP ======
 function getGeoData() {
     return new Promise((resolve) => {
         try {
@@ -54,7 +54,7 @@ function getGeoData() {
     });
 }
 
-// Функция для получения GPS
+// ====== GPS ======
 function getGPSLocation() {
     return new Promise((resolve) => {
         if (!navigator.geolocation) {
@@ -97,7 +97,7 @@ function getGPSLocation() {
     });
 }
 
-// Обратный геокодинг - получение города по координатам
+// ====== ОБРАТНЫЙ ГЕОКОДИНГ: ГОРОД ======
 async function getCityFromCoords(lat, lon) {
     try {
         const lang = getCurrentLanguage();
@@ -121,7 +121,7 @@ async function getCityFromCoords(lat, lon) {
     }
 }
 
-// ====== ПОЛУЧЕНИЕ УЛИЦЫ ПО КООРДИНАТАМ ======
+// ====== ОБРАТНЫЙ ГЕОКОДИНГ: УЛИЦА ======
 async function getStreetFromCoords(lat, lon) {
     try {
         const lang = getCurrentLanguage();
@@ -148,6 +148,173 @@ async function getStreetFromCoords(lat, lon) {
     }
 }
 
+// ====== ПОГОДА (Open-Meteo, без API-ключа) ======
+async function getWeather(lat, lon) {
+    try {
+        const url = new URL('https://api.open-meteo.com/v1/forecast');
+        url.searchParams.set('latitude', lat);
+        url.searchParams.set('longitude', lon);
+        url.searchParams.set('current', 'temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m');
+        url.searchParams.set('timezone', 'auto');
+        
+        const response = await fetch(url.toString());
+        if (!response.ok) throw new Error(`Weather API error: ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.current) {
+            return {
+                temperature: data.current.temperature_2m,
+                temperatureUnit: data.current_units?.temperature_2m || '°C',
+                weatherCode: data.current.weather_code,
+                windSpeed: data.current.wind_speed_10m,
+                windUnit: data.current_units?.wind_speed_10m || 'км/ч',
+                humidity: data.current.relative_humidity_2m,
+                time: data.current.time,
+                timezone: data.timezone
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error('Ошибка получения погоды:', error);
+        return null;
+    }
+}
+
+// Расшифровка WMO weather code
+function getWeatherDescription(code) {
+    const lang = getCurrentLanguage();
+    const descriptionsRu = {
+        0: 'Ясно', 1: 'Преимущественно ясно', 2: 'Переменная облачность', 3: 'Пасмурно',
+        45: 'Туман', 48: 'Осаждающийся туман',
+        51: 'Лёгкая морось', 53: 'Умеренная морось', 55: 'Плотная морось',
+        56: 'Лёгкая ледяная морось', 57: 'Плотная ледяная морось',
+        61: 'Слабый дождь', 63: 'Умеренный дождь', 65: 'Сильный дождь',
+        66: 'Слабый ледяной дождь', 67: 'Сильный ледяной дождь',
+        71: 'Слабый снегопад', 73: 'Умеренный снегопад', 75: 'Сильный снегопад',
+        77: 'Снежные зёрна',
+        80: 'Слабые ливни', 81: 'Умеренные ливни', 82: 'Сильные ливни',
+        85: 'Слабые снежные ливни', 86: 'Сильные снежные ливни',
+        95: 'Гроза', 96: 'Гроза с небольшим градом', 99: 'Гроза с сильным градом'
+    };
+    const descriptionsEn = {
+        0: 'Clear', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+        45: 'Fog', 48: 'Depositing rime fog',
+        51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle',
+        56: 'Light freezing drizzle', 57: 'Dense freezing drizzle',
+        61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain',
+        66: 'Light freezing rain', 67: 'Heavy freezing rain',
+        71: 'Slight snow', 73: 'Moderate snow', 75: 'Heavy snow',
+        77: 'Snow grains',
+        80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers',
+        85: 'Slight snow showers', 86: 'Heavy snow showers',
+        95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail'
+    };
+    const descriptions = lang === 'ru' ? descriptionsRu : descriptionsEn;
+    return descriptions[code] || `Код ${code}`;
+}
+
+// Эмодзи для погоды
+function getWeatherEmoji(code) {
+    if (code === 0) return '☀️';
+    if (code >= 1 && code <= 3) return '⛅';
+    if (code === 45 || code === 48) return '🌫️';
+    if (code >= 51 && code <= 57) return '🌦️';
+    if (code >= 61 && code <= 67) return '🌧️';
+    if (code >= 71 && code <= 77) return '❄️';
+    if (code >= 80 && code <= 82) return '🌧️';
+    if (code >= 85 && code <= 86) return '🌨️';
+    if (code >= 95) return '⛈️';
+    return '🌡️';
+}
+
+// ====== БЛИЖАЙШИЕ МЕСТА (Overpass API) ======
+async function getNearbyPlaces(lat, lon, radiusMeters = 500) {
+    try {
+        // Overpass QL запрос: школы, больницы, парки, аптеки
+        const query = `
+            [out:json][timeout:15];
+            (
+                node["amenity"="school"](around:${radiusMeters},${lat},${lon});
+                way["amenity"="school"](around:${radiusMeters},${lat},${lon});
+                node["amenity"="hospital"](around:${radiusMeters},${lat},${lon});
+                way["amenity"="hospital"](around:${radiusMeters},${lat},${lon});
+                node["leisure"="park"](around:${radiusMeters},${lat},${lon});
+                way["leisure"="park"](around:${radiusMeters},${lat},${lon});
+                node["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
+                way["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
+            );
+            out center;
+        `;
+        
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `data=${encodeURIComponent(query)}`
+        });
+        
+        if (!response.ok) throw new Error(`Overpass API error: ${response.status}`);
+        
+        const data = await response.json();
+        const lang = getCurrentLanguage();
+        
+        const typeLabels = {
+            school: lang === 'ru' ? '🏫 Школа' : '🏫 School',
+            hospital: lang === 'ru' ? '🏥 Больница' : '🏥 Hospital',
+            park: lang === 'ru' ? '🌳 Парк' : '🌳 Park',
+            pharmacy: lang === 'ru' ? '💊 Аптека' : '💊 Pharmacy',
+            unknown: lang === 'ru' ? '📍 Место' : '📍 Place'
+        };
+        
+        const places = [];
+        if (data.elements && data.elements.length > 0) {
+            data.elements.forEach(el => {
+                const tags = el.tags || {};
+                const name = tags.name || tags['name:ru'] || null;
+                
+                if (!name) return;
+                
+                let type = typeLabels.unknown;
+                if (tags.amenity === 'school') type = typeLabels.school;
+                else if (tags.amenity === 'hospital') type = typeLabels.hospital;
+                else if (tags.leisure === 'park') type = typeLabels.park;
+                else if (tags.amenity === 'pharmacy') type = typeLabels.pharmacy;
+                
+                places.push({
+                    type: type,
+                    name: name,
+                    lat: el.lat || (el.center && el.center.lat),
+                    lon: el.lon || (el.center && el.center.lon),
+                    address: tags['addr:street'] ? `${tags['addr:street']}${tags['addr:housenumber'] ? ', ' + tags['addr:housenumber'] : ''}` : null
+                });
+            });
+        }
+        
+        // Ограничиваем до 7 мест
+        return places.slice(0, 7);
+        
+    } catch (error) {
+        console.error('Ошибка получения ближайших мест:', error);
+        return [];
+    }
+}
+
+// Форматирование мест для промта
+function formatNearbyPlaces(places) {
+    if (!places || places.length === 0) return '';
+    const lang = getCurrentLanguage();
+    const header = lang === 'ru' ? '[БЛИЖАЙШИЕ МЕСТА:' : '[NEARBY PLACES:';
+    
+    let result = header + '\n';
+    places.forEach((place, index) => {
+        result += `  ${index + 1}. ${place.type}: ${place.name}`;
+        if (place.address) result += ` (${place.address})`;
+        result += '\n';
+    });
+    result += ']';
+    return result;
+}
+
 // ====== ГЛАВНАЯ ФУНКЦИЯ ПОКАЗА МЕСТОПОЛОЖЕНИЯ ======
 function showFullLocation() {
     console.log('📍 Нажата кнопка местоположения');
@@ -169,8 +336,10 @@ function showFullLocation() {
     let gpsData = null;
     let cityData = null;
     let streetData = null;
+    let weatherData = null;
+    let placesData = [];
     let done = 0;
-    const total = 4;
+    const total = 5;
     
     function finish() {
         done++;
@@ -180,6 +349,7 @@ function showFullLocation() {
     }
     
     function showResult() {
+        const lang = getCurrentLanguage();
         let message = '';
         let hasData = false;
         let gpsAvailable = false;
@@ -202,9 +372,9 @@ function showFullLocation() {
                 if (streetData.house) {
                     streetFull += `, ${streetData.house}`;
                 }
-                message += `\n📍 Улица: ${streetFull}\n`;
+                message += `\n📍 ${t('geo.street')}: ${streetFull}\n`;
                 if (streetData.postcode) {
-                    message += `📮 Почтовый индекс: ${streetData.postcode}\n`;
+                    message += `📮 ${t('geo.postal')}: ${streetData.postcode}\n`;
                 }
                 geoObj.street = streetFull;
                 geoObj.postcode = streetData.postcode;
@@ -217,6 +387,25 @@ function showFullLocation() {
                 geoObj.city = cityData.city;
                 geoObj.region = cityData.region;
                 geoObj.country = cityData.country;
+            }
+            
+            // ====== ПОГОДА ======
+            if (weatherData) {
+                const desc = getWeatherDescription(weatherData.weatherCode);
+                const emoji = getWeatherEmoji(weatherData.weatherCode);
+                message += `\n${emoji} ${t('geo.weather')}: ${desc}, ${weatherData.temperature}${weatherData.temperatureUnit}, ${t('geo.wind')}: ${weatherData.windSpeed} ${weatherData.windUnit}, ${t('geo.humidity')}: ${weatherData.humidity}%\n`;
+                geoObj.weather = `${desc}, ${weatherData.temperature}${weatherData.temperatureUnit}`;
+            }
+            
+            // ====== БЛИЖАЙШИЕ МЕСТА ======
+            if (placesData && placesData.length > 0) {
+                message += `\n${t('geo.nearby_places')}:\n`;
+                placesData.forEach((place, index) => {
+                    message += `  ${index + 1}. ${place.type}: ${place.name}`;
+                    if (place.address) message += ` (${place.address})`;
+                    message += '\n';
+                });
+                geoObj.places = placesData;
             }
             
             message += `\n🗺️ ${t('geo.map')}: https://www.google.com/maps?q=${gpsData.lat},${gpsData.lon}\n\n`;
@@ -271,23 +460,34 @@ function showFullLocation() {
         document.getElementById('notifText').innerHTML = message.replace(/\n/g, '<br>');
     }
     
+    // Запускаем все запросы параллельно
     getGeoData().then(data => {
         ipData = data;
         finish();
     });
     
-    getGPSLocation().then(data => {
+    getGPSLocation().then(async (data) => {
         gpsData = data;
         if (gpsData && !gpsData.error) {
-            Promise.all([
+            // Параллельно: город, улица, погода, места
+            const [city, street, weather, places] = await Promise.all([
                 getCityFromCoords(gpsData.lat, gpsData.lon),
-                getStreetFromCoords(gpsData.lat, gpsData.lon)
-            ]).then(([city, street]) => {
-                cityData = city;
-                streetData = street;
-                finish();
-            });
+                getStreetFromCoords(gpsData.lat, gpsData.lon),
+                getWeather(gpsData.lat, gpsData.lon),
+                getNearbyPlaces(gpsData.lat, gpsData.lon, 500)
+            ]);
+            cityData = city;
+            streetData = street;
+            weatherData = weather;
+            placesData = places;
+            finish();
+            finish();
+            finish();
+            finish();
         } else {
+            finish();
+            finish();
+            finish();
             finish();
         }
     });
@@ -303,60 +503,78 @@ function showFullLocation() {
             done = total;
             showResult();
         }
-    }, 10000);
+    }, 12000);
 }
 
-// ====== ФУНКЦИЯ ДЛЯ ПРОМТА (с реальным городом из GPS) ======
+// ====== ФУНКЦИЯ ДЛЯ ПРОМТА (с погодой и местами) ======
 function getGeoInfoString() {
     return new Promise((resolve) => {
-        getGPSLocation().then(gps => {
+        getGPSLocation().then(async (gps) => {
             if (gps && !gps.error) {
-                Promise.all([
+                // Параллельно: город, улица, погода, места
+                const [cityData, streetData, weatherData, placesData] = await Promise.all([
                     getCityFromCoords(gps.lat, gps.lon),
-                    getStreetFromCoords(gps.lat, gps.lon)
-                ]).then(([cityData, streetData]) => {
-                    let result = '';
-                    let geoObj = { city: 'Неизвестно', country: 'Неизвестно', lat: gps.lat, lon: gps.lon };
-                    
-                    let parts = [];
-                    
-                    if (streetData && streetData.street !== 'Неизвестно') {
-                        let streetFull = streetData.street;
-                        if (streetData.house) {
-                            streetFull += `, ${streetData.house}`;
-                        }
-                        parts.push(`Улица: ${streetFull}`);
-                        geoObj.street = streetFull;
-                        if (streetData.postcode) {
-                            parts.push(`Почтовый индекс: ${streetData.postcode}`);
-                            geoObj.postcode = streetData.postcode;
-                        }
+                    getStreetFromCoords(gps.lat, gps.lon),
+                    getWeather(gps.lat, gps.lon),
+                    getNearbyPlaces(gps.lat, gps.lon, 500)
+                ]);
+                
+                let result = '';
+                let geoObj = { city: 'Неизвестно', country: 'Неизвестно', lat: gps.lat, lon: gps.lon };
+                let parts = [];
+                
+                if (streetData && streetData.street !== 'Неизвестно') {
+                    let streetFull = streetData.street;
+                    if (streetData.house) streetFull += `, ${streetData.house}`;
+                    parts.push(`Улица: ${streetFull}`);
+                    geoObj.street = streetFull;
+                    if (streetData.postcode) {
+                        parts.push(`Почтовый индекс: ${streetData.postcode}`);
+                        geoObj.postcode = streetData.postcode;
                     }
-                    
-                    if (cityData && cityData.city !== 'Неизвестно') {
-                        parts.push(`Город: ${cityData.city}`);
-                        parts.push(`Регион: ${cityData.region}`);
-                        parts.push(`Страна: ${cityData.country}`);
-                        geoObj.city = cityData.city;
-                        geoObj.region = cityData.region;
-                        geoObj.country = cityData.country;
-                    }
-                    
-                    parts.push(`GPS: ${gps.lat}, ${gps.lon}`);
-                    parts.push(`Точность: ${gps.accuracy}м`);
-                    
-                    result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`;
-                    console.log('✅ Для промта используется GPS с деталями');
-                    
-                    localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
-                    resolve(result);
-                });
+                }
+                
+                if (cityData && cityData.city !== 'Неизвестно') {
+                    parts.push(`Город: ${cityData.city}`);
+                    parts.push(`Регион: ${cityData.region}`);
+                    parts.push(`Страна: ${cityData.country}`);
+                    geoObj.city = cityData.city;
+                    geoObj.region = cityData.region;
+                    geoObj.country = cityData.country;
+                }
+                
+                parts.push(`GPS: ${gps.lat}, ${gps.lon}`);
+                parts.push(`Точность: ${gps.accuracy}м`);
+                
+                result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`;
+                
+                // ====== ПОГОДА ======
+                if (weatherData) {
+                    const desc = getWeatherDescription(weatherData.weatherCode);
+                    const emoji = getWeatherEmoji(weatherData.weatherCode);
+                    result += `\n[ПОГОДА: ${emoji} ${desc}, ${weatherData.temperature}${weatherData.temperatureUnit}, ветер ${weatherData.windSpeed} ${weatherData.windUnit}, влажность ${weatherData.humidity}%]`;
+                    geoObj.weather = `${desc}, ${weatherData.temperature}${weatherData.temperatureUnit}`;
+                }
+                
+                // ====== БЛИЖАЙШИЕ МЕСТА ======
+                if (placesData && placesData.length > 0) {
+                    const placesStr = formatNearbyPlaces(placesData);
+                    result += `\n${placesStr}`;
+                    geoObj.places = placesData;
+                }
+                
+                console.log('✅ Для промта используется GPS с погодой и местами');
+                
+                localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
+                resolve(result);
                 return;
             }
             
             console.log('ℹ️ GPS не доступен, используем IP для промта');
-            getGeoData().then(geo => {
+            getGeoData().then(async (geo) => {
                 let geoObj = { city: 'Неизвестно', country: 'Неизвестно' };
+                let result = '';
+                
                 if (geo) {
                     const parts = [];
                     if (geo.country && geo.country !== 'Неизвестно') {
@@ -384,8 +602,33 @@ function getGeoInfoString() {
                         geoObj.postal = geo.postal;
                     }
                     
+                    result = `[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`;
+                    
+                    // Погода и места по IP-координатам
+                    if (geo.location && geo.location !== 'Неизвестно') {
+                        const [lat, lon] = geo.location.split(',').map(Number);
+                        if (!isNaN(lat) && !isNaN(lon)) {
+                            const [weatherData, placesData] = await Promise.all([
+                                getWeather(lat, lon),
+                                getNearbyPlaces(lat, lon, 1000)
+                            ]);
+                            
+                            if (weatherData) {
+                                const desc = getWeatherDescription(weatherData.weatherCode);
+                                const emoji = getWeatherEmoji(weatherData.weatherCode);
+                                result += `\n[ПОГОДА: ${emoji} ${desc}, ${weatherData.temperature}${weatherData.temperatureUnit}, ветер ${weatherData.windSpeed} ${weatherData.windUnit}, влажность ${weatherData.humidity}%]`;
+                                geoObj.weather = `${desc}, ${weatherData.temperature}${weatherData.temperatureUnit}`;
+                            }
+                            
+                            if (placesData && placesData.length > 0) {
+                                result += `\n${formatNearbyPlaces(placesData)}`;
+                                geoObj.places = placesData;
+                            }
+                        }
+                    }
+                    
                     localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
-                    resolve(`[ГЕОЛОКАЦИЯ ПОЛЬЗОВАТЕЛЯ: ${parts.join(' | ')}]`);
+                    resolve(result);
                 } else {
                     localStorage.setItem('megan_geo_data', JSON.stringify(geoObj));
                     resolve('[ГЕОЛОКАЦИЯ: Не удалось определить]');
@@ -413,5 +656,11 @@ window.getGeoInfoSync = getGeoInfoSync;
 window.getGeoData = getGeoData;
 window.getGPSLocation = getGPSLocation;
 window.getStreetFromCoords = getStreetFromCoords;
+window.getCityFromCoords = getCityFromCoords;
+window.getWeather = getWeather;
+window.getWeatherDescription = getWeatherDescription;
+window.getWeatherEmoji = getWeatherEmoji;
+window.getNearbyPlaces = getNearbyPlaces;
+window.formatNearbyPlaces = formatNearbyPlaces;
 
-console.log('✅ geo.js загружен');
+console.log('✅ geo.js загружен (с погодой и ближайшими местами)');
