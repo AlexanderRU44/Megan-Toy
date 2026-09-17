@@ -133,12 +133,15 @@ window.closeNotification = function() {
 // ====== ПОКАЗ РЕЗУЛЬТАТА КОПИРОВАНИЯ ======
 function showCopyResult(success, photoInfo) {
     if (success) {
+        const lang = getCurrentLanguage();
         let geoText = t('geo.unknown');
+        let weatherText = '';
+        let placesText = '';
+        
         try {
             const geoData = localStorage.getItem('megan_geo_data');
             if (geoData) {
                 const geo = JSON.parse(geoData);
-                const lang = getCurrentLanguage();
                 const cityLabel = lang === 'ru' ? 'Город' : 'City';
                 const countryLabel = lang === 'ru' ? 'Страна' : 'Country';
                 
@@ -151,6 +154,17 @@ function showCopyResult(success, photoInfo) {
                 } else if (geo.lat && geo.lon) {
                     geoText = `📍 GPS: ${geo.lat}, ${geo.lon}`;
                 }
+                
+                // Погода
+                if (geo.weather) {
+                    weatherText = `🌤️ ${geo.weather}`;
+                }
+                
+                // Ближайшие места
+                if (geo.places && geo.places.length > 0) {
+                    const placeNames = geo.places.slice(0, 3).map(p => p.name).join(', ');
+                    placesText = `🏢 ${lang === 'ru' ? 'Рядом' : 'Nearby'}: ${placeNames}${geo.places.length > 3 ? '...' : ''}`;
+                }
             }
         } catch(e) {
             console.log('Ошибка получения геоданных:', e);
@@ -161,6 +175,8 @@ function showCopyResult(success, photoInfo) {
         resultHTML += `<div style="display: flex; flex-direction: column; gap: 6px;">`;
         resultHTML += `<div>🕒 ${t('copy.time_added')}</div>`;
         resultHTML += `<div>${geoText}</div>`;
+        if (weatherText) resultHTML += `<div>${weatherText}</div>`;
+        if (placesText) resultHTML += `<div>${placesText}</div>`;
         resultHTML += `<div>💻 ${t('copy.device_added')}</div>`;
         
         if (photoInfo && photoInfo.taken) {
@@ -209,7 +225,6 @@ async function openDeepSeekApp() {
     console.log('🤖 openDeepSeekApp вызвана!');
     
     try {
-        // Копируем промт (с фото)
         await getGeoInfoString();
         const photoResult = await takePhotoForPrompt();
         const payload = await getPreparedPayload();
@@ -218,7 +233,6 @@ async function openDeepSeekApp() {
         
         const lang = getCurrentLanguage();
         
-        // Получаем информацию о фото
         const photoInfo = getPhotoInfo();
         let photoText = '';
         if (photoInfo && photoInfo.taken) {
@@ -227,7 +241,6 @@ async function openDeepSeekApp() {
                 : `\n📸 Photo saved: ${photoInfo.fileName}`;
         }
         
-        // Показываем уведомление с кнопкой
         showNotification(
             '🤖',
             lang === 'ru' ? '🌐 Открыть DeepSeek' : '🌐 Open DeepSeek',
@@ -239,9 +252,7 @@ async function openDeepSeekApp() {
             lang === 'ru' ? '🌐 Открыть' : '🌐 Open',
             function() {
                 closeNotification();
-                // Открываем сайт DeepSeek в новой вкладке
                 window.open('https://chat.deepseek.com', '_blank');
-                // Показываем дополнительное уведомление
                 setTimeout(() => {
                     showNotification(
                         '🤖',
